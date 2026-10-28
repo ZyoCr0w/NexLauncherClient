@@ -21,6 +21,13 @@ public class MixinItemRenderer {
         nexclient$parcial = parcial;
     }
 
+    @Inject(method = "renderFireInFirstPerson", at = @At("HEAD"), cancellable = true, require = 0)
+    private void nexclient$fuego(float parcial, CallbackInfo ci) {
+        if (Config.get().ocultarFuego) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "transformFirstPersonItem", at = @At("HEAD"), cancellable = true)
     private void nexclient$transformar(float equipado, float golpe, CallbackInfo ci) {
         Config c = Config.get();

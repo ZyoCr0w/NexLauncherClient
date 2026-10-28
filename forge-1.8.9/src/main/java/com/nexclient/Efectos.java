@@ -9,13 +9,20 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Vec3;
 
 /** Blockhit (animación y sonido) y multiplicador de partículas de golpe. */
 public final class Efectos {
     private static final String[] IDS = {"random.anvil_land", "mob.irongolem.hit", "random.successful_hit",
             "random.orb", "note.pling", "random.click"};
     private static long ultimoBloqueo;
+    public static double velocidad;
+    private static int combo;
+    private static long ultimoGolpe;
+    private static double alcance = -1;
+    private static boolean herido;
 
     private Efectos() {
     }
@@ -29,6 +36,26 @@ public final class Efectos {
         if (bloqueando()) {
             ultimoBloqueo = System.currentTimeMillis();
         }
+        EntityPlayerSP p = Minecraft.getMinecraft().thePlayer;
+        if (p == null) {
+            combo = 0;
+            return;
+        }
+        double dx = p.posX - p.prevPosX, dz = p.posZ - p.prevPosZ;
+        velocidad = velocidad * 0.5 + Math.sqrt(dx * dx + dz * dz) * 20 * 0.5;
+        boolean ahoraHerido = p.hurtTime > 0;
+        if (ahoraHerido && !herido) {
+            combo = 0;
+        }
+        herido = ahoraHerido;
+    }
+
+    public static int combo() {
+        return System.currentTimeMillis() - ultimoGolpe > 2500 ? 0 : combo;
+    }
+
+    public static double alcance() {
+        return System.currentTimeMillis() - ultimoGolpe > 4000 ? -1 : alcance;
     }
 
     /** Clic izquierdo mientras bloqueas: el juego no golpea, pero en 1.7 la espada sí se movía. */
@@ -50,6 +77,18 @@ public final class Efectos {
     public static void golpe(EntityPlayer jugador, Entity objetivo) {
         Minecraft mc = Minecraft.getMinecraft();
         Config c = Config.get();
+        if (System.currentTimeMillis() - ultimoGolpe > 2500) {
+            combo = 0;
+        }
+        combo++;
+        ultimoGolpe = System.currentTimeMillis();
+        Vec3 ojos = jugador.getPositionEyes(1.0F);
+        if (mc.objectMouseOver != null && mc.objectMouseOver.hitVec != null
+                && mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY) {
+            alcance = ojos.distanceTo(mc.objectMouseOver.hitVec);
+        } else {
+            alcance = ojos.distanceTo(new Vec3(objetivo.posX, objetivo.posY + objetivo.height / 2, objetivo.posZ));
+        }
         boolean blockhit = bloqueando() || System.currentTimeMillis() - ultimoBloqueo < 350;
         if (c.sonido && (c.sonidoCadaGolpe || blockhit)) {
             sonar();

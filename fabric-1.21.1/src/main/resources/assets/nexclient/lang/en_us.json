@@ -1,4 +1,5 @@
 {
 	"key.nexclient.menu": "NexClient menu",
-	"category.nexclient": "NexClient"
+	"category.nexclient": "NexClient",
+	"key.nexclient.zoom": "Zoom (NexClient)"
 }

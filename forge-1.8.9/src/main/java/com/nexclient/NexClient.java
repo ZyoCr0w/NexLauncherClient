@@ -22,6 +22,8 @@ public class NexClient {
     @Mod.EventHandler
     public void init(FMLInitializationEvent e) {
         ClientRegistry.registerKeyBinding(TECLA_MENU);
+        Movimiento.teclaZoom = new KeyBinding("Zoom (NexClient)", Keyboard.KEY_C, "NexClient");
+        ClientRegistry.registerKeyBinding(Movimiento.teclaZoom);
         MinecraftForge.EVENT_BUS.register(new Eventos());
     }
 }

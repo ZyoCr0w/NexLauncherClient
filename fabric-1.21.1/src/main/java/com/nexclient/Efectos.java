@@ -12,12 +12,19 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.phys.HitResult;
 
 /** Blockhit (cuándo se bloquea, su sonido) y multiplicador de partículas de golpe. */
 public final class Efectos {
     private static final String[] IDS = {"block.anvil.land", "item.shield.block", "entity.player.attack.strong",
             "entity.experience_orb.pickup", "block.note_block.pling", "ui.button.click"};
     private static long ultimoBloqueo;
+    /** Bloques por segundo (horizontal), golpes seguidos sin recibir daño y distancia del último golpe. */
+    public static double velocidad;
+    private static int combo;
+    private static long ultimoGolpe;
+    private static double alcance = -1;
+    private static boolean herido;
 
     private Efectos() {
     }
@@ -41,11 +48,41 @@ public final class Efectos {
         if (bloqueando(mc)) {
             ultimoBloqueo = System.currentTimeMillis();
         }
+        LocalPlayer p = mc.player;
+        if (p == null) {
+            combo = 0;
+            return;
+        }
+        double dx = p.getX() - p.xo, dz = p.getZ() - p.zo;
+        velocidad = velocidad * 0.5 + Math.sqrt(dx * dx + dz * dz) * 20 * 0.5;
+        boolean ahoraHerido = p.hurtTime > 0;
+        if (ahoraHerido && !herido) {
+            combo = 0;  // te pegaron: se corta el combo
+        }
+        herido = ahoraHerido;
+    }
+
+    public static int combo() {
+        return System.currentTimeMillis() - ultimoGolpe > 2500 ? 0 : combo;
+    }
+
+    public static double alcance() {
+        return System.currentTimeMillis() - ultimoGolpe > 4000 ? -1 : alcance;
     }
 
     public static void golpe(Player jugador, Entity objetivo) {
         Minecraft mc = Minecraft.getInstance();
         Config c = Config.get();
+        if (System.currentTimeMillis() - ultimoGolpe > 2500) {
+            combo = 0;
+        }
+        combo++;
+        ultimoGolpe = System.currentTimeMillis();
+        if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.ENTITY) {
+            alcance = jugador.getEyePosition().distanceTo(mc.hitResult.getLocation());
+        } else {
+            alcance = Math.sqrt(objetivo.getBoundingBox().distanceToSqr(jugador.getEyePosition()));
+        }
         boolean blockhit = bloqueando(mc) || System.currentTimeMillis() - ultimoBloqueo < 350;
         if (c.sonido && (c.sonidoCadaGolpe || blockhit)) {
             sonar();

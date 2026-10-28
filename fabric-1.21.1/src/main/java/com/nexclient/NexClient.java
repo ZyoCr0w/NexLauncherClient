@@ -13,17 +13,24 @@ import org.lwjgl.glfw.GLFW;
 
 public class NexClient implements ClientModInitializer {
     public static KeyMapping teclaMenu;
+    private static int ticks;
 
     @Override
     public void onInitializeClient() {
         Config.cargar(FabricLoader.getInstance().getConfigDir().resolve("nexclient.json").toFile());
         teclaMenu = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.menu",
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "category.nexclient"));
+        Movimiento.teclaZoom = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.zoom",
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "category.nexclient"));
+        ClientTickEvents.START_CLIENT_TICK.register(Movimiento::tick);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             while (teclaMenu.consumeClick()) {
                 mc.setScreen(new MenuScreen(mc.screen));
             }
             Efectos.tick(mc);
+            if (++ticks % 40 == 0 && mc.screen == null) {
+                Config.recargarSiCambio();
+            }
         });
         HudRenderCallback.EVENT.register((g, tiempo) -> Hud.dibujar(g, false));
         AttackEntityCallback.EVENT.register((jugador, mundo, mano, objetivo, golpe) -> {

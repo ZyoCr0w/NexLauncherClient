@@ -4,10 +4,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Arrastra las teclas, los CPS y los FPS a donde quieras. */
+/** Arrastra cada elemento del HUD a donde quieras. */
 public class EditorHudScreen extends Screen {
     private final Screen padre;
-    private int arrastrando = -1;
+    private String arrastrando;
     private double dx, dy;
 
     public EditorHudScreen(Screen padre) {
@@ -25,17 +25,21 @@ public class EditorHudScreen extends Screen {
         super.render(g, mx, my, delta);
         Hud.dibujar(g, true);
         Config c = Config.get();
-        boolean[] activo = {c.teclas, c.cps, c.fps};
-        for (int i = 0; i < 3; i++) {
-            int[] r = Hud.rect(i, minecraft);
-            boolean encima = i == arrastrando || dentro(r, mx, my);
-            int borde = encima ? 0xFFFFFFFF : (activo[i] ? 0x99FFFFFF : 0x55FF5555);
-            g.renderOutline(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2, borde);
-            if (!activo[i]) {
-                g.drawString(font, Hud.NOMBRES[i] + " (apagado)", r[0], r[1] + r[3] + 2, 0xFFFF7777, true);
+        int activos = 0;
+        for (String id : Hud.IDS) {
+            if (!Hud.activo(c, id)) {
+                continue;
+            }
+            activos++;
+            int[] r = Hud.rect(id, minecraft);
+            boolean encima = id.equals(arrastrando) || dentro(r, mx, my);
+            g.renderOutline(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2, encima ? 0xFFFFFFFF : 0x88FFFFFF);
+            if (encima) {
+                g.drawString(font, Hud.nombre(id), r[0], Math.max(0, r[1] - 10), 0xFFFFFFFF, true);
             }
         }
-        g.drawCenteredString(font, "Arrastra los elementos · ESC para terminar", width / 2, height - 20, 0xFFFFFF);
+        g.drawCenteredString(font, activos == 0 ? "Activa elementos en el menú de NexClient (pestañas HUD e Info)"
+                : "Arrastra los elementos · ESC para terminar", width / 2, height - 20, 0xFFFFFF);
     }
 
     private static boolean dentro(int[] r, double x, double y) {
@@ -45,10 +49,12 @@ public class EditorHudScreen extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int boton) {
         if (boton == 0) {
-            for (int i = 0; i < 3; i++) {
-                int[] r = Hud.rect(i, minecraft);
-                if (dentro(r, mx, my)) {
-                    arrastrando = i;
+            Config c = Config.get();
+            for (int i = Hud.IDS.length - 1; i >= 0; i--) {  // el de encima primero
+                String id = Hud.IDS[i];
+                int[] r = Hud.rect(id, minecraft);
+                if (Hud.activo(c, id) && dentro(r, mx, my)) {
+                    arrastrando = id;
                     dx = mx - r[0];
                     dy = my - r[1];
                     return true;
@@ -60,7 +66,7 @@ public class EditorHudScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int boton, double ddx, double ddy) {
-        if (arrastrando >= 0) {
+        if (arrastrando != null) {
             Hud.mover(arrastrando, (int) Math.round(mx - dx), (int) Math.round(my - dy));
             int[] r = Hud.rect(arrastrando, minecraft);  // ya ajustado a la pantalla
             Hud.mover(arrastrando, r[0], r[1]);
@@ -71,7 +77,7 @@ public class EditorHudScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mx, double my, int boton) {
-        arrastrando = -1;
+        arrastrando = null;
         return super.mouseReleased(mx, my, boton);
     }
 

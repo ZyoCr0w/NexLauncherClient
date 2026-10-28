@@ -5,10 +5,10 @@ import org.lwjgl.input.Keyboard;
 
 import java.io.IOException;
 
-/** Arrastra las teclas, los CPS y los FPS a donde quieras. */
+/** Arrastra cada elemento del HUD a donde quieras. */
 public class EditorHud extends GuiScreen {
     private final GuiScreen padre;
-    private int arrastrando = -1;
+    private String arrastrando;
     private int dx, dy;
 
     public EditorHud(GuiScreen padre) {
@@ -20,17 +20,21 @@ public class EditorHud extends GuiScreen {
         drawRect(0, 0, width, height, 0x44000000);
         Hud.dibujar(true);
         Config c = Config.get();
-        boolean[] activo = {c.teclas, c.cps, c.fps};
-        for (int i = 0; i < 3; i++) {
-            int[] r = Hud.rect(i, mc);
-            boolean encima = i == arrastrando || dentro(r, mx, my);
-            int borde = encima ? 0xFFFFFFFF : (activo[i] ? 0x99FFFFFF : 0x55FF5555);
-            contorno(r[0] - 1, r[1] - 1, r[0] + r[2] + 1, r[1] + r[3] + 1, borde);
-            if (!activo[i]) {
-                fontRendererObj.drawStringWithShadow(Hud.NOMBRES[i] + " (apagado)", r[0], r[1] + r[3] + 2, 0xFFFF7777);
+        int activos = 0;
+        for (String id : Hud.IDS) {
+            if (!Hud.activo(c, id)) {
+                continue;
+            }
+            activos++;
+            int[] r = Hud.rect(id, mc);
+            boolean encima = id.equals(arrastrando) || dentro(r, mx, my);
+            contorno(r[0] - 1, r[1] - 1, r[0] + r[2] + 1, r[1] + r[3] + 1, encima ? 0xFFFFFFFF : 0x88FFFFFF);
+            if (encima) {
+                fontRendererObj.drawStringWithShadow(Hud.nombre(id), r[0], Math.max(0, r[1] - 10), 0xFFFFFFFF);
             }
         }
-        drawCenteredString(fontRendererObj, "Arrastra los elementos · ESC para terminar", width / 2, height - 20, 0xFFFFFF);
+        drawCenteredString(fontRendererObj, activos == 0 ? "Activa elementos en el menú de NexClient (pestañas HUD e Info)"
+                : "Arrastra los elementos · ESC para terminar", width / 2, height - 20, 0xFFFFFF);
         super.drawScreen(mx, my, parcial);
     }
 
@@ -48,10 +52,12 @@ public class EditorHud extends GuiScreen {
     @Override
     protected void mouseClicked(int mx, int my, int boton) throws IOException {
         if (boton == 0) {
-            for (int i = 0; i < 3; i++) {
-                int[] r = Hud.rect(i, mc);
-                if (dentro(r, mx, my)) {
-                    arrastrando = i;
+            Config c = Config.get();
+            for (int i = Hud.IDS.length - 1; i >= 0; i--) {
+                String id = Hud.IDS[i];
+                int[] r = Hud.rect(id, mc);
+                if (Hud.activo(c, id) && dentro(r, mx, my)) {
+                    arrastrando = id;
                     dx = mx - r[0];
                     dy = my - r[1];
                     return;
@@ -63,7 +69,7 @@ public class EditorHud extends GuiScreen {
 
     @Override
     protected void mouseClickMove(int mx, int my, int boton, long tiempo) {
-        if (arrastrando >= 0) {
+        if (arrastrando != null) {
             Hud.mover(arrastrando, mx - dx, my - dy);
             int[] r = Hud.rect(arrastrando, mc);
             Hud.mover(arrastrando, r[0], r[1]);
@@ -72,7 +78,7 @@ public class EditorHud extends GuiScreen {
 
     @Override
     protected void mouseReleased(int mx, int my, int estado) {
-        arrastrando = -1;
+        arrastrando = null;
         super.mouseReleased(mx, my, estado);
     }
 

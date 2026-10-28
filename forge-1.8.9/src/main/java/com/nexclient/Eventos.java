@@ -43,10 +43,17 @@ public class Eventos {
         }
     }
 
+    private int ticks;
+
     @SubscribeEvent
     public void tick(TickEvent.ClientTickEvent e) {
-        if (e.phase == TickEvent.Phase.END) {
+        if (e.phase == TickEvent.Phase.START) {
+            Movimiento.tick(mc);
+        } else {
             Efectos.tick();
+            if (++ticks % 40 == 0 && mc.currentScreen == null) {
+                Config.recargarSiCambio();
+            }
         }
     }
 }

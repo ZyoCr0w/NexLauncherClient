@@ -1,21 +1,62 @@
 package com.nexclient;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraft.item.ItemStack;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.MathHelper;
 
-/** Dibuja las teclas en pantalla, el contador de CPS y el de FPS. */
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+
+/** Todo lo que NexClient dibuja en pantalla. Cada elemento se puede mover en el editor. */
 public final class Hud {
-    public static final int TECLAS = 0, CPS = 1, FPS = 2;
-    public static final String[] NOMBRES = {"Teclas", "CPS", "FPS"};
+    public static final String[] IDS = {"teclas", "cps", "fps", "coords", "ping", "reloj", "velocidad", "combo",
+            "alcance", "estado", "pociones", "armadura"};
+    public static final String[] NOMBRES = {"Teclas", "CPS", "FPS", "Coordenadas", "Ping", "Reloj", "Velocidad",
+            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura"};
+    private static final String[] RUMBOS = {"S", "SO", "O", "NO", "N", "NE", "E", "SE"};
+    private static final String[] ROMANOS = {"", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"};
     private static final float[] BRILLO = new float[7];
     private static long ultimo = System.nanoTime();
 
     private Hud() {
+    }
+
+    public static boolean activo(Config c, String id) {
+        if (id.equals("teclas")) return c.teclas;
+        if (id.equals("cps")) return c.cps;
+        if (id.equals("fps")) return c.fps;
+        if (id.equals("coords")) return c.coords;
+        if (id.equals("ping")) return c.ping;
+        if (id.equals("reloj")) return c.reloj;
+        if (id.equals("velocidad")) return c.velocidad;
+        if (id.equals("combo")) return c.combo;
+        if (id.equals("alcance")) return c.alcance;
+        if (id.equals("estado")) return c.estado;
+        if (id.equals("pociones")) return c.pociones;
+        if (id.equals("armadura")) return c.armadura;
+        return false;
+    }
+
+    public static String nombre(String id) {
+        for (int i = 0; i < IDS.length; i++) {
+            if (IDS[i].equals(id)) {
+                return NOMBRES[i];
+            }
+        }
+        return id;
     }
 
     public static void dibujar(boolean editor) {
@@ -28,20 +69,88 @@ public final class Hud {
         ultimo = ahora;
         Config c = Config.get();
         GlStateManager.pushMatrix();
-        if (c.teclas || editor) {
-            teclas(mc, c, dt);
-        }
-        if (c.cps || editor) {
-            caja(mc.fontRendererObj, rect(CPS, mc), Cps.izquierdo() + " | " + Cps.derecho() + " CPS");
-        }
-        if (c.fps || editor) {
-            caja(mc.fontRendererObj, rect(FPS, mc), Minecraft.getDebugFPS() + " FPS");
+        for (String id : IDS) {
+            if (!activo(c, id)) {
+                continue;
+            }
+            if (id.equals("teclas")) {
+                teclas(mc, c, dt);
+            } else if (id.equals("armadura")) {
+                armadura(mc, c, editor);
+            } else {
+                List<String> l = lineas(mc, c, id, editor);
+                if (!l.isEmpty()) {
+                    texto(mc.fontRendererObj, c, rect(id, mc), l);
+                }
+            }
         }
         GlStateManager.popMatrix();
         GlStateManager.color(1f, 1f, 1f, 1f);
     }
 
-    public static int altoBase(Config c) {
+    public static List<String> lineas(Minecraft mc, Config c, String id, boolean editor) {
+        List<String> l = new ArrayList<String>();
+        EntityPlayerSP p = mc.thePlayer;
+        if (id.equals("cps")) {
+            l.add(Cps.izquierdo() + " | " + Cps.derecho() + " CPS");
+        } else if (id.equals("fps")) {
+            l.add(Minecraft.getDebugFPS() + " FPS");
+        } else if (id.equals("coords")) {
+            if (p != null) {
+                String s = "XYZ: " + MathHelper.floor_double(p.posX) + " " + MathHelper.floor_double(p.posY) + " "
+                        + MathHelper.floor_double(p.posZ);
+                if (c.coordsDireccion) {
+                    int i = ((Math.round(p.rotationYaw / 45f) % 8) + 8) % 8;
+                    s += "  " + RUMBOS[i];
+                }
+                l.add(s);
+            } else if (editor) {
+                l.add("XYZ: 0 64 0  N");
+            }
+        } else if (id.equals("ping")) {
+            int ms = 0;
+            if (p != null && mc.getNetHandler() != null) {
+                NetworkPlayerInfo info = mc.getNetHandler().getPlayerInfo(p.getUniqueID());
+                ms = info == null ? 0 : info.getResponseTime();
+            }
+            l.add(ms + " ms");
+        } else if (id.equals("reloj")) {
+            Calendar t = Calendar.getInstance();
+            int h = t.get(Calendar.HOUR_OF_DAY), m = t.get(Calendar.MINUTE);
+            l.add(c.reloj24 ? String.format("%02d:%02d", h, m)
+                    : String.format("%d:%02d %s", h % 12 == 0 ? 12 : h % 12, m, h < 12 ? "a. m." : "p. m."));
+        } else if (id.equals("velocidad")) {
+            l.add(String.format("%.2f b/s", Efectos.velocidad));
+        } else if (id.equals("combo")) {
+            l.add(Efectos.combo() + " combo");
+        } else if (id.equals("alcance")) {
+            l.add(Efectos.alcance() < 0 ? "- alcance" : String.format("%.2f bloques", Efectos.alcance()));
+        } else if (id.equals("estado")) {
+            String s = Movimiento.textoEstado(mc);
+            if (s != null) {
+                l.add(s);
+            } else if (editor) {
+                l.add("[Sprint (fijo)]");
+            }
+        } else if (id.equals("pociones")) {
+            if (p != null) {
+                for (PotionEffect e : p.getActivePotionEffects()) {
+                    Potion pot = Potion.potionTypes[e.getPotionID()];
+                    if (pot == null) {
+                        continue;
+                    }
+                    int a = Math.max(0, Math.min(ROMANOS.length - 1, e.getAmplifier()));
+                    l.add(I18n.format(pot.getName()) + ROMANOS[a] + "  " + Potion.getDurationString(e));
+                }
+            }
+            if (l.isEmpty() && editor) {
+                l.add("Velocidad II  1:30");
+            }
+        }
+        return l;
+    }
+
+    public static int altoTeclas(Config c) {
         int h = 46;
         if (c.teclasRaton) {
             h += 24;
@@ -52,49 +161,121 @@ public final class Hud {
         return h;
     }
 
-    public static int[] rect(int cual, Minecraft mc) {
+    private static int[] posGuardada(Config c, String id, int indice) {
+        if (id.equals("teclas")) {
+            return new int[]{c.teclasX, c.teclasY};
+        }
+        if (id.equals("cps")) {
+            return new int[]{c.cpsX, c.cpsY};
+        }
+        if (id.equals("fps")) {
+            return new int[]{c.fpsX, c.fpsY};
+        }
+        int[] p = c.pos.get(id);
+        if (p != null && p.length == 2) {
+            return p;
+        }
+        if (id.equals("pociones")) {
+            return new int[]{9999, 40};
+        }
+        if (id.equals("armadura")) {
+            return new int[]{9999, 120};
+        }
+        return new int[]{6, 128 + (indice - 3) * 14};
+    }
+
+    public static int[] rect(String id, Minecraft mc) {
         Config c = Config.get();
         ScaledResolution sr = new ScaledResolution(mc);
         int sw = sr.getScaledWidth(), sh = sr.getScaledHeight();
-        int x, y, w, h;
-        if (cual == TECLAS) {
-            x = c.teclasX;
-            y = c.teclasY;
-            w = Math.round(70 * c.teclasEscala);
-            h = Math.round(altoBase(c) * c.teclasEscala);
-        } else {
-            String texto = cual == CPS ? "88 | 88 CPS" : "888 FPS";
-            x = cual == CPS ? c.cpsX : c.fpsX;
-            y = cual == CPS ? c.cpsY : c.fpsY;
-            w = mc.fontRendererObj.getStringWidth(texto) + 8;
-            h = 13;
+        int indice = 0;
+        for (int i = 0; i < IDS.length; i++) {
+            if (IDS[i].equals(id)) {
+                indice = i;
+            }
         }
-        x = Math.max(0, Math.min(x, sw - w));
-        y = Math.max(0, Math.min(y, sh - h));
+        int[] p = posGuardada(c, id, indice);
+        int w, h;
+        if (id.equals("teclas")) {
+            w = Math.round(70 * c.teclasEscala);
+            h = Math.round(altoTeclas(c) * c.teclasEscala);
+        } else if (id.equals("armadura")) {
+            w = 56;
+            h = 5 * 17;
+        } else {
+            List<String> l = lineas(mc, c, id, true);
+            w = 20;
+            for (String s : l) {
+                w = Math.max(w, mc.fontRendererObj.getStringWidth(s) + 8);
+            }
+            h = Math.max(1, l.size()) * 10 + 3;
+        }
+        int x = Math.max(0, Math.min(p[0], sw - w));
+        int y = Math.max(0, Math.min(p[1], sh - h));
         return new int[]{x, y, w, h};
     }
 
-    public static void mover(int cual, int x, int y) {
+    public static void mover(String id, int x, int y) {
         Config c = Config.get();
-        if (cual == TECLAS) {
+        if (id.equals("teclas")) {
             c.teclasX = x;
             c.teclasY = y;
-        } else if (cual == CPS) {
+        } else if (id.equals("cps")) {
             c.cpsX = x;
             c.cpsY = y;
-        } else {
+        } else if (id.equals("fps")) {
             c.fpsX = x;
             c.fpsY = y;
+        } else {
+            c.pos.put(id, new int[]{x, y});
         }
     }
 
-    private static void caja(FontRenderer f, int[] r, String texto) {
-        Gui.drawRect(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
-        f.drawString(texto, r[0] + (r[2] - f.getStringWidth(texto)) / 2f, r[1] + 3, 0xFFFFFFFF, true);
+    private static void texto(FontRenderer f, Config c, int[] r, List<String> lineas) {
+        if (c.hudFondo) {
+            Gui.drawRect(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
+        }
+        int y = r[1] + 3;
+        for (String s : lineas) {
+            f.drawString(s, r[0] + (r[2] - f.getStringWidth(s)) / 2f, y, c.colorTexto(), c.hudSombra);
+            y += 10;
+        }
+    }
+
+    private static void armadura(Minecraft mc, Config c, boolean editor) {
+        int[] r = rect("armadura", mc);
+        if (c.hudFondo) {
+            Gui.drawRect(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
+        }
+        EntityPlayerSP p = mc.thePlayer;
+        ItemStack[] items = new ItemStack[5];
+        if (p != null) {
+            for (int i = 0; i < 4; i++) {
+                items[i] = p.inventory.armorInventory[3 - i];
+            }
+            items[4] = p.getHeldItem();
+        }
+        int y = r[1];
+        for (ItemStack s : items) {
+            if (s != null) {
+                RenderHelper.enableGUIStandardItemLighting();
+                mc.getRenderItem().renderItemAndEffectIntoGUI(s, r[0] + 1, y);
+                RenderHelper.disableStandardItemLighting();
+                GlStateManager.disableLighting();
+                GlStateManager.disableDepth();
+                String t = s.isItemStackDamageable() ? String.valueOf(s.getMaxDamage() - s.getItemDamage())
+                        : (s.stackSize > 1 ? String.valueOf(s.stackSize) : "");
+                mc.fontRendererObj.drawString(t, r[0] + 20, y + 4, c.colorTexto(), c.hudSombra);
+                GlStateManager.enableDepth();
+            } else if (editor) {
+                mc.fontRendererObj.drawString("-", r[0] + 20, y + 4, 0xFF888888);
+            }
+            y += 17;
+        }
     }
 
     private static void teclas(Minecraft mc, Config c, float dt) {
-        int[] r = rect(TECLAS, mc);
+        int[] r = rect("teclas", mc);
         GameSettings o = mc.gameSettings;
         KeyBinding[] k = {o.keyBindForward, o.keyBindLeft, o.keyBindBack, o.keyBindRight, o.keyBindAttack,
                 o.keyBindUseItem, o.keyBindJump};
