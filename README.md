@@ -26,5 +26,5 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-En tu PC: `cd forge-1.8.9 && gradlew build` (Java 17) o `cd fabric-1.21.1 && gradlew build` (Java 21).
+En tu PC: `cd forge-1.8.9 && gradlew build` (Java 17) o `cd fabric-1.21.1 && gradlew build` (Java 25 para compilar; el mod funciona con Java 21).
 El `.jar` queda en `build/libs/`.

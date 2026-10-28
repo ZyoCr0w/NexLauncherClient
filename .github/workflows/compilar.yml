@@ -22,7 +22,7 @@ jobs:
             java: 17
             nombre: NexClient-1.8.9-forge.jar
           - carpeta: fabric-1.21.1
-            java: 21
+            java: 25  # Loom lo pide para compilar; el mod sigue siendo Java 21
             nombre: NexClient-1.21.1-fabric.jar
     steps:
       - uses: actions/checkout@v5
