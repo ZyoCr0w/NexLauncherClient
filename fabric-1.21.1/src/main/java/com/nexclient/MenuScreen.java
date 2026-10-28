@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 
 /** Menú de NexClient (Shift derecho): HUD, Blockhit y Partículas. */
@@ -103,7 +104,7 @@ public class MenuScreen extends Screen {
         addRenderableWidget(b);
     }
 
-    private void deslizador(String texto, double min, double max, double paso, double valor, Consumer<Double> poner,
+    private void deslizador(String texto, double min, double max, double paso, double valor, DoubleConsumer poner,
                             DoubleFunction<String> formato) {
         int x = x();
         addRenderableWidget(new Deslizador(x, y(), texto, min, max, paso, valor, poner, formato));
@@ -124,11 +125,11 @@ public class MenuScreen extends Screen {
     private static final class Deslizador extends AbstractSliderButton {
         private final String texto;
         private final double min, max, paso;
-        private final Consumer<Double> poner;
+        private final DoubleConsumer poner;
         private final DoubleFunction<String> formato;
 
         Deslizador(int x, int y, String texto, double min, double max, double paso, double valor,
-                   Consumer<Double> poner, DoubleFunction<String> formato) {
+                   DoubleConsumer poner, DoubleFunction<String> formato) {
             super(x, y, 150, 20, Component.empty(), (valor - min) / (max - min));
             this.texto = texto;
             this.min = min;
