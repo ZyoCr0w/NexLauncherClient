@@ -55,6 +55,10 @@ jobs:
               texto = "%0A".join(t.replace("%", "%25").replace("\r", "") for t in trozos[k:k + 40])
               print(f"::error title=gradle {k // 40}::{texto}")
           PY
+      - name: Avisos de mixins
+        if: success()
+        run: |
+          grep -iE "mixin|refmap|unable to locate|cannot find|could not find|warning:" gradle.log | grep -v "Using of the official" | head -40 | sed 's/^/::warning title=aviso::/' || echo "::notice title=aviso::sin avisos de mixins"
       - name: Preparar el .jar
         run: |
           mkdir -p salida
