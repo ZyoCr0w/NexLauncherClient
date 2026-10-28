@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "com.nexclient.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ItemInHandRendererMixin",
+		"MouseHandlerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

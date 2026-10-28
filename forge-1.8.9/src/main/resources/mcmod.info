@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "${modid}",
+    "name": "NexClient",
+    "description": "Herramientas PvP de NexLauncher: teclas en pantalla, CPS, animación de blockhit 1.7, sonido de blockhit y multiplicador de partículas. Menú: Shift derecho.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "https://github.com/ZyoCr0w/NexClient",
+    "updateUrl": "",
+    "authorList": ["ZyoCr0w"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]

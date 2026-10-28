@@ -1,0 +1,64 @@
+name: Compilar NexClient
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  compilar:
+    name: ${{ matrix.nombre }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - carpeta: forge-1.8.9
+            java: 17
+            nombre: NexClient-1.8.9-forge.jar
+          - carpeta: fabric-1.21.1
+            java: 21
+            nombre: NexClient-1.21.1-fabric.jar
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar
+        working-directory: ${{ matrix.carpeta }}
+        run: |
+          chmod +x gradlew
+          ./gradlew build --stacktrace --no-daemon
+      - name: Preparar el .jar
+        run: |
+          mkdir -p salida
+          jar=$(ls ${{ matrix.carpeta }}/build/libs/*.jar | grep -v -e '-sources' -e '-dev' | head -n 1)
+          echo "Jar: $jar"
+          cp "$jar" "salida/${{ matrix.nombre }}"
+          (cd salida && sha256sum "${{ matrix.nombre }}" | cut -d' ' -f1 > "${{ matrix.nombre }}.sha256")
+          ls -l salida
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.nombre }}
+          path: salida/*
+
+  publicar:
+    needs: compilar
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: salida
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: salida/*
+          generate_release_notes: true

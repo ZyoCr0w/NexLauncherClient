@@ -1,0 +1,22 @@
+{
+	"schemaVersion": 1,
+	"id": "nexclient",
+	"version": "${version}",
+	"name": "NexClient",
+	"description": "Herramientas PvP de NexLauncher: teclas en pantalla, CPS, animación de blockhit 1.7, sonido de blockhit y multiplicador de partículas.",
+	"authors": ["ZyoCr0w"],
+	"contact": {"sources": "https://github.com/ZyoCr0w/NexClient"},
+	"license": "MIT",
+	"icon": "assets/nexclient/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.nexclient.NexClient"]
+	},
+	"mixins": ["nexclient.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.15.0",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
