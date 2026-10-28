@@ -5,7 +5,7 @@
 	"name": "NexClient",
 	"description": "Herramientas PvP de NexLauncher: teclas en pantalla, CPS, animación de blockhit 1.7, sonido de blockhit y multiplicador de partículas.",
 	"authors": ["ZyoCr0w"],
-	"contact": {"sources": "https://github.com/ZyoCr0w/NexClient"},
+	"contact": {"sources": "https://github.com/ZyoCr0w/NexLauncherClient"},
 	"license": "MIT",
 	"icon": "assets/nexclient/icon.png",
 	"environment": "client",
