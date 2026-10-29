@@ -67,7 +67,6 @@ public class MenuScreen extends Screen {
                 interruptor("Sprint / Sneak", c.estado, v -> c.estado = v, null);
                 interruptor("Pociones", c.pociones, v -> c.pociones = v, null);
                 interruptor("Armadura", c.armadura, v -> c.armadura = v, "Durabilidad de armadura y arma.");
-                interruptor("Objetivo", c.objetivo, v -> c.objetivo = v, "Nombre y vida del último que golpeaste.");
                 break;
             case 2:
                 interruptor("Blockhit visual", c.blockhit, v -> c.blockhit = v,

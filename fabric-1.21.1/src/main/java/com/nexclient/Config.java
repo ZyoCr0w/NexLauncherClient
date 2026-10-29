@@ -45,7 +45,6 @@ public class Config {
     public boolean estado = false;
     public boolean pociones = false;
     public boolean armadura = false;
-    public boolean objetivo = false;
     /** Posición de cada elemento nuevo: id -> {x, y}. Una x enorme lo pega al borde derecho. */
     public Map<String, int[]> pos = new HashMap<String, int[]>();
     public boolean hudFondo = true;

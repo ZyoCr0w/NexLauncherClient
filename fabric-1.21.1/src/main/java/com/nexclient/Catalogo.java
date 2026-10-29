@@ -6,6 +6,7 @@ import java.util.List;
 /** Mods extra que NexLauncher puede instalar en este perfil PvP (ids de Modrinth). */
 public final class Catalogo {
     public static final String VERSION = "1.21.1";
+    /** Sin minimapas con radar ni barras de vida: los prohíben servidores como UniversoCraft. */
     public static final String[][] MODS = {
             // id, nombre, descripción, recomendado (1 = viene activado)
             {"YL57xq9U", "Iris Shaders", "Shaders con Sodium", "0"},
@@ -13,8 +14,6 @@ public final class Catalogo {
             {"MPCX6s5C", "Not Enough Anim.", "Not Enough Animations: animaciones en 3.ª persona", "0"},
             {"1IjD5062", "Continuity", "Texturas conectadas", "0"},
             {"BVzZfTc1", "ETF", "Entity Texture Features: texturas de packs", "0"},
-            {"1bokaNcj", "Minimapa", "Xaero's Minimap", "0"},
-            {"NcUtCpym", "Mapa del mundo", "Xaero's World Map (tecla M)", "0"},
             {"EsAfCjCV", "AppleSkin", "Saturación en la barra", "0"},
             {"gvQqBUqZ", "Lithium", "Rendimiento", "1"},
             {"NNAgCjsB", "Entity Culling", "Rendimiento", "1"},

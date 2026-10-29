@@ -27,7 +27,6 @@ public final class Efectos {
     private static long ultimoGolpe;
     private static double alcance = -1;
     private static boolean herido;
-    private static LivingEntity objetivo;
     private static int colorAplicado = Integer.MIN_VALUE;
 
     private Efectos() {
@@ -104,14 +103,6 @@ public final class Efectos {
         herido = ahoraHerido;
     }
 
-    /** Último ser vivo que golpeaste (para el panel «Objetivo»), durante 4 s. */
-    public static LivingEntity objetivo() {
-        if (objetivo == null || objetivo.isRemoved() || !objetivo.isAlive()
-                || System.currentTimeMillis() - ultimoGolpe > 4000) {
-            return null;
-        }
-        return objetivo;
-    }
 
     /** Color del parpadeo al recibir daño: se repinta la textura de «overlay» del juego. */
     private static void aplicarColorGolpe(Minecraft mc) {
@@ -158,9 +149,6 @@ public final class Efectos {
         }
         combo++;
         ultimoGolpe = System.currentTimeMillis();
-        if (objetivo instanceof LivingEntity) {
-            Efectos.objetivo = (LivingEntity) objetivo;
-        }
         if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.ENTITY) {
             alcance = jugador.getEyePosition().distanceTo(mc.hitResult.getLocation());
         } else {

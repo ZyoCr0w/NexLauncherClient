@@ -17,9 +17,9 @@ import java.util.List;
 /** Todo lo que NexClient dibuja en pantalla. Cada elemento se puede mover en el editor. */
 public final class Hud {
     public static final String[] IDS = {"teclas", "cps", "fps", "coords", "ping", "reloj", "velocidad", "combo",
-            "alcance", "estado", "pociones", "armadura", "objetivo"};
+            "alcance", "estado", "pociones", "armadura"};
     public static final String[] NOMBRES = {"Teclas", "CPS", "FPS", "Coordenadas", "Ping", "Reloj", "Velocidad",
-            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura", "Objetivo"};
+            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura"};
     private static final String[] RUMBOS = {"S", "SO", "O", "NO", "N", "NE", "E", "SE"};
     private static final String[] ROMANOS = {"", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"};
     private static final EquipmentSlot[] ARMADURA = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS,
@@ -45,7 +45,6 @@ public final class Hud {
             case "estado": return c.estado;
             case "pociones": return c.pociones;
             case "armadura": return c.armadura;
-            case "objetivo": return c.objetivo;
             default: return false;
         }
     }
@@ -160,17 +159,6 @@ public final class Hud {
                     l.add(s);
                 } else if (editor) {
                     l.add("[Sprint (fijo)]");
-                }
-                break;
-            }
-            case "objetivo": {
-                net.minecraft.world.entity.LivingEntity o = Efectos.objetivo();
-                if (o != null) {
-                    l.add(o.getName().getString());
-                    l.add(String.format("♥ %.1f / %.0f", o.getHealth(), o.getMaxHealth()));
-                } else if (editor) {
-                    l.add("Jugador");
-                    l.add("♥ 20.0 / 20");
                 }
                 break;
             }
@@ -295,7 +283,6 @@ public final class Hud {
             case "estado": c.estado = v; break;
             case "pociones": c.pociones = v; break;
             case "armadura": c.armadura = v; break;
-            case "objetivo": c.objetivo = v; break;
             default: return false;
         }
         return true;

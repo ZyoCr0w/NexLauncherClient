@@ -79,7 +79,6 @@ public class MenuNex extends GuiScreen {
             interruptor("Sprint / Sneak", c.estado, new Escritor() { public void poner(boolean v) { c.estado = v; } });
             interruptor("Pociones", c.pociones, new Escritor() { public void poner(boolean v) { c.pociones = v; } });
             interruptor("Armadura", c.armadura, new Escritor() { public void poner(boolean v) { c.armadura = v; } });
-            interruptor("Objetivo", c.objetivo, new Escritor() { public void poner(boolean v) { c.objetivo = v; } });
         } else if (pagina == 2) {
             ayuda = "Blockhit: golpea y bloquea con la espada. «Estilo 1.7» mueve la espada al golpear bloqueando.";
             interruptor("Blockhit visual", c.blockhit, new Escritor() { public void poner(boolean v) { c.blockhit = v; } });

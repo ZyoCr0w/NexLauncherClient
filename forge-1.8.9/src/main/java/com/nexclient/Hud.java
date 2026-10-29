@@ -23,9 +23,9 @@ import java.util.List;
 /** Todo lo que NexClient dibuja en pantalla. Cada elemento se puede mover en el editor. */
 public final class Hud {
     public static final String[] IDS = {"teclas", "cps", "fps", "coords", "ping", "reloj", "velocidad", "combo",
-            "alcance", "estado", "pociones", "armadura", "objetivo"};
+            "alcance", "estado", "pociones", "armadura"};
     public static final String[] NOMBRES = {"Teclas", "CPS", "FPS", "Coordenadas", "Ping", "Reloj", "Velocidad",
-            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura", "Objetivo"};
+            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura"};
     private static final String[] RUMBOS = {"S", "SO", "O", "NO", "N", "NE", "E", "SE"};
     private static final String[] ROMANOS = {"", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"};
     private static final float[] BRILLO = new float[7];
@@ -47,7 +47,6 @@ public final class Hud {
         if (id.equals("estado")) return c.estado;
         if (id.equals("pociones")) return c.pociones;
         if (id.equals("armadura")) return c.armadura;
-        if (id.equals("objetivo")) return c.objetivo;
         return false;
     }
 
@@ -159,15 +158,6 @@ public final class Hud {
                 l.add(s);
             } else if (editor) {
                 l.add("[Sprint (fijo)]");
-            }
-        } else if (id.equals("objetivo")) {
-            net.minecraft.entity.EntityLivingBase o = Efectos.objetivo();
-            if (o != null) {
-                l.add(o.getName());
-                l.add(String.format("\u2764 %.1f / %.0f", o.getHealth(), o.getMaxHealth()));
-            } else if (editor) {
-                l.add("Jugador");
-                l.add("\u2764 20.0 / 20");
             }
         } else if (id.equals("pociones")) {
             if (p != null) {
@@ -287,7 +277,6 @@ public final class Hud {
         else if (id.equals("estado")) c.estado = v;
         else if (id.equals("pociones")) c.pociones = v;
         else if (id.equals("armadura")) c.armadura = v;
-        else if (id.equals("objetivo")) c.objetivo = v;
     }
 
     public static void mover(String id, int x, int y) {
