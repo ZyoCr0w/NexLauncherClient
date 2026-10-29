@@ -3,6 +3,7 @@ package com.nexclient;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiIngameMenu;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
@@ -108,12 +109,38 @@ public class Eventos {
     }
 
     private int ticks;
+    private boolean zoomRevisado;
+
+    /**
+     * OptiFine trae su propio zoom, también en la C: con los dos a la vez el aumento se multiplicaba y la
+     * rueda no hacía nada. Si su tecla es la misma que la de NexClient, se le quita (una sola vez); el zoom
+     * de NexClient hace lo mismo y además se ajusta con la rueda.
+     */
+    private void sinZoomOptiFine() {
+        if (!Config.get().zoom || Movimiento.teclaZoom == null) {
+            return;
+        }
+        for (KeyBinding k : mc.gameSettings.keyBindings) {
+            if ("of.key.zoom".equals(k.getKeyDescription()) && k != Movimiento.teclaZoom
+                    && k.getKeyCode() == Movimiento.teclaZoom.getKeyCode() && k.getKeyCode() != 0) {
+                k.setKeyCode(0);
+                KeyBinding.resetKeyBindingArrayAndHash();
+                mc.gameSettings.saveOptions();
+                System.out.println("[NexClient] Zoom de OptiFine desactivado: lo hace NexClient (tecla "
+                        + org.lwjgl.input.Keyboard.getKeyName(Movimiento.teclaZoom.getKeyCode()) + ").");
+            }
+        }
+    }
 
     @SubscribeEvent
     public void tick(TickEvent.ClientTickEvent e) {
         if (e.phase == TickEvent.Phase.START) {
             Movimiento.tick(mc);
             VistaLibre.tick(mc);
+            if (!zoomRevisado && mc.gameSettings != null) {
+                zoomRevisado = true;
+                sinZoomOptiFine();
+            }
         } else {
             Efectos.tick();
             if (++ticks % 40 == 0 && mc.currentScreen == null) {
