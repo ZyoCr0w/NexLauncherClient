@@ -8,10 +8,12 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.phys.HitResult;
 
 /** Blockhit (cuándo se bloquea, su sonido) y multiplicador de partículas de golpe. */
@@ -42,6 +44,25 @@ public final class Efectos {
             return p.getUseItem().getItem() instanceof ShieldItem;
         }
         return mc.options.keyUse.isDown();
+    }
+
+    /** Comiendo o bebiendo (comida, pociones, leche…). */
+    public static boolean comiendo(Minecraft mc) {
+        LocalPlayer p = mc.player;
+        if (p == null || !p.isUsingItem()) {
+            return false;
+        }
+        UseAnim a = p.getUseItem().getUseAnimation();
+        return a == UseAnim.EAT || a == UseAnim.DRINK;
+    }
+
+    /** Clic izquierdo mientras comes: el juego no golpea, pero en 1.7 el brazo sí se movía (sin sonido). */
+    public static void clicIzquierdo(Minecraft mc) {
+        Config c = Config.get();
+        LocalPlayer p = mc.player;
+        if (p != null && c.blockhitComida && comiendo(mc)) {
+            ((LivingEntity) p).swing(p.getUsedItemHand(), false);  // solo la animación, sin paquete
+        }
     }
 
     public static void tick(Minecraft mc) {

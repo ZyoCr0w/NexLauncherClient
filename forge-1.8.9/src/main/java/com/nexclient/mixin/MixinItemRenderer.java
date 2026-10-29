@@ -1,6 +1,7 @@
 package com.nexclient.mixin;
 
 import com.nexclient.Config;
+import com.nexclient.Efectos;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.renderer.GlStateManager;
@@ -32,7 +33,9 @@ public class MixinItemRenderer {
     private void nexclient$transformar(float equipado, float golpe, CallbackInfo ci) {
         Config c = Config.get();
         EntityPlayerSP p = Minecraft.getMinecraft().thePlayer;
-        if (!c.blockhit || !c.estilo17 || p == null || !p.isBlocking()) {
+        boolean espada = c.blockhit && c.estilo17 && p != null && p.isBlocking();
+        boolean comida = c.blockhitComida && Efectos.comiendo();
+        if (p == null || (!espada && !comida)) {
             return;
         }
         // Igual que el método original, pero con el golpe real en vez de 0

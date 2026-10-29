@@ -48,7 +48,7 @@ public class EditorHud extends GuiScreen {
         int x = r[0] + r[2] / 2 < width / 2 ? width - 156 : 6;
         int y = 24;
         final String id = elegido;
-        final GuiButton[] ref = new GuiButton[6];
+        final GuiButton[] ref = new GuiButton[7];
         ref[0] = boton(x, y, 150, "Mostrar: " + (Hud.activo(c, id) ? "Sí" : "No"), new Runnable() {
             public void run() {
                 boolean v = !Hud.activo(c, id);
@@ -69,6 +69,13 @@ public class EditorHud extends GuiScreen {
             public void run() {
                 e.colorTexto = (e.colorTexto + 1) % Config.COLORES.length;
                 ref[1].displayString = "Texto: " + Config.NOMBRES_COLOR[e.colorTexto];
+            }
+        });
+        y += 22;
+        ref[5] = boton(x, y, 150, "Arcoíris: " + (e.arcoiris ? "Sí" : "No"), new Runnable() {
+            public void run() {
+                e.arcoiris = !e.arcoiris;
+                ref[5].displayString = "Arcoíris: " + (e.arcoiris ? "Sí" : "No");
             }
         });
         y += 22;

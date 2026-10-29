@@ -54,6 +54,9 @@ public class EditorHudScreen extends Screen {
         y += 22;
         addRenderableWidget(color(x, y, "Texto", e.colorTexto, v -> e.colorTexto = v));
         y += 22;
+        addRenderableWidget(CycleButton.onOffBuilder(e.arcoiris).create(x, y, 150, 20,
+                Component.literal("Arcoíris"), (b, v) -> e.arcoiris = v));
+        y += 22;
         addRenderableWidget(CycleButton.onOffBuilder(e.sombra).create(x, y, 150, 20, Component.literal("Sombra"),
                 (b, v) -> e.sombra = v));
         y += 22;

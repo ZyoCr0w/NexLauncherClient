@@ -96,7 +96,8 @@ public final class Hud {
             } else {
                 int y = 3;
                 for (String s : lineas(mc, c, id, editor)) {
-                    g.drawString(mc.font, s, (b[0] - mc.font.width(s)) / 2, y, Config.COLORES[e.colorTexto], e.sombra);
+                    texto(g, mc.font, s, (b[0] - mc.font.width(s)) / 2, y, Config.COLORES[e.colorTexto], e.sombra,
+                            e.arcoiris);
                     y += 10;
                 }
             }
@@ -313,7 +314,7 @@ public final class Hud {
                 g.renderItem(s, 1, y);
                 String t = s.isDamageableItem() ? String.valueOf(s.getMaxDamage() - s.getDamageValue())
                         : (s.getCount() > 1 ? String.valueOf(s.getCount()) : "");
-                g.drawString(mc.font, t, 20, y + 4, Config.COLORES[e.colorTexto], e.sombra);
+                texto(g, mc.font, t, 20, y + 4, Config.COLORES[e.colorTexto], e.sombra, e.arcoiris);
             } else if (editor) {
                 g.drawString(mc.font, "—", 20, y + 4, 0xFF888888, false);
             }
@@ -334,6 +335,7 @@ public final class Hud {
         int fondo = Math.round(e.fondo * 2.55f) << 24;
         int texto = Config.COLORES[e.colorTexto];
         int borde = e.borde ? Config.COLORES[e.colorBorde] : 0;
+        arcoTeclas = e.arcoiris;
         tecla(g, f, 24, 0, 22, 22, nombre(k[0]), null, BRILLO[0], fondo, texto, borde, e.sombra);
         tecla(g, f, 0, 24, 22, 22, nombre(k[1]), null, BRILLO[1], fondo, texto, borde, e.sombra);
         tecla(g, f, 24, 24, 22, 22, nombre(k[2]), null, BRILLO[2], fondo, texto, borde, e.sombra);
@@ -360,6 +362,24 @@ public final class Hud {
         return s.length() > 3 ? s.substring(0, 3) : s;
     }
 
+    /** Texto normal, o arcoíris: el tono avanza con el tiempo y con la posición de cada letra. */
+    public static void texto(GuiGraphics g, Font f, String s, int x, int y, int color, boolean sombra, boolean arcoiris) {
+        if (!arcoiris) {
+            g.drawString(f, s, x, y, color, sombra);
+            return;
+        }
+        float t = (System.currentTimeMillis() % 4000L) / 4000f;
+        int cx = x;
+        for (int i = 0; i < s.length(); i++) {
+            String ch = s.substring(i, i + 1);
+            float tono = (t + (cx - x) / 90f) % 1f;
+            g.drawString(f, ch, cx, y, 0xFF000000 | net.minecraft.util.Mth.hsvToRgb(1f - tono, 0.8f, 1f), sombra);
+            cx += f.width(ch);
+        }
+    }
+
+    private static boolean arcoTeclas;
+
     private static void tecla(GuiGraphics g, Font f, int x, int y, int w, int h, String texto, String sub, float b,
                               int fondo, int colorTexto, int borde, boolean sombraBase) {
         g.fill(x, y, x + w, y + h, mezclar(fondo, 0xCCFFFFFF, b));
@@ -369,13 +389,13 @@ public final class Hud {
         int color = mezclar(colorTexto, 0xFF000000, b);
         boolean sombra = sombraBase && b < 0.5f;
         if (sub == null) {
-            g.drawString(f, texto, x + (w - f.width(texto)) / 2, y + (h - 8) / 2, color, sombra);
+            texto(g, f, texto, x + (w - f.width(texto)) / 2, y + (h - 8) / 2, color, sombra, arcoTeclas && b < 0.5f);
         } else {
-            g.drawString(f, texto, x + (w - f.width(texto)) / 2, y + 3, color, sombra);
+            texto(g, f, texto, x + (w - f.width(texto)) / 2, y + 3, color, sombra, arcoTeclas && b < 0.5f);
             g.pose().pushPose();
             g.pose().translate(x + w / 2f, y + 13, 0);
             g.pose().scale(0.6f, 0.6f, 1f);
-            g.drawString(f, sub, -f.width(sub) / 2, 0, color, sombra);
+            texto(g, f, sub, -f.width(sub) / 2, 0, color, sombra, arcoTeclas && b < 0.5f);
             g.pose().popPose();
         }
     }

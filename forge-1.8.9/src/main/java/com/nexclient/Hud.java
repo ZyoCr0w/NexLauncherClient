@@ -99,7 +99,7 @@ public final class Hud {
                 int y = 3;
                 FontRenderer f = mc.fontRendererObj;
                 for (String s : lineas(mc, c, id, editor)) {
-                    f.drawString(s, (b[0] - f.getStringWidth(s)) / 2f, y, Config.COLORES[e.colorTexto], e.sombra);
+                    texto(f, s, (b[0] - f.getStringWidth(s)) / 2f, y, Config.COLORES[e.colorTexto], e.sombra, e.arcoiris);
                     y += 10;
                 }
             }
@@ -314,7 +314,7 @@ public final class Hud {
                 GlStateManager.disableDepth();
                 String t = s.isItemStackDamageable() ? String.valueOf(s.getMaxDamage() - s.getItemDamage())
                         : (s.stackSize > 1 ? String.valueOf(s.stackSize) : "");
-                mc.fontRendererObj.drawString(t, 20, y + 4, Config.COLORES[e.colorTexto], e.sombra);
+                texto(mc.fontRendererObj, t, 20, y + 4, Config.COLORES[e.colorTexto], e.sombra, e.arcoiris);
                 GlStateManager.enableDepth();
             } else if (editor) {
                 mc.fontRendererObj.drawString("-", 20, y + 4, 0xFF888888);
@@ -336,6 +336,7 @@ public final class Hud {
         int fondo = Math.round(e.fondo * 2.55f) << 24;
         int texto = Config.COLORES[e.colorTexto];
         int borde = e.borde ? Config.COLORES[e.colorBorde] : 0;
+        arcoTeclas = e.arcoiris;
         tecla(f, 24, 0, 22, 22, nombre(k[0]), null, BRILLO[0], fondo, texto, borde, e.sombra);
         tecla(f, 0, 24, 22, 22, nombre(k[1]), null, BRILLO[1], fondo, texto, borde, e.sombra);
         tecla(f, 24, 24, 22, 22, nombre(k[2]), null, BRILLO[2], fondo, texto, borde, e.sombra);
@@ -360,6 +361,24 @@ public final class Hud {
         return s.length() > 3 ? s.substring(0, 3) : s;
     }
 
+    /** Texto normal, o arcoíris: el tono avanza con el tiempo y con la posición de cada letra. */
+    public static void texto(FontRenderer f, String s, float x, float y, int color, boolean sombra, boolean arcoiris) {
+        if (!arcoiris) {
+            f.drawString(s, x, y, color, sombra);
+            return;
+        }
+        float t = (System.currentTimeMillis() % 4000L) / 4000f;
+        float cx = x;
+        for (int i = 0; i < s.length(); i++) {
+            String ch = s.substring(i, i + 1);
+            float tono = (t + (cx - x) / 90f) % 1f;
+            f.drawString(ch, cx, y, 0xFF000000 | java.awt.Color.HSBtoRGB(1f - tono, 0.8f, 1f), sombra);
+            cx += f.getStringWidth(ch);
+        }
+    }
+
+    private static boolean arcoTeclas;
+
     private static void tecla(FontRenderer f, int x, int y, int w, int h, String texto, String sub, float b,
                               int fondo, int colorTexto, int borde, boolean sombraBase) {
         Gui.drawRect(x, y, x + w, y + h, mezclar(fondo, 0xCCFFFFFF, b));
@@ -369,13 +388,13 @@ public final class Hud {
         int color = mezclar(colorTexto, 0xFF000000, b);
         boolean sombra = sombraBase && b < 0.5f;
         if (sub == null) {
-            f.drawString(texto, x + (w - f.getStringWidth(texto)) / 2f, y + (h - 8) / 2f, color, sombra);
+            texto(f, texto, x + (w - f.getStringWidth(texto)) / 2f, y + (h - 8) / 2f, color, sombra, arcoTeclas && b < 0.5f);
         } else {
-            f.drawString(texto, x + (w - f.getStringWidth(texto)) / 2f, y + 3, color, sombra);
+            texto(f, texto, x + (w - f.getStringWidth(texto)) / 2f, y + 3, color, sombra, arcoTeclas && b < 0.5f);
             GlStateManager.pushMatrix();
             GlStateManager.translate(x + w / 2f, y + 13, 0);
             GlStateManager.scale(0.6f, 0.6f, 1f);
-            f.drawString(sub, -f.getStringWidth(sub) / 2f, 0, color, sombra);
+            texto(f, sub, -f.getStringWidth(sub) / 2f, 0, color, sombra, arcoTeclas && b < 0.5f);
             GlStateManager.popMatrix();
         }
     }

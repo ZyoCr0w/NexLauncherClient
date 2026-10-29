@@ -41,12 +41,43 @@ public abstract class ItemInHandRendererMixin {
     public abstract void renderItem(LivingEntity entidad, ItemStack item, ItemDisplayContext contexto, boolean izquierda,
                                     PoseStack pose, MultiBufferSource buffer, int luz);
 
+    /** Comer como el juego, pero además con el golpe del brazo (animación de 1.7). */
+    private void comerGolpeando(AbstractClientPlayer jugador, float parcial, InteractionHand mano, float golpe,
+                                ItemStack item, float equipado, PoseStack pose, MultiBufferSource buffer, int luz) {
+        HumanoidArm brazo = mano == InteractionHand.MAIN_HAND ? jugador.getMainArm() : jugador.getMainArm().getOpposite();
+        boolean derecha = brazo == HumanoidArm.RIGHT;
+        int s = derecha ? 1 : -1;
+        pose.pushPose();
+        float f = (float) jugador.getUseItemRemainingTicks() - parcial + 1.0f;
+        float g = f / (float) item.getUseDuration(jugador);
+        if (g < 0.8f) {
+            pose.translate(0.0f, Math.abs((float) Math.cos(f / 4.0f * (float) Math.PI) * 0.1f), 0.0f);
+        }
+        float h = 1.0f - (float) Math.pow(g, 27.0);
+        pose.translate(h * 0.6f * s, h * -0.5f, 0.0f);
+        pose.mulPose(Axis.YP.rotationDegrees(s * h * 90.0f));
+        pose.mulPose(Axis.XP.rotationDegrees(h * 10.0f));
+        pose.mulPose(Axis.ZP.rotationDegrees(s * h * 30.0f));
+        applyItemArmTransform(pose, brazo, equipado);
+        applyItemArmAttackTransform(pose, brazo, golpe);
+        renderItem(jugador, item, derecha ? ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+                : ItemDisplayContext.FIRST_PERSON_LEFT_HAND, !derecha, pose, buffer, luz);
+        pose.popPose();
+    }
+
     @Inject(method = "renderArmWithItem", at = @At("HEAD"), cancellable = true)
     private void nexclient$blockhit(AbstractClientPlayer jugador, float parcial, float pitch, InteractionHand mano,
                                     float golpe, ItemStack item, float equipado, PoseStack pose,
                                     MultiBufferSource buffer, int luz, CallbackInfo ci) {
         Config c = Config.get();
-        if (!c.blockhit || !Efectos.bloqueando(Minecraft.getInstance())) {
+        Minecraft mc = Minecraft.getInstance();
+        if (c.blockhitComida && Efectos.comiendo(mc) && jugador.getUsedItemHand() == mano
+                && jugador.getUseItem() == item) {
+            comerGolpeando(jugador, parcial, mano, golpe, item, equipado, pose, buffer, luz);
+            ci.cancel();
+            return;
+        }
+        if (!c.blockhit || !Efectos.bloqueando(mc)) {
             return;
         }
         if (mano == InteractionHand.OFF_HAND) {

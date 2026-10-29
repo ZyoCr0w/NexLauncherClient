@@ -76,6 +76,8 @@ public class MenuScreen extends Screen {
                         "Con espada y clic derecho, la espada se pone en pose de bloqueo como en 1.8.");
                 interruptor("Estilo 1.7", c.estilo17, v -> c.estilo17 = v,
                         "La espada sigue golpeando mientras bloqueas (animación de 1.7).");
+                interruptor("Blockhit con comida", c.blockhitComida, v -> c.blockhitComida = v,
+                        "Al comer o beber, el brazo sigue golpeando como en 1.7 (sin sonido).");
                 interruptor("Ocultar escudo", c.ocultarEscudo, v -> c.ocultarEscudo = v,
                         "Si bloqueas con un escudo en la otra mano, no se dibuja.");
                 interruptor("Sonido de blockhit", c.sonido, v -> c.sonido = v, null);

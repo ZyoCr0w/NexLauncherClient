@@ -63,12 +63,16 @@ public class Config {
         public int colorTexto = 0;
         public boolean borde = false;
         public int colorBorde = 0;
+        /** Texto arcoíris (chroma): cada letra cambia de color con el tiempo. */
+        public boolean arcoiris = false;
     }
 
     // ---- Blockhit
     public boolean blockhit = true;
     /** true: la espada se sigue moviendo al golpear mientras bloqueas (como en 1.7). */
     public boolean estilo17 = true;
+    /** Animación de 1.7 también al comer o beber: el brazo sigue golpeando (sin sonido de blockhit). */
+    public boolean blockhitComida = true;
     /** 1.21: al bloquear con espada no se dibuja el escudo de la otra mano. */
     public boolean ocultarEscudo = true;
     public boolean sonido = true;

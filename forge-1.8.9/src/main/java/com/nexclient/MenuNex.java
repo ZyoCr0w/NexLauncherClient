@@ -86,6 +86,7 @@ public class MenuNex extends GuiScreen {
             ayuda = "Blockhit: golpea y bloquea con la espada. «Estilo 1.7» mueve la espada al golpear bloqueando.";
             interruptor("Blockhit visual", c.blockhit, new Escritor() { public void poner(boolean v) { c.blockhit = v; } });
             interruptor("Estilo 1.7", c.estilo17, new Escritor() { public void poner(boolean v) { c.estilo17 = v; } });
+            interruptor("Blockhit con comida", c.blockhitComida, new Escritor() { public void poner(boolean v) { c.blockhitComida = v; } });
             interruptor("Sonido de blockhit", c.sonido, new Escritor() { public void poner(boolean v) { c.sonido = v; } });
             final GuiButton[] ref = new GuiButton[1];
             ref[0] = boton(x(), y(), 150, "Sonido: " + Config.nombreSonido(c.sonidoId), new Runnable() {

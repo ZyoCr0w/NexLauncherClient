@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.item.EnumAction;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -59,17 +60,31 @@ public final class Efectos {
     }
 
     /** Clic izquierdo mientras bloqueas: el juego no golpea, pero en 1.7 la espada sí se movía. */
+    /** Comiendo o bebiendo (comida, pociones, leche…). */
+    public static boolean comiendo() {
+        EntityPlayerSP p = Minecraft.getMinecraft().thePlayer;
+        if (p == null || !p.isUsingItem() || p.getItemInUse() == null) {
+            return false;
+        }
+        EnumAction a = p.getItemInUse().getItemUseAction();
+        return a == EnumAction.EAT || a == EnumAction.DRINK;
+    }
+
+    /** Clic izquierdo mientras bloqueas o comes: el juego no golpea, pero en 1.7 el brazo sí se movía. */
     public static void clicIzquierdo() {
         Config c = Config.get();
-        if (!bloqueando()) {
+        boolean espada = bloqueando();
+        boolean comida = !espada && c.blockhitComida && comiendo();
+        if (!espada && !comida) {
             return;
         }
         EntityPlayerSP p = Minecraft.getMinecraft().thePlayer;
-        if (c.blockhit && c.estilo17 && (!p.isSwingInProgress || p.swingProgressInt >= 3 || p.swingProgressInt < 0)) {
+        boolean animar = comida || (c.blockhit && c.estilo17);
+        if (animar && (!p.isSwingInProgress || p.swingProgressInt >= 3 || p.swingProgressInt < 0)) {
             p.swingProgressInt = -1;  // solo la animación: no se manda nada al servidor
             p.isSwingInProgress = true;
         }
-        if (c.sonido) {
+        if (espada && c.sonido) {  // el sonido de blockhit es solo con la espada
             sonar();
         }
     }
