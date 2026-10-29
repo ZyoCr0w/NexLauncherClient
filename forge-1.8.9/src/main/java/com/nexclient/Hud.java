@@ -68,24 +68,51 @@ public final class Hud {
         float dt = Math.min(0.1f, (ahora - ultimo) / 1.0e9f);
         ultimo = ahora;
         Config c = Config.get();
-        GlStateManager.pushMatrix();
         for (String id : IDS) {
-            if (!activo(c, id)) {
-                continue;
+            if (activo(c, id)) {
+                dibujarUno(mc, c, id, editor, dt);
             }
-            if (id.equals("teclas")) {
-                teclas(mc, c, dt);
-            } else if (id.equals("armadura")) {
-                armadura(mc, c, editor);
+        }
+        GlStateManager.color(1f, 1f, 1f, 1f);
+    }
+
+    /** Dibuja un elemento con su estilo (escala, fondo, borde, colores). */
+    public static void dibujarUno(Minecraft mc, Config c, String id, boolean editor, float dt) {
+        int[] r = rect(id, mc);
+        Config.Estilo e = c.estilo(id);
+        int[] b = base(id, mc, c);
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(r[0], r[1], 0);
+        GlStateManager.scale(e.escala, e.escala, 1f);
+        if (id.equals("teclas")) {
+            teclas(mc, c, e, dt);
+        } else {
+            if (e.fondo > 0) {
+                Gui.drawRect(0, 0, b[0], b[1], Math.round(e.fondo * 2.55f) << 24);
+            }
+            if (e.borde) {
+                contorno(0, 0, b[0], b[1], Config.COLORES[e.colorBorde]);
+            }
+            if (id.equals("armadura")) {
+                armadura(mc, e, editor);
             } else {
-                List<String> l = lineas(mc, c, id, editor);
-                if (!l.isEmpty()) {
-                    texto(mc.fontRendererObj, c, rect(id, mc), l);
+                int y = 3;
+                FontRenderer f = mc.fontRendererObj;
+                for (String s : lineas(mc, c, id, editor)) {
+                    f.drawString(s, (b[0] - f.getStringWidth(s)) / 2f, y, Config.COLORES[e.colorTexto], e.sombra);
+                    y += 10;
                 }
             }
         }
         GlStateManager.popMatrix();
         GlStateManager.color(1f, 1f, 1f, 1f);
+    }
+
+    public static void contorno(int x1, int y1, int x2, int y2, int color) {
+        Gui.drawRect(x1, y1, x2, y1 + 1, color);
+        Gui.drawRect(x1, y2 - 1, x2, y2, color);
+        Gui.drawRect(x1, y1, x1 + 1, y2, color);
+        Gui.drawRect(x2 - 1, y1, x2, y2, color);
     }
 
     public static List<String> lineas(Minecraft mc, Config c, String id, boolean editor) {
@@ -184,6 +211,22 @@ public final class Hud {
         return new int[]{6, 128 + (indice - 3) * 14};
     }
 
+    /** Tamaño sin escalar del elemento. */
+    public static int[] base(String id, Minecraft mc, Config c) {
+        if (id.equals("teclas")) {
+            return new int[]{70, altoTeclas(c)};
+        }
+        if (id.equals("armadura")) {
+            return new int[]{56, 5 * 17};
+        }
+        List<String> l = lineas(mc, c, id, true);
+        int w = 20;
+        for (String s : l) {
+            w = Math.max(w, mc.fontRendererObj.getStringWidth(s) + 8);
+        }
+        return new int[]{w, Math.max(1, l.size()) * 10 + 3};
+    }
+
     public static int[] rect(String id, Minecraft mc) {
         Config c = Config.get();
         ScaledResolution sr = new ScaledResolution(mc);
@@ -195,24 +238,45 @@ public final class Hud {
             }
         }
         int[] p = posGuardada(c, id, indice);
-        int w, h;
-        if (id.equals("teclas")) {
-            w = Math.round(70 * c.teclasEscala);
-            h = Math.round(altoTeclas(c) * c.teclasEscala);
-        } else if (id.equals("armadura")) {
-            w = 56;
-            h = 5 * 17;
-        } else {
-            List<String> l = lineas(mc, c, id, true);
-            w = 20;
-            for (String s : l) {
-                w = Math.max(w, mc.fontRendererObj.getStringWidth(s) + 8);
-            }
-            h = Math.max(1, l.size()) * 10 + 3;
-        }
+        int[] b = base(id, mc, c);
+        float e = c.estilo(id).escala;
+        int w = Math.round(b[0] * e), h = Math.round(b[1] * e);
         int x = Math.max(0, Math.min(p[0], sw - w));
         int y = Math.max(0, Math.min(p[1], sh - h));
         return new int[]{x, y, w, h};
+    }
+
+    public static void restablecer(String id) {
+        Config c = Config.get();
+        c.estilos.remove(id);
+        if (id.equals("teclas")) {
+            c.teclasX = 6;
+            c.teclasY = 6;
+            c.teclasEscala = 1f;
+        } else if (id.equals("cps")) {
+            c.cpsX = 6;
+            c.cpsY = 100;
+        } else if (id.equals("fps")) {
+            c.fpsX = 6;
+            c.fpsY = 114;
+        } else {
+            c.pos.remove(id);
+        }
+    }
+
+    public static void poner(Config c, String id, boolean v) {
+        if (id.equals("teclas")) c.teclas = v;
+        else if (id.equals("cps")) c.cps = v;
+        else if (id.equals("fps")) c.fps = v;
+        else if (id.equals("coords")) c.coords = v;
+        else if (id.equals("ping")) c.ping = v;
+        else if (id.equals("reloj")) c.reloj = v;
+        else if (id.equals("velocidad")) c.velocidad = v;
+        else if (id.equals("combo")) c.combo = v;
+        else if (id.equals("alcance")) c.alcance = v;
+        else if (id.equals("estado")) c.estado = v;
+        else if (id.equals("pociones")) c.pociones = v;
+        else if (id.equals("armadura")) c.armadura = v;
     }
 
     public static void mover(String id, int x, int y) {
@@ -231,22 +295,7 @@ public final class Hud {
         }
     }
 
-    private static void texto(FontRenderer f, Config c, int[] r, List<String> lineas) {
-        if (c.hudFondo) {
-            Gui.drawRect(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
-        }
-        int y = r[1] + 3;
-        for (String s : lineas) {
-            f.drawString(s, r[0] + (r[2] - f.getStringWidth(s)) / 2f, y, c.colorTexto(), c.hudSombra);
-            y += 10;
-        }
-    }
-
-    private static void armadura(Minecraft mc, Config c, boolean editor) {
-        int[] r = rect("armadura", mc);
-        if (c.hudFondo) {
-            Gui.drawRect(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
-        }
+    private static void armadura(Minecraft mc, Config.Estilo e, boolean editor) {
         EntityPlayerSP p = mc.thePlayer;
         ItemStack[] items = new ItemStack[5];
         if (p != null) {
@@ -255,27 +304,26 @@ public final class Hud {
             }
             items[4] = p.getHeldItem();
         }
-        int y = r[1];
+        int y = 0;
         for (ItemStack s : items) {
             if (s != null) {
                 RenderHelper.enableGUIStandardItemLighting();
-                mc.getRenderItem().renderItemAndEffectIntoGUI(s, r[0] + 1, y);
+                mc.getRenderItem().renderItemAndEffectIntoGUI(s, 1, y);
                 RenderHelper.disableStandardItemLighting();
                 GlStateManager.disableLighting();
                 GlStateManager.disableDepth();
                 String t = s.isItemStackDamageable() ? String.valueOf(s.getMaxDamage() - s.getItemDamage())
                         : (s.stackSize > 1 ? String.valueOf(s.stackSize) : "");
-                mc.fontRendererObj.drawString(t, r[0] + 20, y + 4, c.colorTexto(), c.hudSombra);
+                mc.fontRendererObj.drawString(t, 20, y + 4, Config.COLORES[e.colorTexto], e.sombra);
                 GlStateManager.enableDepth();
             } else if (editor) {
-                mc.fontRendererObj.drawString("-", r[0] + 20, y + 4, 0xFF888888);
+                mc.fontRendererObj.drawString("-", 20, y + 4, 0xFF888888);
             }
             y += 17;
         }
     }
 
-    private static void teclas(Minecraft mc, Config c, float dt) {
-        int[] r = rect("teclas", mc);
+    private static void teclas(Minecraft mc, Config c, Config.Estilo e, float dt) {
         GameSettings o = mc.gameSettings;
         KeyBinding[] k = {o.keyBindForward, o.keyBindLeft, o.keyBindBack, o.keyBindRight, o.keyBindAttack,
                 o.keyBindUseItem, o.keyBindJump};
@@ -285,24 +333,26 @@ public final class Hud {
             BRILLO[i] += (objetivo - BRILLO[i]) * Math.min(1f, dt * vel);
         }
         FontRenderer f = mc.fontRendererObj;
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(r[0], r[1], 0);
-        GlStateManager.scale(c.teclasEscala, c.teclasEscala, 1f);
-        tecla(f, 24, 0, 22, 22, nombre(k[0]), null, BRILLO[0]);
-        tecla(f, 0, 24, 22, 22, nombre(k[1]), null, BRILLO[1]);
-        tecla(f, 24, 24, 22, 22, nombre(k[2]), null, BRILLO[2]);
-        tecla(f, 48, 24, 22, 22, nombre(k[3]), null, BRILLO[3]);
+        int fondo = Math.round(e.fondo * 2.55f) << 24;
+        int texto = Config.COLORES[e.colorTexto];
+        int borde = e.borde ? Config.COLORES[e.colorBorde] : 0;
+        tecla(f, 24, 0, 22, 22, nombre(k[0]), null, BRILLO[0], fondo, texto, borde, e.sombra);
+        tecla(f, 0, 24, 22, 22, nombre(k[1]), null, BRILLO[1], fondo, texto, borde, e.sombra);
+        tecla(f, 24, 24, 22, 22, nombre(k[2]), null, BRILLO[2], fondo, texto, borde, e.sombra);
+        tecla(f, 48, 24, 22, 22, nombre(k[3]), null, BRILLO[3], fondo, texto, borde, e.sombra);
         int y = 48;
         if (c.teclasRaton) {
-            tecla(f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + " CPS" : null, BRILLO[4]);
-            tecla(f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + " CPS" : null, BRILLO[5]);
+            tecla(f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + " CPS" : null, BRILLO[4], fondo, texto, borde, e.sombra);
+            tecla(f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + " CPS" : null, BRILLO[5], fondo, texto, borde, e.sombra);
             y += 24;
         }
         if (c.teclasEspacio) {
-            Gui.drawRect(0, y, 70, y + 10, mezclar(0x66000000, 0xCCFFFFFF, BRILLO[6]));
-            Gui.drawRect(22, y + 4, 48, y + 6, mezclar(0xFFFFFFFF, 0xFF000000, BRILLO[6]));
+            Gui.drawRect(0, y, 70, y + 10, mezclar(fondo, 0xCCFFFFFF, BRILLO[6]));
+            if (borde != 0) {
+                contorno(0, y, 70, y + 10, borde);
+            }
+            Gui.drawRect(22, y + 4, 48, y + 6, mezclar(texto, 0xFF000000, BRILLO[6]));
         }
-        GlStateManager.popMatrix();
     }
 
     private static String nombre(KeyBinding k) {
@@ -310,10 +360,14 @@ public final class Hud {
         return s.length() > 3 ? s.substring(0, 3) : s;
     }
 
-    private static void tecla(FontRenderer f, int x, int y, int w, int h, String texto, String sub, float b) {
-        Gui.drawRect(x, y, x + w, y + h, mezclar(0x66000000, 0xCCFFFFFF, b));
-        int color = mezclar(0xFFFFFFFF, 0xFF000000, b);
-        boolean sombra = b < 0.5f;
+    private static void tecla(FontRenderer f, int x, int y, int w, int h, String texto, String sub, float b,
+                              int fondo, int colorTexto, int borde, boolean sombraBase) {
+        Gui.drawRect(x, y, x + w, y + h, mezclar(fondo, 0xCCFFFFFF, b));
+        if (borde != 0) {
+            contorno(x, y, x + w, y + h, borde);
+        }
+        int color = mezclar(colorTexto, 0xFF000000, b);
+        boolean sombra = sombraBase && b < 0.5f;
         if (sub == null) {
             f.drawString(texto, x + (w - f.getStringWidth(texto)) / 2f, y + (h - 8) / 2f, color, sombra);
         } else {

@@ -68,20 +68,40 @@ public final class Hud {
         ultimo = ahora;
         Config c = Config.get();
         for (String id : IDS) {
-            if (!activo(c, id)) {
-                continue;
+            if (activo(c, id)) {
+                dibujarUno(g, mc, c, id, editor, dt);
             }
-            if (id.equals("teclas")) {
-                teclas(g, mc, c, dt);
-            } else if (id.equals("armadura")) {
-                armadura(g, mc, c, editor);
+        }
+    }
+
+    /** Dibuja un elemento con su estilo (escala, fondo, borde, colores). */
+    public static void dibujarUno(GuiGraphics g, Minecraft mc, Config c, String id, boolean editor, float dt) {
+        int[] r = rect(id, mc);
+        Config.Estilo e = c.estilo(id);
+        int[] b = base(id, mc, c);
+        g.pose().pushPose();
+        g.pose().translate(r[0], r[1], 0);
+        g.pose().scale(e.escala, e.escala, 1f);
+        if (id.equals("teclas")) {
+            teclas(g, mc, c, e, dt);
+        } else {
+            if (e.fondo > 0) {
+                g.fill(0, 0, b[0], b[1], (Math.round(e.fondo * 2.55f) << 24));
+            }
+            if (e.borde) {
+                g.renderOutline(0, 0, b[0], b[1], Config.COLORES[e.colorBorde]);
+            }
+            if (id.equals("armadura")) {
+                armadura(g, mc, e, editor);
             } else {
-                List<String> lineas = lineas(mc, c, id, editor);
-                if (!lineas.isEmpty()) {
-                    texto(g, mc.font, c, rect(id, mc), lineas);
+                int y = 3;
+                for (String s : lineas(mc, c, id, editor)) {
+                    g.drawString(mc.font, s, (b[0] - mc.font.width(s)) / 2, y, Config.COLORES[e.colorTexto], e.sombra);
+                    y += 10;
                 }
             }
         }
+        g.pose().popPose();
     }
 
     // ---- contenido de cada elemento de texto
@@ -195,7 +215,23 @@ public final class Hud {
         return new int[]{6, 128 + (indice - 3) * 14};
     }
 
-    /** {x, y, ancho, alto} del elemento, sin salirse de la pantalla. */
+    /** Tamaño sin escalar del elemento. */
+    public static int[] base(String id, Minecraft mc, Config c) {
+        if (id.equals("teclas")) {
+            return new int[]{70, altoTeclas(c)};
+        }
+        if (id.equals("armadura")) {
+            return new int[]{56, ARMADURA.length * 17};
+        }
+        List<String> l = lineas(mc, c, id, true);
+        int w = 20;
+        for (String s : l) {
+            w = Math.max(w, mc.font.width(s) + 8);
+        }
+        return new int[]{w, Math.max(1, l.size()) * 10 + 3};
+    }
+
+    /** {x, y, ancho, alto} del elemento ya escalado, sin salirse de la pantalla. */
     public static int[] rect(String id, Minecraft mc) {
         Config c = Config.get();
         int sw = mc.getWindow().getGuiScaledWidth(), sh = mc.getWindow().getGuiScaledHeight();
@@ -206,24 +242,49 @@ public final class Hud {
             }
         }
         int[] p = posGuardada(c, id, indice);
-        int w, h;
-        if (id.equals("teclas")) {
-            w = Math.round(70 * c.teclasEscala);
-            h = Math.round(altoTeclas(c) * c.teclasEscala);
-        } else if (id.equals("armadura")) {
-            w = 56;
-            h = ARMADURA.length * 17;
-        } else {
-            List<String> l = lineas(mc, c, id, true);
-            w = 20;
-            for (String s : l) {
-                w = Math.max(w, mc.font.width(s) + 8);
-            }
-            h = Math.max(1, l.size()) * 10 + 3;
-        }
+        int[] b = base(id, mc, c);
+        float e = c.estilo(id).escala;
+        int w = Math.round(b[0] * e), h = Math.round(b[1] * e);
         int x = Math.max(0, Math.min(p[0], sw - w));
         int y = Math.max(0, Math.min(p[1], sh - h));
         return new int[]{x, y, w, h};
+    }
+
+    public static void restablecer(String id) {
+        Config c = Config.get();
+        c.estilos.remove(id);
+        if (id.equals("teclas")) {
+            c.teclasX = 6;
+            c.teclasY = 6;
+            c.teclasEscala = 1f;
+        } else if (id.equals("cps")) {
+            c.cpsX = 6;
+            c.cpsY = 100;
+        } else if (id.equals("fps")) {
+            c.fpsX = 6;
+            c.fpsY = 114;
+        } else {
+            c.pos.remove(id);
+        }
+    }
+
+    public static boolean poner(Config c, String id, boolean v) {
+        switch (id) {
+            case "teclas": c.teclas = v; break;
+            case "cps": c.cps = v; break;
+            case "fps": c.fps = v; break;
+            case "coords": c.coords = v; break;
+            case "ping": c.ping = v; break;
+            case "reloj": c.reloj = v; break;
+            case "velocidad": c.velocidad = v; break;
+            case "combo": c.combo = v; break;
+            case "alcance": c.alcance = v; break;
+            case "estado": c.estado = v; break;
+            case "pociones": c.pociones = v; break;
+            case "armadura": c.armadura = v; break;
+            default: return false;
+        }
+        return true;
     }
 
     public static void mover(String id, int x, int y) {
@@ -242,41 +303,25 @@ public final class Hud {
         }
     }
 
-    // ---- dibujo
-    private static void texto(GuiGraphics g, Font f, Config c, int[] r, List<String> lineas) {
-        if (c.hudFondo) {
-            g.fill(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
-        }
-        int y = r[1] + 3;
-        for (String s : lineas) {
-            g.drawString(f, s, r[0] + (r[2] - f.width(s)) / 2, y, c.colorTexto(), c.hudSombra);
-            y += 10;
-        }
-    }
-
-    private static void armadura(GuiGraphics g, Minecraft mc, Config c, boolean editor) {
-        int[] r = rect("armadura", mc);
-        if (c.hudFondo) {
-            g.fill(r[0], r[1], r[0] + r[2], r[1] + r[3], 0x66000000);
-        }
+    // ---- dibujo (coordenadas locales: el elemento ya está trasladado y escalado)
+    private static void armadura(GuiGraphics g, Minecraft mc, Config.Estilo e, boolean editor) {
         LocalPlayer p = mc.player;
-        int y = r[1];
+        int y = 0;
         for (EquipmentSlot slot : ARMADURA) {
             ItemStack s = p == null ? ItemStack.EMPTY : p.getItemBySlot(slot);
             if (!s.isEmpty()) {
-                g.renderItem(s, r[0] + 1, y);
+                g.renderItem(s, 1, y);
                 String t = s.isDamageableItem() ? String.valueOf(s.getMaxDamage() - s.getDamageValue())
                         : (s.getCount() > 1 ? String.valueOf(s.getCount()) : "");
-                g.drawString(mc.font, t, r[0] + 20, y + 4, c.colorTexto(), c.hudSombra);
+                g.drawString(mc.font, t, 20, y + 4, Config.COLORES[e.colorTexto], e.sombra);
             } else if (editor) {
-                g.drawString(mc.font, "—", r[0] + 20, y + 4, 0xFF888888, false);
+                g.drawString(mc.font, "—", 20, y + 4, 0xFF888888, false);
             }
             y += 17;
         }
     }
 
-    private static void teclas(GuiGraphics g, Minecraft mc, Config c, float dt) {
-        int[] r = rect("teclas", mc);
+    private static void teclas(GuiGraphics g, Minecraft mc, Config c, Config.Estilo e, float dt) {
         KeyMapping[] k = {mc.options.keyUp, mc.options.keyLeft, mc.options.keyDown, mc.options.keyRight,
                 mc.options.keyAttack, mc.options.keyUse, mc.options.keyJump};
         for (int i = 0; i < k.length; i++) {
@@ -285,25 +330,29 @@ public final class Hud {
             float vel = objetivo > BRILLO[i] ? 28f : 9f;
             BRILLO[i] += (objetivo - BRILLO[i]) * Math.min(1f, dt * vel);
         }
-        g.pose().pushPose();
-        g.pose().translate(r[0], r[1], 0);
-        g.pose().scale(c.teclasEscala, c.teclasEscala, 1f);
         Font f = mc.font;
-        tecla(g, f, 24, 0, 22, 22, nombre(k[0]), null, BRILLO[0]);
-        tecla(g, f, 0, 24, 22, 22, nombre(k[1]), null, BRILLO[1]);
-        tecla(g, f, 24, 24, 22, 22, nombre(k[2]), null, BRILLO[2]);
-        tecla(g, f, 48, 24, 22, 22, nombre(k[3]), null, BRILLO[3]);
+        int fondo = Math.round(e.fondo * 2.55f) << 24;
+        int texto = Config.COLORES[e.colorTexto];
+        int borde = e.borde ? Config.COLORES[e.colorBorde] : 0;
+        tecla(g, f, 24, 0, 22, 22, nombre(k[0]), null, BRILLO[0], fondo, texto, borde, e.sombra);
+        tecla(g, f, 0, 24, 22, 22, nombre(k[1]), null, BRILLO[1], fondo, texto, borde, e.sombra);
+        tecla(g, f, 24, 24, 22, 22, nombre(k[2]), null, BRILLO[2], fondo, texto, borde, e.sombra);
+        tecla(g, f, 48, 24, 22, 22, nombre(k[3]), null, BRILLO[3], fondo, texto, borde, e.sombra);
         int y = 48;
         if (c.teclasRaton) {
-            tecla(g, f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + " CPS" : null, BRILLO[4]);
-            tecla(g, f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + " CPS" : null, BRILLO[5]);
+            tecla(g, f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + " CPS" : null, BRILLO[4], fondo, texto,
+                    borde, e.sombra);
+            tecla(g, f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + " CPS" : null, BRILLO[5], fondo, texto,
+                    borde, e.sombra);
             y += 24;
         }
         if (c.teclasEspacio) {
-            g.fill(0, y, 70, y + 10, mezclar(0x66000000, 0xCCFFFFFF, BRILLO[6]));
-            g.fill(22, y + 4, 48, y + 6, mezclar(0xFFFFFFFF, 0xFF000000, BRILLO[6]));
+            g.fill(0, y, 70, y + 10, mezclar(fondo, 0xCCFFFFFF, BRILLO[6]));
+            if (borde != 0) {
+                g.renderOutline(0, y, 70, 10, borde);
+            }
+            g.fill(22, y + 4, 48, y + 6, mezclar(texto, 0xFF000000, BRILLO[6]));
         }
-        g.pose().popPose();
     }
 
     private static String nombre(KeyMapping k) {
@@ -311,10 +360,14 @@ public final class Hud {
         return s.length() > 3 ? s.substring(0, 3) : s;
     }
 
-    private static void tecla(GuiGraphics g, Font f, int x, int y, int w, int h, String texto, String sub, float b) {
-        g.fill(x, y, x + w, y + h, mezclar(0x66000000, 0xCCFFFFFF, b));
-        int color = mezclar(0xFFFFFFFF, 0xFF000000, b);
-        boolean sombra = b < 0.5f;
+    private static void tecla(GuiGraphics g, Font f, int x, int y, int w, int h, String texto, String sub, float b,
+                              int fondo, int colorTexto, int borde, boolean sombraBase) {
+        g.fill(x, y, x + w, y + h, mezclar(fondo, 0xCCFFFFFF, b));
+        if (borde != 0) {
+            g.renderOutline(x, y, w, h, borde);
+        }
+        int color = mezclar(colorTexto, 0xFF000000, b);
+        boolean sombra = sombraBase && b < 0.5f;
         if (sub == null) {
             g.drawString(f, texto, x + (w - f.width(texto)) / 2, y + (h - 8) / 2, color, sombra);
         } else {

@@ -11,7 +11,9 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,6 +50,20 @@ public class Config {
     public boolean hudFondo = true;
     public boolean hudSombra = true;
     public int hudColor = 0;
+    /** Estilo propio de cada elemento del HUD (se crea con los valores generales de arriba). */
+    public Map<String, Estilo> estilos = new HashMap<String, Estilo>();
+    /** Mods extra elegidos en el juego, por versión ("1.8.9", "1.21.1"); NexLauncher los instala al jugar. */
+    public Map<String, List<String>> extras = new HashMap<String, List<String>>();
+
+    public static class Estilo {
+        public float escala = 1.0f;
+        /** Opacidad del fondo, 0–100 %. */
+        public int fondo = 40;
+        public boolean sombra = true;
+        public int colorTexto = 0;
+        public boolean borde = false;
+        public int colorBorde = 0;
+    }
 
     // ---- Blockhit
     public boolean blockhit = true;
@@ -160,6 +176,20 @@ public class Config {
         if (pos == null) {
             pos = new HashMap<String, int[]>();
         }
+        if (estilos == null) {
+            estilos = new HashMap<String, Estilo>();
+        }
+        if (extras == null) {
+            extras = new HashMap<String, List<String>>();
+        }
+        for (Estilo e : estilos.values()) {
+            if (e != null) {
+                e.escala = Math.max(0.5f, Math.min(3f, e.escala));
+                e.fondo = Math.max(0, Math.min(100, e.fondo));
+                e.colorTexto = Math.max(0, Math.min(COLORES.length - 1, e.colorTexto));
+                e.colorBorde = Math.max(0, Math.min(COLORES.length - 1, e.colorBorde));
+            }
+        }
         if (indiceSonido(sonidoId) < 0) {
             sonidoId = "metal";
         }
@@ -181,6 +211,38 @@ public class Config {
 
     public int colorTexto() {
         return COLORES[hudColor];
+    }
+
+    public Estilo estilo(String id) {
+        Estilo e = estilos.get(id);
+        if (e == null) {
+            e = new Estilo();
+            e.fondo = hudFondo ? 40 : 0;
+            e.sombra = hudSombra;
+            e.colorTexto = hudColor;
+            if (id.equals("teclas")) {
+                e.escala = teclasEscala;
+            }
+            estilos.put(id, e);
+        }
+        return e;
+    }
+
+    /** Lista de mods extra de esa versión (null = todavía no se eligió: NexLauncher usa los recomendados). */
+    public List<String> extrasDe(String version) {
+        return extras.get(version);
+    }
+
+    public void ponerExtra(String version, String id, boolean activo, List<String> porDefecto) {
+        List<String> l = extras.get(version);
+        if (l == null) {
+            l = new ArrayList<String>(porDefecto);
+            extras.put(version, l);
+        }
+        l.remove(id);
+        if (activo) {
+            l.add(id);
+        }
     }
 
     /** Hora del juego (0–23999) como texto: 6000 -> 12:00. */

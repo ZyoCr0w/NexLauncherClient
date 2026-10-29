@@ -1,6 +1,9 @@
 package com.nexclient;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiIngameMenu;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
@@ -15,6 +18,24 @@ public class Eventos {
     public void hud(RenderGameOverlayEvent.Post e) {
         if (e.type == RenderGameOverlayEvent.ElementType.ALL) {
             Hud.dibujar(false);
+        }
+    }
+
+    private static final int ID_BOTON = 98170;
+
+    /** Botón «NexClient» en el menú de pausa (Esc), abajo a la izquierda. */
+    @SubscribeEvent
+    public void menuPausa(GuiScreenEvent.InitGuiEvent.Post e) {
+        if (e.gui instanceof GuiIngameMenu) {
+            e.buttonList.add(new GuiButton(ID_BOTON, 6, e.gui.height - 26, 98, 20, "NexClient"));
+        }
+    }
+
+    @SubscribeEvent
+    public void botonPausa(GuiScreenEvent.ActionPerformedEvent.Pre e) {
+        if (e.gui instanceof GuiIngameMenu && e.button.id == ID_BOTON) {
+            mc.displayGuiScreen(new MenuNex(e.gui));
+            e.setCanceled(true);
         }
     }
 

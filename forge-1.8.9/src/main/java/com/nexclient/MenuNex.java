@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Menú de NexClient (Shift derecho). */
 public class MenuNex extends GuiScreen {
-    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual"};
+    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mods"};
     private static int pagina = 0;
     private final GuiScreen padre;
     private final List<Runnable> acciones = new ArrayList<Runnable>();
@@ -40,7 +40,7 @@ public class MenuNex extends GuiScreen {
         acciones.clear();
         final Config c = Config.get();
         int cx = width / 2;
-        int ancho = 62;
+        int ancho = 54;
         int x0 = cx - (PAGINAS.length * (ancho + 2)) / 2;
         for (int i = 0; i < PAGINAS.length; i++) {
             final int k = i;
@@ -55,18 +55,17 @@ public class MenuNex extends GuiScreen {
         }
         fila = 0;
         if (pagina == 0) {
-            ayuda = "Shift derecho abre este menú. Zoom: tecla C (cámbiala en Controles).";
+            ayuda = "Shift derecho o Esc → NexClient abren este menú. Zoom: tecla C (cámbiala en Controles).";
+            final GuiScreen yo = this;
+            boton(width / 2 - 155, y(), 310, "§lEditar HUD§r · posición, tamaño, fondo, borde y colores", new Runnable() {
+                public void run() { mc.displayGuiScreen(new EditorHud(yo)); } });
+            fila++;
             interruptor("Teclas en pantalla", c.teclas, new Escritor() { public void poner(boolean v) { c.teclas = v; } });
             interruptor("CPS en las teclas", c.teclasCps, new Escritor() { public void poner(boolean v) { c.teclasCps = v; } });
             interruptor("Botones del ratón", c.teclasRaton, new Escritor() { public void poner(boolean v) { c.teclasRaton = v; } });
             interruptor("Barra espaciadora", c.teclasEspacio, new Escritor() { public void poner(boolean v) { c.teclasEspacio = v; } });
-            deslizador("Tamaño: ", "%", 50, 250, c.teclasEscala * 100, new Numero() {
-                public void poner(double v) { c.teclasEscala = (float) (Math.round(v / 5) * 5 / 100.0); } });
             interruptor("Contador de CPS", c.cps, new Escritor() { public void poner(boolean v) { c.cps = v; } });
             interruptor("Contador de FPS", c.fps, new Escritor() { public void poner(boolean v) { c.fps = v; } });
-            final GuiScreen yo = this;
-            boton(x(), y(), 150, "Mover elementos del HUD…", new Runnable() {
-                public void run() { mc.displayGuiScreen(new EditorHud(yo)); } });
         } else if (pagina == 1) {
             ayuda = "Activa lo que quieras ver y acomódalo con «Mover elementos del HUD».";
             interruptor("Coordenadas", c.coords, new Escritor() { public void poner(boolean v) { c.coords = v; } });
@@ -116,6 +115,21 @@ public class MenuNex extends GuiScreen {
             interruptor("Hora fija", c.tiempoFijo, new Escritor() { public void poner(boolean v) { c.tiempoFijo = v; } });
             horaSlider(c);
             interruptor("Siempre despejado", c.despejado, new Escritor() { public void poner(boolean v) { c.despejado = v; } });
+        } else if (pagina == 5) {
+            ayuda = "Se instalan o quitan la próxima vez que abras el perfil PvP desde NexLauncher.";
+            int k = 0;
+            for (final String[] m : Catalogo.MODS) {
+                final GuiButton[] ref = new GuiButton[1];
+                ref[0] = boton(width / 2 - 156 + (k % 3) * 105, 56 + (k / 3) * 22, 102,
+                        textoMod(m[1], Catalogo.elegido(c, m[0])), new Runnable() {
+                            public void run() {
+                                boolean v = !Catalogo.elegido(c, m[0]);
+                                c.ponerExtra(Catalogo.VERSION, m[0], v, Catalogo.porDefecto());
+                                ref[0].displayString = textoMod(m[1], v);
+                            }
+                        });
+                k++;
+            }
         } else {
             ayuda = "«Siempre crítico» y «Siempre filo» son solo visuales: no cambian el daño.";
             interruptor("Multiplicar partículas", c.particulas, new Escritor() { public void poner(boolean v) { c.particulas = v; } });
@@ -129,6 +143,10 @@ public class MenuNex extends GuiScreen {
                 public void poner(double v) { c.contornoGrosor = (float) (Math.round(v * 2) / 2.0); } }, true);
         }
         boton(cx - 100, height - 26, 200, "Listo", new Runnable() { public void run() { cerrar(); } });
+    }
+
+    private static String textoMod(String nombre, boolean activo) {
+        return (activo ? "§a+ §r" : "§8- §7") + nombre;
     }
 
     private int x() {
