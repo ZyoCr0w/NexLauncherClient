@@ -13,6 +13,37 @@ import org.lwjgl.glfw.GLFW;
 public final class Movimiento {
     public static KeyMapping teclaZoom;
     public static boolean zoomActivo;
+
+    /** Aumento del zoom en este momento: arranca en el de los ajustes y la rueda del ratón lo cambia. */
+    public static float zoomObjetivo = 4.0f;
+    private static float zoomMostrado = 1.0f;
+    private static long tZoom;
+
+    /** Rueda del ratón con el zoom puesto: cada paso acerca o aleja un 20 %. */
+    public static void rueda(double pasos) {
+        if (pasos == 0) {
+            return;
+        }
+        float f = (float) Math.pow(1.2, Math.signum(pasos));
+        zoomObjetivo = Math.max(1.1f, Math.min(50f, zoomObjetivo * f));
+    }
+
+    public static boolean hayZoom() {
+        return zoomActivo || zoomMostrado > 1.001f;
+    }
+
+    /** Campo de visión con el zoom aplicado; el cambio se ve suave (no de golpe) a cualquier FPS. */
+    public static double fov(double base) {
+        long ahora = System.nanoTime();
+        float dt = tZoom == 0 ? 0f : Math.min(0.1f, (ahora - tZoom) / 1e9f);
+        tZoom = ahora;
+        float objetivo = zoomActivo ? zoomObjetivo : 1.0f;
+        zoomMostrado += (objetivo - zoomMostrado) * Math.min(1f, dt * 14f);
+        if (Math.abs(zoomMostrado - objetivo) < 0.002f) {
+            zoomMostrado = objetivo;
+        }
+        return base / zoomMostrado;
+    }
     private static boolean sprintFijo, sneakFijo, prevSprint, prevSneak, suavePrevio, fbActivo;
     private static double gammaPrevio = 0.5;
 
@@ -60,6 +91,7 @@ public final class Movimiento {
         boolean z = c.zoom && libre && teclaZoom != null && teclaZoom.isDown();
         if (z != zoomActivo) {
             if (z) {
+                zoomObjetivo = c.zoomFactor;  // cada vez que aprietas la tecla vuelve al de los ajustes
                 suavePrevio = o.smoothCamera;
                 if (c.zoomSuave) {
                     o.smoothCamera = true;

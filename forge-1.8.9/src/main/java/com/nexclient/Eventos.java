@@ -86,6 +86,11 @@ public class Eventos {
 
     @SubscribeEvent
     public void raton(MouseEvent e) {
+        if (e.dwheel != 0 && Movimiento.zoomActivo && mc.currentScreen == null) {
+            Movimiento.rueda(e.dwheel);  // con el zoom puesto la rueda cambia el aumento, no la ranura
+            e.setCanceled(true);
+            return;
+        }
         if (!e.buttonstate || e.button < 0 || mc.currentScreen != null) {
             return;
         }

@@ -103,7 +103,7 @@ public class MenuNex extends GuiScreen {
                 public void poner(double v) { c.tono = (float) (Math.round(v) / 100.0); } });
             boton(x(), y(), 150, "Probar sonido", new Runnable() { public void run() { Efectos.sonar(); } });
         } else if (pagina == 3) {
-            ayuda = "Vista libre: mantén R y mira alrededor con el ratón (la tecla se cambia en Controles).";
+            ayuda = "Zoom: mantén C y usa la rueda para acercar o alejar. Vista libre: mantén R y mira alrededor.";
             interruptor("Toggle sprint", c.toggleSprint, new Escritor() { public void poner(boolean v) { c.toggleSprint = v; } });
             interruptor("Toggle sneak", c.toggleSneak, new Escritor() { public void poner(boolean v) { c.toggleSneak = v; } });
             interruptor("Zoom (tecla C)", c.zoom, new Escritor() { public void poner(boolean v) { c.zoom = v; } });

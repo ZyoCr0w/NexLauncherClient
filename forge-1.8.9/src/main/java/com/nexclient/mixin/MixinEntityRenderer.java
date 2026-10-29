@@ -1,6 +1,5 @@
 package com.nexclient.mixin;
 
-import com.nexclient.Config;
 import com.nexclient.Movimiento;
 import com.nexclient.VistaLibre;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -40,8 +39,8 @@ public class MixinEntityRenderer {
 
     @Inject(method = "getFOVModifier", at = @At("RETURN"), cancellable = true, require = 0)
     private void nexclient$zoom(float parcial, boolean usarAjuste, CallbackInfoReturnable<Float> cir) {
-        if (Movimiento.zoomActivo) {
-            cir.setReturnValue(cir.getReturnValue() / Config.get().zoomFactor);
+        if (Movimiento.hayZoom()) {
+            cir.setReturnValue((float) Movimiento.fov(cir.getReturnValue()));
         }
     }
 }

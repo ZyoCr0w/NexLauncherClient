@@ -2,6 +2,7 @@ package com.nexclient.mixin;
 
 import com.nexclient.Cps;
 import com.nexclient.Efectos;
+import com.nexclient.Movimiento;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import org.lwjgl.glfw.GLFW;
@@ -13,6 +14,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /** Cuenta cada clic (solo jugando, no en menús) para el contador de CPS. */
 @Mixin(MouseHandler.class)
 public class MouseHandlerMixin {
+    /** Con el zoom puesto, la rueda cambia el aumento en vez de la ranura de la barra. */
+    @Inject(method = "onScroll", at = @At("HEAD"), cancellable = true, require = 0)
+    private void nexclient$ruedaZoom(long ventana, double dx, double dy, CallbackInfo ci) {
+        if (Movimiento.zoomActivo && Minecraft.getInstance().screen == null) {
+            Movimiento.rueda(dy);
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "onPress", at = @At("HEAD"))
     private void nexclient$clic(long ventana, int boton, int accion, int mods, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
