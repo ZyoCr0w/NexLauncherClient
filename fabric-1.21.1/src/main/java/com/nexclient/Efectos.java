@@ -58,6 +58,23 @@ public final class Efectos {
         return a == UseAnim.EAT || a == UseAnim.DRINK;
     }
 
+    /**
+     * Clic izquierdo mantenido mientras bloqueas o comes: el brazo repite el golpe como si spamearas clics.
+     * swing() del propio juego solo lo reinicia a la mitad de la animación, así que basta llamarlo cada tick.
+     */
+    private static void mantenerGolpe(Minecraft mc) {
+        Config c = Config.get();
+        LocalPlayer p = mc.player;
+        if (p == null || mc.screen != null || !c.blockhitMantener || !mc.options.keyAttack.isDown() || !p.isUsingItem()) {
+            return;
+        }
+        boolean espada = c.blockhit && c.estilo17 && bloqueando(mc);
+        boolean comida = c.blockhitComida && comiendo(mc);
+        if (espada || comida) {
+            ((LivingEntity) p).swing(comida ? p.getUsedItemHand() : net.minecraft.world.InteractionHand.MAIN_HAND, false);
+        }
+    }
+
     /** Clic izquierdo mientras comes: el juego no golpea, pero en 1.7 el brazo sí se movía (sin sonido). */
     public static void clicIzquierdo(Minecraft mc) {
         Config c = Config.get();
@@ -71,6 +88,7 @@ public final class Efectos {
         if (bloqueando(mc)) {
             ultimoBloqueo = System.currentTimeMillis();
         }
+        mantenerGolpe(mc);
         aplicarColorGolpe(mc);
         LocalPlayer p = mc.player;
         if (p == null) {

@@ -74,6 +74,8 @@ public class Config {
     public boolean estilo17 = true;
     /** Animación de 1.7 también al comer o beber: el brazo sigue golpeando (sin sonido de blockhit). */
     public boolean blockhitComida = true;
+    /** Al mantener el clic izquierdo mientras bloqueas o comes, el brazo repite el golpe (como spam de clics). */
+    public boolean blockhitMantener = true;
     /** 1.21: al bloquear con espada no se dibuja el escudo de la otra mano. */
     public boolean ocultarEscudo = true;
     public boolean sonido = true;

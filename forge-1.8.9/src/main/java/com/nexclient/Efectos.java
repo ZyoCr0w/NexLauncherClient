@@ -38,6 +38,7 @@ public final class Efectos {
         if (bloqueando()) {
             ultimoBloqueo = System.currentTimeMillis();
         }
+        mantenerGolpe();
         EntityPlayerSP p = Minecraft.getMinecraft().thePlayer;
         if (p == null) {
             combo = 0;
@@ -78,6 +79,25 @@ public final class Efectos {
         }
         EnumAction a = p.getItemInUse().getItemUseAction();
         return a == EnumAction.EAT || a == EnumAction.DRINK;
+    }
+
+    /**
+     * Clic izquierdo mantenido mientras bloqueas o comes: el brazo repite el golpe como si spamearas clics
+     * (se reinicia a la mitad de la animación, como el swing del juego). Solo visual, sin paquetes ni sonido.
+     */
+    private static void mantenerGolpe() {
+        Minecraft mc = Minecraft.getMinecraft();
+        Config c = Config.get();
+        EntityPlayerSP p = mc.thePlayer;
+        if (p == null || mc.currentScreen != null || !c.blockhitMantener || !mc.gameSettings.keyBindAttack.isKeyDown()) {
+            return;
+        }
+        boolean espada = c.blockhit && c.estilo17 && bloqueando();
+        boolean comida = c.blockhitComida && comiendo();
+        if ((espada || comida) && (!p.isSwingInProgress || p.swingProgressInt >= 3 || p.swingProgressInt < 0)) {
+            p.swingProgressInt = -1;
+            p.isSwingInProgress = true;
+        }
     }
 
     /** Clic izquierdo mientras bloqueas o comes: el juego no golpea, pero en 1.7 el brazo sí se movía. */
