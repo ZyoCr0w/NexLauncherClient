@@ -9,6 +9,7 @@ public final class Catalogo {
     /** Sin minimapas con radar ni barras de vida: los prohíben servidores como UniversoCraft. */
     public static final String[][] MODS = {
             // id, nombre, descripción, recomendado (1 = viene activado)
+            {"9gNVPfzw", "MinecraftCapes", "Capa gratis visible para otros (minecraftcapes.net)", "1"},
             {"zV5r3pPn", "3D Skin Layers", "Capas de skin en 3D", "0"},
             {"kYuIpRLv", "Wavey Capes", "Capas con movimiento", "0"},
             {"NNAgCjsB", "Entity Culling", "No dibuja entidades que no ves", "1"},
