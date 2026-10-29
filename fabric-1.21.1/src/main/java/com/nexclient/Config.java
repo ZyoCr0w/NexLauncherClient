@@ -105,6 +105,8 @@ public class Config {
     public int vistaLibre = 1;
     /** Ping de cada jugador en números en la lista del Tab. */
     public boolean pingTab = true;
+    /** Al abrir el mundo en LAN (Jugar con amigos de NexLauncher), dejar entrar cuentas no premium. */
+    public boolean lanSinPremium = true;
 
     // ---- Mira y color de golpe
     public boolean mira = false;

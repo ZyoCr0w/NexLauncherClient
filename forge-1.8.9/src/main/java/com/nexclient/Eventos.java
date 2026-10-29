@@ -143,6 +143,7 @@ public class Eventos {
             }
         } else {
             Efectos.tick();
+            Lan.tick(mc);
             if (++ticks % 40 == 0 && mc.currentScreen == null) {
                 Config.recargarSiCambio();
             }
