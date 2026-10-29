@@ -32,7 +32,7 @@ public final class VistaLibre {
                     // en modo «mantener» solo importa si está apretada
                 }
                 alternada = false;
-                quiere = c.vistaLibre == 1 && tecla.isDown();
+                quiere = c.vistaLibre == 1 && mc.screen == null && Movimiento.fisico(mc, tecla);
             }
         }
         if (mc.player == null || mc.level == null) {

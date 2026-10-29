@@ -50,7 +50,7 @@ public final class Movimiento {
     private Movimiento() {
     }
 
-    private static boolean fisico(Minecraft mc, KeyMapping k) {
+    public static boolean fisico(Minecraft mc, KeyMapping k) {
         InputConstants.Key key = KeyBindingHelper.getBoundKeyOf(k);
         long w = mc.getWindow().getWindow();
         if (key.getType() == InputConstants.Type.MOUSE) {
@@ -88,7 +88,8 @@ public final class Movimiento {
         }
         prevSneak = k;
         // zoom (mantener la tecla)
-        boolean z = c.zoom && libre && teclaZoom != null && teclaZoom.isDown();
+        // se lee el teclado directo: la C también es «Guardar barra» de vanilla y con el choque isDown() falla
+        boolean z = c.zoom && libre && teclaZoom != null && fisico(mc, teclaZoom);
         if (z != zoomActivo) {
             if (z) {
                 zoomObjetivo = c.zoomFactor;  // cada vez que aprietas la tecla vuelve al de los ajustes
