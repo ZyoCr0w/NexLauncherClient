@@ -33,12 +33,35 @@ public class Eventos {
 
     private static final int ID_BOTON = 98170;
 
-    /** Botón «NexClient» en el menú de pausa (Esc), abajo a la izquierda. */
+    /** Botón «NexClient» en el menú de pausa (Esc): centrado, justo encima de «Volver al juego». */
     @SubscribeEvent
     public void menuPausa(GuiScreenEvent.InitGuiEvent.Post e) {
-        if (e.gui instanceof GuiIngameMenu) {
-            e.buttonList.add(new GuiButton(ID_BOTON, 6, e.gui.height - 26, 98, 20, "NexClient"));
+        if (!(e.gui instanceof GuiIngameMenu)) {
+            return;
         }
+        GuiButton volver = null;
+        for (GuiButton b : e.buttonList) {
+            if (b.id == 4) {  // «Volver al juego»
+                volver = b;
+            }
+        }
+        if (volver == null) {
+            for (GuiButton b : e.buttonList) {
+                if (volver == null || b.yPosition < volver.yPosition) {
+                    volver = b;
+                }
+            }
+        }
+        if (volver == null) {
+            return;
+        }
+        int y = volver.yPosition;
+        for (GuiButton b : e.buttonList) {
+            if (b.yPosition >= y) {
+                b.yPosition += 24;  // todo baja una fila para hacerle lugar
+            }
+        }
+        e.buttonList.add(new GuiButton(ID_BOTON, volver.xPosition, y, volver.width, 20, "NexClient"));
     }
 
     @SubscribeEvent

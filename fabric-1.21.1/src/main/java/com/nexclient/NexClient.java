@@ -17,6 +17,36 @@ import net.minecraft.world.InteractionResult;
 import org.lwjgl.glfw.GLFW;
 
 public class NexClient implements ClientModInitializer {
+    private static void botonPausa(net.minecraft.client.Minecraft mc, net.minecraft.client.gui.screens.Screen pantalla) {
+        java.util.List<net.minecraft.client.gui.components.AbstractWidget> widgets = Screens.getButtons(pantalla);
+        net.minecraft.client.gui.components.AbstractWidget volver = null;
+        for (net.minecraft.client.gui.components.AbstractWidget w : widgets) {
+            if (w.getMessage().getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents
+                    && ((net.minecraft.network.chat.contents.TranslatableContents) w.getMessage().getContents())
+                    .getKey().equals("menu.returnToGame")) {
+                volver = w;
+            }
+        }
+        if (volver == null) {  // por si otro mod cambió el texto: el botón más alto
+            for (net.minecraft.client.gui.components.AbstractWidget w : widgets) {
+                if (w instanceof Button && (volver == null || w.getY() < volver.getY())) {
+                    volver = w;
+                }
+            }
+        }
+        if (volver == null) {  // menú de pausa sin botones (F3 + Esc)
+            return;
+        }
+        int y = volver.getY();
+        for (net.minecraft.client.gui.components.AbstractWidget w : widgets) {
+            if (w.getY() >= y) {
+                w.setY(w.getY() + 24);  // todo baja una fila para hacerle lugar
+            }
+        }
+        widgets.add(Button.builder(Component.literal("⚔ NexClient"), b -> mc.setScreen(new MenuScreen(pantalla)))
+                .bounds(volver.getX(), y, volver.getWidth(), 20).build());
+    }
+
     public static KeyMapping teclaMenu;
     private static int ticks;
 
@@ -38,11 +68,10 @@ public class NexClient implements ClientModInitializer {
             }
         });
         HudRenderCallback.EVENT.register((g, tiempo) -> Hud.dibujar(g, false));
-        // Botón «NexClient» en el menú de pausa (Esc), abajo a la izquierda
+        // Botón «NexClient» en el menú de pausa (Esc): centrado, justo encima de «Volver al juego»
         ScreenEvents.AFTER_INIT.register((mc, pantalla, ancho, alto) -> {
             if (pantalla instanceof PauseScreen) {
-                Screens.getButtons(pantalla).add(Button.builder(Component.literal("⚔ NexClient"),
-                        b -> mc.setScreen(new MenuScreen(pantalla))).bounds(6, alto - 26, 98, 20).build());
+                botonPausa(mc, pantalla);
             }
         });
         AttackEntityCallback.EVENT.register((jugador, mundo, mano, objetivo, golpe) -> {
