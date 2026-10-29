@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Menú de NexClient (Shift derecho). */
 public class MenuNex extends GuiScreen {
-    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mods"};
+    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mira", "Mods"};
     private static int pagina = 0;
     private final GuiScreen padre;
     private final List<Runnable> acciones = new ArrayList<Runnable>();
@@ -40,7 +40,7 @@ public class MenuNex extends GuiScreen {
         acciones.clear();
         final Config c = Config.get();
         int cx = width / 2;
-        int ancho = 54;
+        int ancho = 46;
         int x0 = cx - (PAGINAS.length * (ancho + 2)) / 2;
         for (int i = 0; i < PAGINAS.length; i++) {
             final int k = i;
@@ -79,9 +79,7 @@ public class MenuNex extends GuiScreen {
             interruptor("Sprint / Sneak", c.estado, new Escritor() { public void poner(boolean v) { c.estado = v; } });
             interruptor("Pociones", c.pociones, new Escritor() { public void poner(boolean v) { c.pociones = v; } });
             interruptor("Armadura", c.armadura, new Escritor() { public void poner(boolean v) { c.armadura = v; } });
-            interruptor("Fondo oscuro", c.hudFondo, new Escritor() { public void poner(boolean v) { c.hudFondo = v; } });
-            interruptor("Sombra del texto", c.hudSombra, new Escritor() { public void poner(boolean v) { c.hudSombra = v; } });
-            color("Color del texto", true);
+            interruptor("Objetivo", c.objetivo, new Escritor() { public void poner(boolean v) { c.objetivo = v; } });
         } else if (pagina == 2) {
             ayuda = "Blockhit: golpea y bloquea con la espada. «Estilo 1.7» mueve la espada al golpear bloqueando.";
             interruptor("Blockhit visual", c.blockhit, new Escritor() { public void poner(boolean v) { c.blockhit = v; } });
@@ -117,6 +115,24 @@ public class MenuNex extends GuiScreen {
             horaSlider(c);
             interruptor("Siempre despejado", c.despejado, new Escritor() { public void poner(boolean v) { c.despejado = v; } });
         } else if (pagina == 5) {
+            ayuda = "«Color de golpe» cambia el rojo con el que parpadean al recibir daño.";
+            interruptor("Mira personalizada", c.mira, new Escritor() { public void poner(boolean v) { c.mira = v; } });
+            final GuiButton[] est = new GuiButton[1];
+            est[0] = boton(x(), y(), 150, "Estilo: " + Config.ESTILOS_MIRA[c.miraEstilo], new Runnable() {
+                public void run() {
+                    c.miraEstilo = (c.miraEstilo + 1) % Config.ESTILOS_MIRA.length;
+                    est[0].displayString = "Estilo: " + Config.ESTILOS_MIRA[c.miraEstilo];
+                }
+            });
+            deslizador("Tamaño: ", "", 1, 20, c.miraTamano, new Numero() { public void poner(double v) { c.miraTamano = (int) Math.round(v); } });
+            deslizador("Grosor: ", "", 1, 6, c.miraGrosor, new Numero() { public void poner(double v) { c.miraGrosor = (int) Math.round(v); } });
+            deslizador("Separación: ", "", 0, 12, c.miraHueco, new Numero() { public void poner(double v) { c.miraHueco = (int) Math.round(v); } });
+            colorIdx("Color de la mira", 0);
+            interruptor("Borde negro", c.miraBorde, new Escritor() { public void poner(boolean v) { c.miraBorde = v; } });
+            fila++;
+            interruptor("Color de golpe", c.colorGolpe, new Escritor() { public void poner(boolean v) { c.colorGolpe = v; } });
+            colorIdx("Color", 1);
+        } else if (pagina == 6) {
             ayuda = "Se instalan o quitan la próxima vez que abras el perfil PvP desde NexLauncher.";
             int k = 0;
             for (final String[] m : Catalogo.MODS) {
@@ -196,6 +212,24 @@ public class MenuNex extends GuiScreen {
         });
     }
 
+    /** Botón que cicla un color: 0 = mira, 1 = color de golpe. */
+    private void colorIdx(final String texto, final int cual) {
+        final Config c = Config.get();
+        final GuiButton[] ref = new GuiButton[1];
+        int actual = cual == 0 ? c.miraColor : c.colorGolpeIdx;
+        ref[0] = boton(x(), y(), 150, texto + ": " + Config.NOMBRES_COLOR[actual], new Runnable() {
+            public void run() {
+                int i = ((cual == 0 ? c.miraColor : c.colorGolpeIdx) + 1) % Config.COLORES.length;
+                if (cual == 0) {
+                    c.miraColor = i;
+                } else {
+                    c.colorGolpeIdx = i;
+                }
+                ref[0].displayString = texto + ": " + Config.NOMBRES_COLOR[i];
+            }
+        });
+    }
+
     private void horaSlider(final Config c) {
         final int id = acciones.size();
         acciones.add(null);
@@ -264,5 +298,8 @@ public class MenuNex extends GuiScreen {
         drawCenteredString(fontRendererObj, "§lNexClient", width / 2, 10, 0xFFFFFF);
         drawCenteredString(fontRendererObj, ayuda, width / 2, height - 38, 0xAAAAAA);
         super.drawScreen(mx, my, parcial);
+        if (pagina == 5 && Config.get().mira) {
+            Hud.mira(width / 2, height - 52);
+        }
     }
 }

@@ -45,6 +45,7 @@ public class Config {
     public boolean estado = false;
     public boolean pociones = false;
     public boolean armadura = false;
+    public boolean objetivo = false;
     /** Posición de cada elemento nuevo: id -> {x, y}. Una x enorme lo pega al borde derecho. */
     public Map<String, int[]> pos = new HashMap<String, int[]>();
     public boolean hudFondo = true;
@@ -100,6 +101,17 @@ public class Config {
     public int hora = 6000;
     public boolean despejado = false;
 
+    // ---- Mira y color de golpe
+    public boolean mira = false;
+    public int miraEstilo = 1;
+    public int miraTamano = 5;
+    public int miraGrosor = 1;
+    public int miraHueco = 2;
+    public int miraColor = 0;
+    public boolean miraBorde = true;
+    public boolean colorGolpe = false;
+    public int colorGolpeIdx = 1;
+
     // ---- Visual
     public boolean contorno = false;
     public int contornoColor = 0;
@@ -107,6 +119,7 @@ public class Config {
 
     public static final String[] SONIDOS = {"metal", "escudo", "golpe", "orbe", "pling", "click"};
     public static final String[] NOMBRES = {"Metal", "Escudo", "Golpe", "Experiencia", "Pling", "Click"};
+    public static final String[] ESTILOS_MIRA = {"Cruz", "Cruz y punto", "Punto", "Círculo", "T"};
     public static final int[] COLORES = {0xFFFFFFFF, 0xFF55FFFF, 0xFF55FF55, 0xFFFFFF55, 0xFFFF5555, 0xFFFF55FF,
             0xFFFFAA00, 0xFF5555FF, 0xFF000000};
     public static final String[] NOMBRES_COLOR = {"Blanco", "Aqua", "Verde", "Amarillo", "Rojo", "Rosa", "Naranja",
@@ -175,6 +188,12 @@ public class Config {
         zoomFactor = Math.max(1.5f, Math.min(15f, zoomFactor));
         hora = Math.max(0, Math.min(23999, hora));
         contornoGrosor = Math.max(1f, Math.min(8f, contornoGrosor));
+        miraEstilo = Math.max(0, Math.min(ESTILOS_MIRA.length - 1, miraEstilo));
+        miraTamano = Math.max(1, Math.min(20, miraTamano));
+        miraGrosor = Math.max(1, Math.min(6, miraGrosor));
+        miraHueco = Math.max(0, Math.min(12, miraHueco));
+        miraColor = Math.max(0, Math.min(COLORES.length - 1, miraColor));
+        colorGolpeIdx = Math.max(0, Math.min(COLORES.length - 1, colorGolpeIdx));
         hudColor = Math.max(0, Math.min(COLORES.length - 1, hudColor));
         contornoColor = Math.max(0, Math.min(COLORES.length - 1, contornoColor));
         if (pos == null) {

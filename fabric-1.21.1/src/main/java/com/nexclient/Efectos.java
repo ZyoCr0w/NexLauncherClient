@@ -27,6 +27,8 @@ public final class Efectos {
     private static long ultimoGolpe;
     private static double alcance = -1;
     private static boolean herido;
+    private static LivingEntity objetivo;
+    private static int colorAplicado = Integer.MIN_VALUE;
 
     private Efectos() {
     }
@@ -69,6 +71,7 @@ public final class Efectos {
         if (bloqueando(mc)) {
             ultimoBloqueo = System.currentTimeMillis();
         }
+        aplicarColorGolpe(mc);
         LocalPlayer p = mc.player;
         if (p == null) {
             combo = 0;
@@ -81,6 +84,44 @@ public final class Efectos {
             combo = 0;  // te pegaron: se corta el combo
         }
         herido = ahoraHerido;
+    }
+
+    /** Último ser vivo que golpeaste (para el panel «Objetivo»), durante 4 s. */
+    public static LivingEntity objetivo() {
+        if (objetivo == null || objetivo.isRemoved() || !objetivo.isAlive()
+                || System.currentTimeMillis() - ultimoGolpe > 4000) {
+            return null;
+        }
+        return objetivo;
+    }
+
+    /** Color del parpadeo al recibir daño: se repinta la textura de «overlay» del juego. */
+    private static void aplicarColorGolpe(Minecraft mc) {
+        Config c = Config.get();
+        int deseado = c.colorGolpe ? Config.COLORES[c.colorGolpeIdx] : -1;
+        if (deseado == colorAplicado || mc.gameRenderer == null) {
+            return;
+        }
+        try {
+            net.minecraft.client.renderer.texture.DynamicTexture tex =
+                    ((com.nexclient.mixin.OverlayTextureAccessor) mc.gameRenderer.overlayTexture()).nexclient$textura();
+            com.mojang.blaze3d.platform.NativeImage img = tex.getPixels();
+            if (img == null) {
+                return;
+            }
+            int abgr = deseado == -1 ? -1308622593  // el rojo original de Minecraft
+                    : (0xB2 << 24) | ((deseado & 255) << 16) | (((deseado >> 8) & 255) << 8) | ((deseado >> 16) & 255);
+            for (int y = 0; y < 8; y++) {
+                for (int x = 0; x < 16; x++) {
+                    img.setPixelRGBA(x, y, abgr);
+                }
+            }
+            tex.upload();
+            colorAplicado = deseado;
+        } catch (Throwable e) {
+            colorAplicado = deseado;  // no reintentar cada tick
+            System.err.println("[NexClient] Color de golpe no disponible: " + e);
+        }
     }
 
     public static int combo() {
@@ -99,6 +140,9 @@ public final class Efectos {
         }
         combo++;
         ultimoGolpe = System.currentTimeMillis();
+        if (objetivo instanceof LivingEntity) {
+            Efectos.objetivo = (LivingEntity) objetivo;
+        }
         if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.ENTITY) {
             alcance = jugador.getEyePosition().distanceTo(mc.hitResult.getLocation());
         } else {

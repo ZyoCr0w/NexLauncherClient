@@ -17,9 +17,9 @@ import java.util.List;
 /** Todo lo que NexClient dibuja en pantalla. Cada elemento se puede mover en el editor. */
 public final class Hud {
     public static final String[] IDS = {"teclas", "cps", "fps", "coords", "ping", "reloj", "velocidad", "combo",
-            "alcance", "estado", "pociones", "armadura"};
+            "alcance", "estado", "pociones", "armadura", "objetivo"};
     public static final String[] NOMBRES = {"Teclas", "CPS", "FPS", "Coordenadas", "Ping", "Reloj", "Velocidad",
-            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura"};
+            "Combo", "Alcance", "Sprint / Sneak", "Pociones", "Armadura", "Objetivo"};
     private static final String[] RUMBOS = {"S", "SO", "O", "NO", "N", "NE", "E", "SE"};
     private static final String[] ROMANOS = {"", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"};
     private static final EquipmentSlot[] ARMADURA = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS,
@@ -45,6 +45,7 @@ public final class Hud {
             case "estado": return c.estado;
             case "pociones": return c.pociones;
             case "armadura": return c.armadura;
+            case "objetivo": return c.objetivo;
             default: return false;
         }
     }
@@ -159,6 +160,17 @@ public final class Hud {
                     l.add(s);
                 } else if (editor) {
                     l.add("[Sprint (fijo)]");
+                }
+                break;
+            }
+            case "objetivo": {
+                net.minecraft.world.entity.LivingEntity o = Efectos.objetivo();
+                if (o != null) {
+                    l.add(o.getName().getString());
+                    l.add(String.format("♥ %.1f / %.0f", o.getHealth(), o.getMaxHealth()));
+                } else if (editor) {
+                    l.add("Jugador");
+                    l.add("♥ 20.0 / 20");
                 }
                 break;
             }
@@ -283,6 +295,7 @@ public final class Hud {
             case "estado": c.estado = v; break;
             case "pociones": c.pociones = v; break;
             case "armadura": c.armadura = v; break;
+            case "objetivo": c.objetivo = v; break;
             default: return false;
         }
         return true;
@@ -397,6 +410,43 @@ public final class Hud {
             g.pose().scale(0.6f, 0.6f, 1f);
             texto(g, f, sub, -f.width(sub) / 2, 0, color, sombra, arcoTeclas && b < 0.5f);
             g.pose().popPose();
+        }
+    }
+
+    /** Mira personalizada, centrada en (cx, cy). */
+    public static void mira(GuiGraphics g, int cx, int cy) {
+        Config c = Config.get();
+        int s = c.miraTamano, t = c.miraGrosor, h = c.miraHueco, color = Config.COLORES[c.miraColor];
+        int a = t / 2;
+        java.util.List<int[]> r = new java.util.ArrayList<int[]>();
+        int estilo = c.miraEstilo;
+        if (estilo == 0 || estilo == 1 || estilo == 4) {
+            r.add(new int[]{cx - h - s, cy - a, cx - h, cy - a + t});          // izquierda
+            r.add(new int[]{cx + h + 1, cy - a, cx + h + 1 + s, cy - a + t});  // derecha
+            r.add(new int[]{cx - a, cy + h + 1, cx - a + t, cy + h + 1 + s});  // abajo
+            if (estilo != 4) {
+                r.add(new int[]{cx - a, cy - h - s, cx - a + t, cy - h});      // arriba
+            }
+        }
+        if (estilo == 1 || estilo == 2) {
+            int d = Math.max(1, t);
+            r.add(new int[]{cx - d / 2, cy - d / 2, cx - d / 2 + d, cy - d / 2 + d});
+        }
+        if (estilo == 3) {
+            int radio = s + h;
+            for (int i = 0; i < 32; i++) {
+                double ang = Math.PI * 2 * i / 32;
+                int x = cx + (int) Math.round(Math.cos(ang) * radio), y = cy + (int) Math.round(Math.sin(ang) * radio);
+                r.add(new int[]{x - a, y - a, x - a + t, y - a + t});
+            }
+        }
+        if (c.miraBorde) {
+            for (int[] q : r) {
+                g.fill(q[0] - 1, q[1] - 1, q[2] + 1, q[3] + 1, 0xC0000000);
+            }
+        }
+        for (int[] q : r) {
+            g.fill(q[0], q[1], q[2], q[3], color);
         }
     }
 

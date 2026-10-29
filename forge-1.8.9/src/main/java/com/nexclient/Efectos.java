@@ -24,6 +24,7 @@ public final class Efectos {
     private static long ultimoGolpe;
     private static double alcance = -1;
     private static boolean herido;
+    private static EntityLivingBase objetivo;
 
     private Efectos() {
     }
@@ -49,6 +50,15 @@ public final class Efectos {
             combo = 0;
         }
         herido = ahoraHerido;
+    }
+
+    /** Último ser vivo que golpeaste (para el panel «Objetivo»), durante 4 s. */
+    public static EntityLivingBase objetivo() {
+        if (objetivo == null || objetivo.isDead || objetivo.getHealth() <= 0
+                || System.currentTimeMillis() - ultimoGolpe > 4000) {
+            return null;
+        }
+        return objetivo;
     }
 
     public static int combo() {
@@ -97,6 +107,9 @@ public final class Efectos {
         }
         combo++;
         ultimoGolpe = System.currentTimeMillis();
+        if (objetivo instanceof EntityLivingBase) {
+            Efectos.objetivo = (EntityLivingBase) objetivo;
+        }
         Vec3 ojos = jugador.getPositionEyes(1.0F);
         if (mc.objectMouseOver != null && mc.objectMouseOver.hitVec != null
                 && mc.objectMouseOver.typeOfHit == MovingObjectPosition.MovingObjectType.ENTITY) {

@@ -17,7 +17,7 @@ import java.util.function.DoubleFunction;
 
 /** Menú de NexClient (Shift derecho). */
 public class MenuScreen extends Screen {
-    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mods"};
+    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mira", "Mods"};
     private static int pagina = 0;
     private final Screen padre;
     private int fila;
@@ -31,7 +31,7 @@ public class MenuScreen extends Screen {
     protected void init() {
         Config c = Config.get();
         int cx = width / 2;
-        int ancho = 54;
+        int ancho = 46;
         int x0 = cx - (PAGINAS.length * (ancho + 2)) / 2;
         for (int i = 0; i < PAGINAS.length; i++) {
             final int k = i;
@@ -67,9 +67,7 @@ public class MenuScreen extends Screen {
                 interruptor("Sprint / Sneak", c.estado, v -> c.estado = v, null);
                 interruptor("Pociones", c.pociones, v -> c.pociones = v, null);
                 interruptor("Armadura", c.armadura, v -> c.armadura = v, "Durabilidad de armadura y arma.");
-                interruptor("Fondo oscuro", c.hudFondo, v -> c.hudFondo = v, null);
-                interruptor("Sombra del texto", c.hudSombra, v -> c.hudSombra = v, null);
-                color("Color del texto", c.hudColor, v -> c.hudColor = v);
+                interruptor("Objetivo", c.objetivo, v -> c.objetivo = v, "Nombre y vida del último que golpeaste.");
                 break;
             case 2:
                 interruptor("Blockhit visual", c.blockhit, v -> c.blockhit = v,
@@ -111,7 +109,22 @@ public class MenuScreen extends Screen {
                         v -> Config.textoHora((int) Math.round(v)));
                 interruptor("Siempre despejado", c.despejado, v -> c.despejado = v, "Sin lluvia en tu pantalla.");
                 break;
-            case 5: {
+            case 5:
+                interruptor("Mira personalizada", c.mira, v -> c.mira = v, "Reemplaza la mira del juego.");
+                addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(Config.ESTILOS_MIRA[i]))
+                        .withValues(java.util.Arrays.asList(0, 1, 2, 3, 4)).withInitialValue(c.miraEstilo)
+                        .create(x(), y(), 150, 20, Component.literal("Estilo"), (b, v) -> c.miraEstilo = v));
+                deslizador("Tamaño", 1, 20, 1, c.miraTamano, v -> c.miraTamano = (int) Math.round(v), v -> String.valueOf(Math.round(v)));
+                deslizador("Grosor", 1, 6, 1, c.miraGrosor, v -> c.miraGrosor = (int) Math.round(v), v -> String.valueOf(Math.round(v)));
+                deslizador("Separación", 0, 12, 1, c.miraHueco, v -> c.miraHueco = (int) Math.round(v), v -> String.valueOf(Math.round(v)));
+                color("Color de la mira", c.miraColor, v -> c.miraColor = v);
+                interruptor("Borde negro", c.miraBorde, v -> c.miraBorde = v, null);
+                fila++;
+                interruptor("Color de golpe", c.colorGolpe, v -> c.colorGolpe = v,
+                        "Cambia el rojo con el que parpadean los jugadores al recibir daño.");
+                color("Color", c.colorGolpeIdx, v -> c.colorGolpeIdx = v);
+                break;
+            case 6: {
                 int k = 0;
                 for (String[] m : Catalogo.MODS) {
                     final String id = m[0], nombre = m[1];
@@ -188,7 +201,10 @@ public class MenuScreen extends Screen {
     public void render(GuiGraphics g, int mx, int my, float delta) {
         super.render(g, mx, my, delta);
         g.drawCenteredString(font, "§lNexClient", width / 2, 10, 0xFFFFFF);
-        if (pagina == 5) {
+        if (pagina == 5 && Config.get().mira) {
+            Hud.mira(g, width / 2, height - 52);
+        }
+        if (pagina == 6) {
             g.drawCenteredString(font, "Se instalan o quitan la próxima vez que abras el perfil PvP desde NexLauncher.",
                     width / 2, height - 38, 0xAAAAAA);
         }

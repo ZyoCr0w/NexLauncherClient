@@ -14,6 +14,16 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 public class Eventos {
     private final Minecraft mc = Minecraft.getMinecraft();
 
+    /** Mira personalizada en lugar de la del juego. */
+    @SubscribeEvent
+    public void mira(RenderGameOverlayEvent.Pre e) {
+        if (e.type == RenderGameOverlayEvent.ElementType.CROSSHAIRS && Config.get().mira
+                && mc.gameSettings.thirdPersonView == 0 && !mc.gameSettings.showDebugInfo) {
+            e.setCanceled(true);
+            Hud.mira(e.resolution.getScaledWidth() / 2, e.resolution.getScaledHeight() / 2);
+        }
+    }
+
     @SubscribeEvent
     public void hud(RenderGameOverlayEvent.Post e) {
         if (e.type == RenderGameOverlayEvent.ElementType.ALL) {

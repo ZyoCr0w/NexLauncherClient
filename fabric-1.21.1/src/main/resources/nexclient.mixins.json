@@ -5,11 +5,13 @@
 	"client": [
 		"ClientLevelDataMixin",
 		"GameRendererMixin",
+		"GuiMixin",
 		"ItemInHandRendererMixin",
 		"LevelMixin",
 		"LevelRendererMixin",
 		"MouseHandlerMixin",
 		"OptionInstanceAccessor",
+		"OverlayTextureAccessor",
 		"ScreenEffectRendererMixin"
 	],
 	"injectors": {
