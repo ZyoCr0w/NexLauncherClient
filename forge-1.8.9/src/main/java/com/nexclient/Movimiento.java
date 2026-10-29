@@ -41,7 +41,7 @@ public final class Movimiento {
         }
         return base / zoomMostrado;
     }
-    private static boolean sprintFijo, sneakFijo, prevSprint, prevSneak, suavePrevio, fbActivo;
+    private static boolean sprintFijo, sneakFijo, prevSprint, prevSneak, fbActivo;
     private static float gammaPrevio = 0.5f;
 
     private Movimiento() {
@@ -85,14 +85,8 @@ public final class Movimiento {
         if (z != zoomActivo) {
             if (z) {
                 zoomObjetivo = c.zoomFactor;  // cada vez que aprietas la tecla vuelve al de los ajustes
-                suavePrevio = o.smoothCamera;
-                if (c.zoomSuave) {
-                    o.smoothCamera = true;
-                }
-            } else {
-                o.smoothCamera = suavePrevio;
             }
-            zoomActivo = z;
+            zoomActivo = z;  // sin cámara cinemática: el ratón responde igual que siempre
         }
         if (c.fullbright) {
             if (!fbActivo) {

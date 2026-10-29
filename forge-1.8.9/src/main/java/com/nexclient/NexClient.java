@@ -22,7 +22,7 @@ public class NexClient {
     @Mod.EventHandler
     public void init(FMLInitializationEvent e) {
         ClientRegistry.registerKeyBinding(TECLA_MENU);
-        Movimiento.teclaZoom = new KeyBinding("Zoom (NexClient)", Keyboard.KEY_C, "NexClient");
+        Movimiento.teclaZoom = new KeyBinding("Zoom NexClient", Keyboard.KEY_Z, "NexClient");
         ClientRegistry.registerKeyBinding(Movimiento.teclaZoom);
         VistaLibre.tecla = new KeyBinding("Vista libre (NexClient)", Keyboard.KEY_R, "NexClient");
         ClientRegistry.registerKeyBinding(VistaLibre.tecla);

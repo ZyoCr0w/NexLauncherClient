@@ -55,7 +55,7 @@ public class MenuNex extends GuiScreen {
         }
         fila = 0;
         if (pagina == 0) {
-            ayuda = "Shift derecho o Esc → NexClient abren este menú. Zoom: tecla C (cámbiala en Controles).";
+            ayuda = "Shift derecho o Esc → NexClient abren este menú. Zoom: tecla Z (cámbiala en Controles).";
             final GuiScreen yo = this;
             boton(width / 2 - 155, y(), 310, "§lEditar HUD§r · posición, tamaño, fondo, borde y colores", new Runnable() {
                 public void run() { mc.displayGuiScreen(new EditorHud(yo)); } });
@@ -103,13 +103,12 @@ public class MenuNex extends GuiScreen {
                 public void poner(double v) { c.tono = (float) (Math.round(v) / 100.0); } });
             boton(x(), y(), 150, "Probar sonido", new Runnable() { public void run() { Efectos.sonar(); } });
         } else if (pagina == 3) {
-            ayuda = "Zoom: mantén C y usa la rueda para acercar o alejar. Vista libre: mantén R y mira alrededor.";
+            ayuda = "Zoom: mantén Z y usa la rueda para acercar o alejar. Vista libre: mantén R y mira alrededor.";
             interruptor("Toggle sprint", c.toggleSprint, new Escritor() { public void poner(boolean v) { c.toggleSprint = v; } });
             interruptor("Toggle sneak", c.toggleSneak, new Escritor() { public void poner(boolean v) { c.toggleSneak = v; } });
-            interruptor("Zoom (tecla C)", c.zoom, new Escritor() { public void poner(boolean v) { c.zoom = v; } });
+            interruptor("Zoom (tecla Z)", c.zoom, new Escritor() { public void poner(boolean v) { c.zoom = v; } });
             deslizador("Zoom: x", "", 1.5, 15, c.zoomFactor, new Numero() {
                 public void poner(double v) { c.zoomFactor = (float) (Math.round(v * 2) / 2.0); } }, true);
-            interruptor("Zoom suave", c.zoomSuave, new Escritor() { public void poner(boolean v) { c.zoomSuave = v; } });
             interruptor("Fullbright", c.fullbright, new Escritor() { public void poner(boolean v) { c.fullbright = v; } });
             interruptor("Ocultar fuego", c.ocultarFuego, new Escritor() { public void poner(boolean v) { c.ocultarFuego = v; } });
             interruptor("Hora fija", c.tiempoFijo, new Escritor() { public void poner(boolean v) { c.tiempoFijo = v; } });

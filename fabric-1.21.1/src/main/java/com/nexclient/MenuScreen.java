@@ -100,10 +100,9 @@ public class MenuScreen extends Screen {
                         "Tu tecla de correr alterna: pulsa una vez y sigues corriendo.");
                 interruptor("Toggle sneak", c.toggleSneak, v -> c.toggleSneak = v,
                         "Tu tecla de agacharse alterna.");
-                interruptor("Zoom (tecla C)", c.zoom, v -> c.zoom = v, "Mantén C; con la rueda del ratón acercas o alejas. La tecla se cambia en Controles.");
+                interruptor("Zoom (tecla Z)", c.zoom, v -> c.zoom = v, "Mantén Z; con la rueda del ratón acercas o alejas. La tecla se cambia en Controles.");
                 deslizador("Aumento inicial", 1.5, 15, 0.5, c.zoomFactor, v -> c.zoomFactor = (float) v,
                         v -> String.format("x%.1f", v));
-                interruptor("Zoom suave", c.zoomSuave, v -> c.zoomSuave = v, "Cámara cinemática al hacer zoom.");
                 interruptor("Fullbright", c.fullbright, v -> c.fullbright = v, "Ves todo iluminado, también cuevas.");
                 interruptor("Ocultar fuego", c.ocultarFuego, v -> c.ocultarFuego = v,
                         "Quita las llamas que tapan la pantalla.");

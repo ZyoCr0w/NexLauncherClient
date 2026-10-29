@@ -44,7 +44,7 @@ public final class Movimiento {
         }
         return base / zoomMostrado;
     }
-    private static boolean sprintFijo, sneakFijo, prevSprint, prevSneak, suavePrevio, fbActivo;
+    private static boolean sprintFijo, sneakFijo, prevSprint, prevSneak, fbActivo;
     private static double gammaPrevio = 0.5;
 
     private Movimiento() {
@@ -88,19 +88,13 @@ public final class Movimiento {
         }
         prevSneak = k;
         // zoom (mantener la tecla)
-        // se lee el teclado directo: la C también es «Guardar barra» de vanilla y con el choque isDown() falla
+        // se lee el teclado directo: si la tecla choca con otra acción, isDown() puede fallar
         boolean z = c.zoom && libre && teclaZoom != null && fisico(mc, teclaZoom);
         if (z != zoomActivo) {
             if (z) {
                 zoomObjetivo = c.zoomFactor;  // cada vez que aprietas la tecla vuelve al de los ajustes
-                suavePrevio = o.smoothCamera;
-                if (c.zoomSuave) {
-                    o.smoothCamera = true;
-                }
-            } else {
-                o.smoothCamera = suavePrevio;
             }
-            zoomActivo = z;
+            zoomActivo = z;  // sin cámara cinemática: el ratón responde igual que siempre
         }
         // fullbright
         OptionInstance<Double> gamma = o.gamma();

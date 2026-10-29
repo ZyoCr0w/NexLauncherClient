@@ -55,8 +55,8 @@ public class NexClient implements ClientModInitializer {
         Config.cargar(FabricLoader.getInstance().getConfigDir().resolve("nexclient.json").toFile());
         teclaMenu = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.menu",
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "category.nexclient"));
-        Movimiento.teclaZoom = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.zoom",
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "category.nexclient"));
+        Movimiento.teclaZoom = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.zoomz",
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Z, "category.nexclient"));
         VistaLibre.tecla = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.vistalibre",
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "category.nexclient"));
         ClientTickEvents.START_CLIENT_TICK.register(Movimiento::tick);
