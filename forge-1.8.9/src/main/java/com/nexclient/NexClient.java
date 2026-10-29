@@ -24,6 +24,8 @@ public class NexClient {
         ClientRegistry.registerKeyBinding(TECLA_MENU);
         Movimiento.teclaZoom = new KeyBinding("Zoom (NexClient)", Keyboard.KEY_C, "NexClient");
         ClientRegistry.registerKeyBinding(Movimiento.teclaZoom);
+        VistaLibre.tecla = new KeyBinding("Vista libre (NexClient)", Keyboard.KEY_R, "NexClient");
+        ClientRegistry.registerKeyBinding(VistaLibre.tecla);
         MinecraftForge.EVENT_BUS.register(new Eventos());
     }
 }

@@ -67,6 +67,8 @@ public class MenuScreen extends Screen {
                 interruptor("Sprint / Sneak", c.estado, v -> c.estado = v, null);
                 interruptor("Pociones", c.pociones, v -> c.pociones = v, null);
                 interruptor("Armadura", c.armadura, v -> c.armadura = v, "Durabilidad de armadura y arma.");
+                interruptor("Ping en el Tab", c.pingTab, v -> c.pingTab = v,
+                        "En la lista de jugadores (Tab) ves el ping de cada uno en números.");
                 break;
             case 2:
                 interruptor("Blockhit visual", c.blockhit, v -> c.blockhit = v,
@@ -109,6 +111,11 @@ public class MenuScreen extends Screen {
                 deslizador("Hora", 0, 23999, 250, c.hora, v -> c.hora = (int) Math.round(v),
                         v -> Config.textoHora((int) Math.round(v)));
                 interruptor("Siempre despejado", c.despejado, v -> c.despejado = v, "Sin lluvia en tu pantalla.");
+                addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(Config.MODOS_VISTA[i]))
+                        .withValues(java.util.Arrays.asList(0, 1, 2)).withInitialValue(c.vistaLibre)
+                        .withTooltip(i -> Tooltip.create(Component.literal("Cámara libre en tercera persona: mueves el "
+                                + "ratón y miras alrededor sin girar a tu personaje. Tecla en Opciones → Controles.")))
+                        .create(x(), y(), 150, 20, Component.literal("Vista libre"), (b, v) -> c.vistaLibre = v));
                 break;
             case 5:
                 interruptor("Mira personalizada", c.mira, v -> c.mira = v, "Reemplaza la mira del juego.");

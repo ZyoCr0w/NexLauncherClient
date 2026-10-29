@@ -101,6 +101,10 @@ public class Config {
     public boolean tiempoFijo = false;
     public int hora = 6000;
     public boolean despejado = false;
+    /** Vista libre (tecla R): 0 apagada, 1 mientras mantienes la tecla, 2 la tecla la prende y apaga. */
+    public int vistaLibre = 1;
+    /** Ping de cada jugador en números en la lista del Tab. */
+    public boolean pingTab = true;
 
     // ---- Mira y color de golpe
     public boolean mira = false;
@@ -120,6 +124,7 @@ public class Config {
 
     public static final String[] SONIDOS = {"metal", "escudo", "golpe", "orbe", "pling", "click"};
     public static final String[] NOMBRES = {"Metal", "Escudo", "Golpe", "Experiencia", "Pling", "Click"};
+    public static final String[] MODOS_VISTA = {"Apagada", "Mantener R", "Alternar R"};
     public static final String[] ESTILOS_MIRA = {"Cruz", "Cruz y punto", "Punto", "Círculo", "T"};
     public static final int[] COLORES = {0xFFFFFFFF, 0xFF55FFFF, 0xFF55FF55, 0xFFFFFF55, 0xFFFF5555, 0xFFFF55FF,
             0xFFFFAA00, 0xFF5555FF, 0xFF000000};
@@ -188,6 +193,7 @@ public class Config {
         tono = Math.max(0.5f, Math.min(2f, tono));
         zoomFactor = Math.max(1.5f, Math.min(15f, zoomFactor));
         hora = Math.max(0, Math.min(23999, hora));
+        vistaLibre = Math.max(0, Math.min(2, vistaLibre));
         contornoGrosor = Math.max(1f, Math.min(8f, contornoGrosor));
         miraEstilo = Math.max(0, Math.min(ESTILOS_MIRA.length - 1, miraEstilo));
         miraTamano = Math.max(1, Math.min(20, miraTamano));

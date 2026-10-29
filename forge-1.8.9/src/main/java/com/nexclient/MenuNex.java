@@ -79,6 +79,7 @@ public class MenuNex extends GuiScreen {
             interruptor("Sprint / Sneak", c.estado, new Escritor() { public void poner(boolean v) { c.estado = v; } });
             interruptor("Pociones", c.pociones, new Escritor() { public void poner(boolean v) { c.pociones = v; } });
             interruptor("Armadura", c.armadura, new Escritor() { public void poner(boolean v) { c.armadura = v; } });
+            interruptor("Ping en el Tab", c.pingTab, new Escritor() { public void poner(boolean v) { c.pingTab = v; } });
         } else if (pagina == 2) {
             ayuda = "Blockhit: golpea y bloquea con la espada. «Estilo 1.7» mueve la espada al golpear bloqueando.";
             interruptor("Blockhit visual", c.blockhit, new Escritor() { public void poner(boolean v) { c.blockhit = v; } });
@@ -102,7 +103,7 @@ public class MenuNex extends GuiScreen {
                 public void poner(double v) { c.tono = (float) (Math.round(v) / 100.0); } });
             boton(x(), y(), 150, "Probar sonido", new Runnable() { public void run() { Efectos.sonar(); } });
         } else if (pagina == 3) {
-            ayuda = "Hora fija y despejado solo cambian lo que ves tú.";
+            ayuda = "Vista libre: mantén R y mira alrededor con el ratón (la tecla se cambia en Controles).";
             interruptor("Toggle sprint", c.toggleSprint, new Escritor() { public void poner(boolean v) { c.toggleSprint = v; } });
             interruptor("Toggle sneak", c.toggleSneak, new Escritor() { public void poner(boolean v) { c.toggleSneak = v; } });
             interruptor("Zoom (tecla C)", c.zoom, new Escritor() { public void poner(boolean v) { c.zoom = v; } });
@@ -114,6 +115,13 @@ public class MenuNex extends GuiScreen {
             interruptor("Hora fija", c.tiempoFijo, new Escritor() { public void poner(boolean v) { c.tiempoFijo = v; } });
             horaSlider(c);
             interruptor("Siempre despejado", c.despejado, new Escritor() { public void poner(boolean v) { c.despejado = v; } });
+            final GuiButton[] vista = new GuiButton[1];
+            vista[0] = boton(x(), y(), 150, "Vista libre: " + Config.MODOS_VISTA[c.vistaLibre], new Runnable() {
+                public void run() {
+                    c.vistaLibre = (c.vistaLibre + 1) % Config.MODOS_VISTA.length;
+                    vista[0].displayString = "Vista libre: " + Config.MODOS_VISTA[c.vistaLibre];
+                }
+            });
         } else if (pagina == 5) {
             ayuda = "«Color de golpe» cambia el rojo con el que parpadean al recibir daño.";
             interruptor("Mira personalizada", c.mira, new Escritor() { public void poner(boolean v) { c.mira = v; } });

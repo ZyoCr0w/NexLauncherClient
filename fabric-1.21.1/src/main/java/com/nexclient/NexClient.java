@@ -57,7 +57,10 @@ public class NexClient implements ClientModInitializer {
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "category.nexclient"));
         Movimiento.teclaZoom = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.zoom",
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, "category.nexclient"));
+        VistaLibre.tecla = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.vistalibre",
+                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "category.nexclient"));
         ClientTickEvents.START_CLIENT_TICK.register(Movimiento::tick);
+        ClientTickEvents.START_CLIENT_TICK.register(VistaLibre::tick);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             while (teclaMenu.consumeClick()) {
                 mc.setScreen(new MenuScreen(mc.screen));

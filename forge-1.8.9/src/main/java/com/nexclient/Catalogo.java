@@ -10,8 +10,8 @@ public final class Catalogo {
     public static final String[][] MODS = {
             // id, nombre, descripción, recomendado (1 = viene activado)
             {"9gNVPfzw", "MinecraftCapes", "Capa gratis visible para otros (minecraftcapes.net)", "1"},
-            {"zV5r3pPn", "3D Skin Layers", "Capas de skin en 3D", "0"},
-            {"kYuIpRLv", "Wavey Capes", "Capas con movimiento", "0"},
+            {"zV5r3pPn", "3D Skin Layers", "Capas de skin en 3D", "1"},
+            {"kYuIpRLv", "Wavey Capes", "Capas con movimiento", "1"},
             {"NNAgCjsB", "Entity Culling", "No dibuja entidades que no ves", "1"},
             {"Nv2fQJo5", "ReplayMod", "Graba tus partidas", "0"},
     };

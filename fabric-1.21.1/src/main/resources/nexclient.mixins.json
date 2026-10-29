@@ -3,7 +3,9 @@
 	"package": "com.nexclient.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
+		"CameraMixin",
 		"ClientLevelDataMixin",
+		"EntityMixin",
 		"GameRendererMixin",
 		"GuiMixin",
 		"ItemInHandRendererMixin",
@@ -12,6 +14,7 @@
 		"MouseHandlerMixin",
 		"OptionInstanceAccessor",
 		"OverlayTextureAccessor",
+		"PlayerTabOverlayMixin",
 		"ScreenEffectRendererMixin"
 	],
 	"injectors": {

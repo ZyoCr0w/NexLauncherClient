@@ -14,9 +14,14 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 public class Eventos {
     private final Minecraft mc = Minecraft.getMinecraft();
 
-    /** Mira personalizada en lugar de la del juego. */
+    /** Mira personalizada en lugar de la del juego; en tercera persona y con la vista libre no hay mira. */
     @SubscribeEvent
     public void mira(RenderGameOverlayEvent.Pre e) {
+        if (e.type == RenderGameOverlayEvent.ElementType.CROSSHAIRS
+                && (mc.gameSettings.thirdPersonView != 0 || VistaLibre.activa)) {
+            e.setCanceled(true);
+            return;
+        }
         if (e.type == RenderGameOverlayEvent.ElementType.CROSSHAIRS && Config.get().mira
                 && mc.gameSettings.thirdPersonView == 0 && !mc.gameSettings.showDebugInfo) {
             e.setCanceled(true);
@@ -103,6 +108,7 @@ public class Eventos {
     public void tick(TickEvent.ClientTickEvent e) {
         if (e.phase == TickEvent.Phase.START) {
             Movimiento.tick(mc);
+            VistaLibre.tick(mc);
         } else {
             Efectos.tick();
             if (++ticks % 40 == 0 && mc.currentScreen == null) {
