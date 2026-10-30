@@ -57,7 +57,17 @@ public final class Hooks {
             if (nombre == null || !NOMBRE.matcher(nombre).matches()) {
                 return perfil;
             }
-            String[] t = buscar(nombre + (reemplazar ? "&mojang=1" : ""));
+            String extra = "";
+            if (reemplazar) {
+                for (Object p : (Iterable<?>) multimap.getMethod("get", Object.class).invoke(props, "textures")) {
+                    extra = datosOtraPc((String) llamar(p, "getValue", "value"));
+                    break;
+                }
+            }
+            String[] t = buscar(nombre + extra);
+            if (t == null && reemplazar) {
+                avisarSinSkin(nombre);
+            }
             if (t == null) {
                 return perfil;
             }
@@ -113,8 +123,9 @@ public final class Hooks {
                 return p;
             }
             String nombre = m.group(1);
-            String[] t = buscar(nombre + "&mojang=1");
+            String[] t = buscar(nombre + datosOtraPc(v));
             if (t == null) {
+                avisarSinSkin(nombre);
                 return p;
             }
             if (AVISADOS.add(nombre.toLowerCase())) {
@@ -123,6 +134,42 @@ public final class Hooks {
             return p.getClass().getConstructor(String.class, String.class, String.class).newInstance("textures", t[0], t[1]);
         } catch (Throwable e) {
             return p;
+        }
+    }
+
+    private static final Pattern SKIN_URL = Pattern.compile("\"SKIN\"\\s*:\\s*\\{\\s*\"url\"\\s*:\\s*\"[^\"]*/([0-9a-f]{64})\"");
+    private static final Pattern CAPA_URL = Pattern.compile("\"CAPE\"\\s*:\\s*\\{\\s*\"url\"\\s*:\\s*\"[^\"]*/([0-9a-f]{64})\"");
+    private static final Pattern SLIM = Pattern.compile("\"model\"\\s*:\\s*\"slim\"");
+
+    /**
+     * Lo que se le pasa a tu launcher de una skin que apunta a otra PC: sus hashes. Tu launcher la baja por el
+     * mismo túnel del mundo de tu amigo (o de NexSkins / su cuenta premium) y te da un perfil que sí se puede usar.
+     */
+    private static String datosOtraPc(String valor) {
+        StringBuilder q = new StringBuilder("&mojang=1");
+        try {
+            String json = new String(java.util.Base64.getDecoder().decode(valor), "UTF-8");
+            Matcher m = SKIN_URL.matcher(json);
+            if (m.find()) {
+                q.append("&tex=").append(m.group(1));
+            }
+            m = CAPA_URL.matcher(json);
+            if (m.find()) {
+                q.append("&capa=").append(m.group(1));
+            }
+            if (SLIM.matcher(json).find()) {
+                q.append("&modelo=slim");
+            }
+        } catch (Throwable e) {
+            // sin hashes: se busca solo por nombre
+        }
+        return q.toString();
+    }
+
+    private static void avisarSinSkin(String nombre) {
+        if (AVISADOS.add("!" + nombre.toLowerCase())) {
+            System.out.println("[NexLauncher] La skin de " + nombre + " apunta al launcher de otra PC y no se pudo "
+                    + "conseguir (ni por el servidor, ni en NexSkins, ni premium).");
         }
     }
 
@@ -232,7 +279,7 @@ public final class Hooks {
                     + (partes.length > 1 ? "&" + partes[1] : ""));
             HttpURLConnection con = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
             con.setConnectTimeout(1500);
-            con.setReadTimeout(4000);
+            con.setReadTimeout(10000);  // puede bajar la skin por el túnel del amigo
             int codigo = con.getResponseCode();
             if (codigo == 200) {
                 InputStream in = con.getInputStream();
