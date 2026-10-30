@@ -12,6 +12,7 @@ public final class Catalogo {
             {"zV5r3pPn", "3D Skin Layers", "Capas de skin en 3D", "1"},
             {"kYuIpRLv", "Wavey Capes", "Capas con movimiento", "1"},
             {"NNAgCjsB", "Entity Culling", "No dibuja entidades que no ves", "1"},
+            {"YknNc5nN", "PolyPatcher", "Arreglos de 1.8.9 y más FPS con OptiFine", "1"},
             {"Nv2fQJo5", "ReplayMod", "Graba tus partidas", "0"},
     };
 
