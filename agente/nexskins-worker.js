@@ -48,7 +48,7 @@ async function perfil(env, nombre) {
   const r = { username: d.nombre, skins: {} };
   if (d.skin) r.skins[d.slim ? "slim" : "default"] = d.skin;
   if (d.capa) r.cape = d.capa;
-  return json(r, 200, { "Cache-Control": "public, max-age=60" });
+  return json(r, 200, { "Cache-Control": "public, max-age=20" });
 }
 
 async function textura(env, hash) {
