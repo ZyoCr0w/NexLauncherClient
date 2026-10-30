@@ -6,9 +6,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * Editor mínimo de archivos .class (sin librerías): al principio de los métodos elegidos agrega
- *   aload_1; invokestatic Hooks.preparar(Object)Object; checkcast GameProfile; astore_1
- * (8 bytes: múltiplo de 4, así los tableswitch quedan alineados) y corre los offsets que dependen del código.
+ * Editor mínimo de archivos .class (sin librerías). Dos cambios, siempre al principio del método:
+ *  - perfil (getTextures/getPackedTextures):
+ *      aload_1; invokestatic Hooks.preparar(Object)Object; checkcast GameProfile; astore_1          (8 bytes)
+ *  - aceptar (firma de la skin y dominio de la textura: que valgan las de NexLauncher aunque juegues premium):
+ *      nop nop nop; aload_s; invokestatic Hooks.firma|dominio; ifeq +5; iconst_1; ireturn          (12 bytes)
+ *    con un marco nuevo (same_frame) en el 12, donde sigue el código original.
+ * Los dos miden un múltiplo de 4 (los tableswitch quedan alineados); se corren los offsets que dependen del código.
  */
 final class Parche {
     private static final String[][] METODOS = {
@@ -17,10 +21,12 @@ final class Parche {
             // authlib 5+ (Minecraft 1.20.2 en adelante)
             {"getPackedTextures", "(Lcom/mojang/authlib/GameProfile;)Lcom/mojang/authlib/properties/Property;"},
     };
-    private static final int N = 8;
+    private static final int N_PERFIL = 8, N_ACEPTAR = 12;
     /** Solo para pruebas: elegir otros métodos (el checkcast usa el tipo del primer parámetro). */
     static java.util.function.BiPredicate<String, String> prueba;
     static String tipoPrueba;
+    /** Solo para pruebas: aplicar el cambio «aceptar» a otros métodos. */
+    static java.util.function.BiPredicate<String, String> pruebaAceptar;
 
     private Parche() {
     }
@@ -62,6 +68,8 @@ final class Parche {
         // Constantes nuevas al final del pool
         int k = nCp;
         int uHooks = k++, cHooks = k++, uNom = k++, uDesc = k++, nt = k++, mref = k++, uGp = k++, cGp = k++;
+        int uDescZ = k++, uFirma = k++, ntFirma = k++, mFirma = k++, uDescS = k++, uDominio = k++, ntDominio = k++,
+                mDominio = k++, uSmt = k++;
         ByteArrayOutputStream extra = new ByteArrayOutputStream();
         DataOutputStream e = new DataOutputStream(extra);
         e.writeByte(1); e.writeUTF("nexlauncher/agente/Hooks");
@@ -72,10 +80,20 @@ final class Parche {
         e.writeByte(10); e.writeShort(cHooks); e.writeShort(nt);
         e.writeByte(1); e.writeUTF(tipoPrueba != null ? tipoPrueba : "com/mojang/authlib/GameProfile");
         e.writeByte(7); e.writeShort(uGp);
+        e.writeByte(1); e.writeUTF("(Ljava/lang/Object;)Z");
+        e.writeByte(1); e.writeUTF("firma");
+        e.writeByte(12); e.writeShort(uFirma); e.writeShort(uDescZ);
+        e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntFirma);
+        e.writeByte(1); e.writeUTF("(Ljava/lang/String;)Z");
+        e.writeByte(1); e.writeUTF("dominio");
+        e.writeByte(12); e.writeShort(uDominio); e.writeShort(uDescS);
+        e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntDominio);
+        e.writeByte(1); e.writeUTF("StackMapTable");
         if (k > 0xffff) {
             throw new IOException("pool lleno");
         }
         byte[] insercion = {0x2b, (byte) 0xb8, (byte) (mref >> 8), (byte) mref, (byte) 0xc0, (byte) (cGp >> 8), (byte) cGp, 0x4c};
+        int version = ((c[6] & 0xff) << 8) | (c[7] & 0xff);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream(c.length + 256);
         DataOutputStream o = new DataOutputStream(out);
@@ -103,8 +121,15 @@ final class Parche {
             int acceso = b.getShort() & 0xffff;
             int nom = b.getShort() & 0xffff;
             int desc = b.getShort() & 0xffff;
-            boolean elegido = (acceso & 0x0008) == 0 && (prueba != null ? prueba.test(utf[nom], utf[desc])
+            boolean estatico = (acceso & 0x0008) != 0;
+            boolean elegido = !estatico && (prueba != null ? prueba.test(utf[nom], utf[desc])
                     : elegido(utf[nom], utf[desc]));
+            // aceptar: 0 = no; si no, el método del Hook y en qué variable viene lo que se revisa
+            int aceptar = elegido ? 0 : aceptar(utf[nom], utf[desc], estatico, mFirma, mDominio);
+            int slot = estatico ? 0 : 1;
+            if ("isSignatureValid".equals(utf[nom])) {
+                slot = 0;  // Property.isSignatureValid(PublicKey): la propiedad es «this»
+            }
             o.writeShort(acceso);
             o.writeShort(nom);
             o.writeShort(desc);
@@ -116,7 +141,13 @@ final class Parche {
                 byte[] dato = new byte[largo];
                 b.get(dato);
                 if (elegido && "Code".equals(utf[an])) {
-                    dato = codigo(dato, utf, insercion);
+                    dato = codigo(dato, utf, insercion, N_PERFIL, -1);
+                    cambiados++;
+                    CAMBIADOS.add(utf[nom]);
+                } else if (aceptar != 0 && "Code".equals(utf[an])) {
+                    byte[] ins = {0, 0, 0, (byte) (slot == 0 ? 0x2a : 0x2b), (byte) 0xb8, (byte) (aceptar >> 8),
+                            (byte) aceptar, (byte) 0x99, 0, 5, 0x04, (byte) 0xac};
+                    dato = codigo(dato, utf, ins, N_ACEPTAR, version >= 50 ? uSmt : -1);
                     cambiados++;
                     CAMBIADOS.add(utf[nom]);
                 }
@@ -143,6 +174,24 @@ final class Parche {
                 && desc.startsWith("(Lcom/mojang/authlib/GameProfile;");
     }
 
+    /** Revisiones de authlib que rechazan las skins de NexLauncher: devuelve el Methodref del Hook (o 0). */
+    private static int aceptar(String nombre, String desc, boolean estatico, int mFirma, int mDominio) {
+        if (pruebaAceptar != null) {
+            return pruebaAceptar.test(nombre, desc) ? mFirma : 0;
+        }
+        if ("isSignatureValid".equals(nombre) && "(Ljava/security/PublicKey;)Z".equals(desc) && !estatico) {
+            return mFirma;  // authlib 1.x–3.x: Property.isSignatureValid
+        }
+        if ("validateProperty".equals(nombre) && "(Lcom/mojang/authlib/properties/Property;)Z".equals(desc)) {
+            return mFirma;  // authlib 4+: YggdrasilServicesKeyInfo / MinecraftServicesKeyInfo (26.3+)
+        }
+        if (("isWhitelistedDomain".equals(nombre) || "isAllowedTextureDomain".equals(nombre))
+                && "(Ljava/lang/String;)Z".equals(desc)) {
+            return mDominio;  // lista de dominios de texturas (estático o, en 26.3+, de instancia)
+        }
+        return 0;
+    }
+
     private static void saltarAtributos(ByteBuffer b) {
         int n = b.getShort() & 0xffff;
         for (int i = 0; i < n; i++) {
@@ -152,7 +201,9 @@ final class Parche {
         }
     }
 
-    private static byte[] codigo(byte[] d, String[] utf, byte[] ins) throws IOException {
+    /** uSmt >= 0: el código insertado salta al original (offset n), que necesita su propio marco. */
+    private static byte[] codigo(byte[] d, String[] utf, byte[] ins, int nIns, int uSmt) throws IOException {
+        int N = nIns;
         ByteBuffer b = ByteBuffer.wrap(d);
         int maxStack = b.getShort() & 0xffff;
         int maxLocals = b.getShort() & 0xffff;
@@ -162,7 +213,7 @@ final class Parche {
         ByteArrayOutputStream out = new ByteArrayOutputStream(d.length + 32);
         DataOutputStream o = new DataOutputStream(out);
         o.writeShort(Math.max(maxStack, 1));
-        o.writeShort(Math.max(maxLocals, 2));
+        o.writeShort(Math.max(maxLocals, uSmt >= 0 ? 1 : 2));
         o.writeInt(largo + N);
         o.write(ins);
         o.write(code);
@@ -179,6 +230,7 @@ final class Parche {
         DataOutputStream ao = o;
         o = new DataOutputStream(atrs);
         int nAtrQuitados = 0;
+        boolean conMarcos = false;
         for (int a = 0; a < nAtr; a++) {
             int an = b.getShort() & 0xffff;
             int l = b.getInt();
@@ -207,7 +259,8 @@ final class Parche {
                     y.position(p + 10);
                 }
             } else if ("StackMapTable".equals(nombre)) {
-                x = marcos(x);
+                x = marcos(x, N, uSmt >= 0);
+                conMarcos = true;
             } else if (nombre != null && nombre.contains("TypeAnnotations")) {
                 nAtrQuitados++;  // apuntan a offsets del código; no se usan para jugar
                 continue;
@@ -216,21 +269,38 @@ final class Parche {
             o.writeInt(x.length);
             o.write(x);
         }
+        if (uSmt >= 0 && !conMarcos) {  // método sin saltos (p. ej. ya cambiado por authlib-injector)
+            o.writeShort(uSmt);
+            o.writeInt(3);
+            o.writeShort(1);
+            o.writeByte(N);  // same_frame en N
+            nAtr++;
+        }
         ao.writeShort(nAtr - nAtrQuitados);
         ao.write(atrs.toByteArray());
         return out.toByteArray();
     }
 
     /** El primer marco cuenta su desplazamiento desde el inicio; los Uninitialized(offset) apuntan a un «new». */
-    private static byte[] marcos(byte[] x) throws IOException {
+    private static byte[] marcos(byte[] x, int N, boolean nuevo) throws IOException {
         ByteBuffer b = ByteBuffer.wrap(x);
         int n = b.getShort() & 0xffff;
         ByteArrayOutputStream out = new ByteArrayOutputStream(x.length + 4);
         DataOutputStream o = new DataOutputStream(out);
-        o.writeShort(n);
+        // ¿el primer marco ya estaba en el 0? entonces queda justo en N y sirve como el del salto
+        desplazado = N;
+        if (n > 0) {
+            int t0 = x[2] & 0xff;
+            int d0 = t0 < 64 ? t0 : t0 < 128 ? t0 - 64 : ((x[3] & 0xff) << 8) | (x[4] & 0xff);
+            nuevo = nuevo && d0 != 0;
+        }
+        o.writeShort(n + (nuevo ? 1 : 0));
+        if (nuevo) {
+            o.writeByte(N);  // same_frame: mismas variables que al entrar, pila vacía
+        }
         for (int i = 0; i < n; i++) {
             int t = b.get() & 0xff;
-            int extra = i == 0 ? N : 0;
+            int extra = i == 0 ? (nuevo ? -1 : N) : 0;
             if (t < 64) {
                 escribirDelta(o, t + extra, 0, 251);
             } else if (t < 128) {
@@ -277,6 +347,12 @@ final class Parche {
     }
 
     private static void tipo(ByteBuffer b, DataOutputStream o) throws IOException {
+        tipo(b, o, desplazado);
+    }
+
+    private static int desplazado;
+
+    private static void tipo(ByteBuffer b, DataOutputStream o, int N) throws IOException {
         int tag = b.get() & 0xff;
         o.writeByte(tag);
         if (tag == 7) {

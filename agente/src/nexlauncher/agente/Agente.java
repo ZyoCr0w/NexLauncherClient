@@ -11,11 +11,12 @@ import java.util.jar.JarFile;
  * pregunta a NexLauncher, que la busca en NexSkins. Funciona en cualquier versión (también Vanilla), como el
  * sistema de skins de TLauncher, porque cambia authlib (la librería de cuentas de Minecraft) al cargarse.
  *
- * Solo toca dos métodos de YggdrasilMinecraftSessionService: al principio les cambia el perfil por uno con la
- * skin de NexLauncher si el servidor no mandó ninguna. Si algo falla, el juego sigue exactamente igual.
+ * Toca pocos métodos de authlib: getTextures/getPackedTextures (perfil con la skin de NexLauncher si el servidor
+ * no mandó ninguna o la mandó apuntando al launcher de otra PC) y las revisiones de firma y dominio de las
+ * texturas (que acepten las de NexLauncher también con cuenta premium). Si algo falla, el juego sigue igual.
  */
 public final class Agente {
-    static final String VERSION = "2";
+    static final String VERSION = "3";
     static final String PAQUETE = "com/mojang/authlib/";
 
     private Agente() {
@@ -41,8 +42,10 @@ public final class Agente {
         inst.addTransformer(new ClassFileTransformer() {
             @Override
             public byte[] transform(ClassLoader cl, String nombre, Class<?> redefinida, ProtectionDomain pd, byte[] bytes) {
-                // Barato: solo clases de authlib que mencionen los métodos de texturas
-                if (nombre == null || !nombre.startsWith(PAQUETE) || !contiene(bytes, "Textures")) {
+                // Barato: solo clases de authlib que mencionen los métodos de texturas, firmas o dominios
+                if (nombre == null || !nombre.startsWith(PAQUETE) || !(contiene(bytes, "Textures")
+                        || contiene(bytes, "validateProperty") || contiene(bytes, "isSignatureValid")
+                        || contiene(bytes, "Domain"))) {
                     return null;
                 }
                 try {

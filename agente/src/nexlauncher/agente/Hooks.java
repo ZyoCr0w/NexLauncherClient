@@ -25,6 +25,12 @@ public final class Hooks {
     private static final Pattern VALOR = Pattern.compile("\"value\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
     private static final Pattern FIRMA = Pattern.compile("\"signature\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
     private static final Pattern NOMBRE = Pattern.compile("\\w{1,16}");
+    private static final Pattern URL_TEX = Pattern.compile("\"url\"\\s*:\\s*\"([^\"]+)\"");
+    /** Clave común de NexLauncher (la misma que firma las skins offline y las de NexSkins). */
+    private static final String CLAVE_N = "e5d56c0d08ee4f1af8f3b604cb0b3eb23ce0cd177fc8ec331374b6e6b141d634a51ff9c3d65761e3a736a16f3b19b096a3060f8f9ee0bb9c48b70fd5dba498a45aacdefbdf339be3fb65532f9c30c451e8cd5e1bb4275c2ad45658a672f140dd48235197f12f7f7ae3a3ec0d4a3b1bd4f6ef5785a72ebd65df73039152c951b0372fd73fedcc02f0a0a7878d0a4071f3d4b1e55a58c8eb0534948eab68b8894e9856e49f72e50a9f93a839e015e2fb130585cfd15655f9f799f88f23a8ce11ceeb088ac96f1e5c11c7cc8616a9a9e8499260dae91bc919c0c4cf07b03ec55167291b5cf026ed031c1d1c8dff76146f1dbec295197e36a998a5e3e14ce373e083";
+    private static volatile java.security.PublicKey llave;
+    private static final ConcurrentHashMap<String, Boolean> FIRMAS = new ConcurrentHashMap<String, Boolean>();
+    private static final String[] DOMINIOS = System.getProperty("nexlauncher.dominios", "").toLowerCase().split(",");
     private static final java.util.Set<String> AVISADOS = java.util.Collections.newSetFromMap(
             new ConcurrentHashMap<String, Boolean>());
 
@@ -40,14 +46,18 @@ public final class Hooks {
             ClassLoader cl = perfil.getClass().getClassLoader();
             Class<?> multimap = Class.forName("com.google.common.collect.Multimap", false, cl);
             Object props = llamar(perfil, "getProperties", "properties");
-            if (props == null || (Boolean) multimap.getMethod("containsKey", Object.class).invoke(props, "textures")) {
+            if (props == null) {
+                return perfil;
+            }
+            boolean reemplazar = (Boolean) multimap.getMethod("containsKey", Object.class).invoke(props, "textures");
+            if (reemplazar && !deOtraPc(multimap.getMethod("get", Object.class).invoke(props, "textures"))) {
                 return perfil;
             }
             String nombre = (String) llamar(perfil, "getName", "name");
             if (nombre == null || !NOMBRE.matcher(nombre).matches()) {
                 return perfil;
             }
-            String[] t = buscar(nombre);
+            String[] t = buscar(nombre + (reemplazar ? "&mojang=1" : ""));
             if (t == null) {
                 return perfil;
             }
@@ -57,7 +67,11 @@ public final class Hooks {
             Class<?> cProp = Class.forName("com.mojang.authlib.properties.Property", false, cl);
             Object prop = cProp.getConstructor(String.class, String.class, String.class).newInstance("textures", t[0], t[1]);
             Method put = multimap.getMethod("put", Object.class, Object.class);
+            Method quitar = reemplazar ? multimap.getMethod("removeAll", Object.class) : null;
             try {
+                if (reemplazar) {
+                    quitar.invoke(props, "textures");
+                }
                 put.invoke(props, "textures", prop);
                 return perfil;
             } catch (InvocationTargetException inmutable) {
@@ -65,6 +79,9 @@ public final class Hooks {
             }
             Object mapa = Class.forName("com.google.common.collect.LinkedHashMultimap", false, cl).getMethod("create").invoke(null);
             multimap.getMethod("putAll", multimap).invoke(mapa, props);
+            if (reemplazar) {
+                quitar.invoke(mapa, "textures");
+            }
             put.invoke(mapa, "textures", prop);
             Object nuevas = props.getClass().getConstructor(multimap).newInstance(mapa);
             UUID id = (UUID) llamar(perfil, "getId", "id");
@@ -73,6 +90,85 @@ public final class Hooks {
         } catch (Throwable e) {
             return perfil;  // nunca romper el juego por una skin
         }
+    }
+
+    /** ¿La skin apunta al launcher de otra PC (http://127.0.0.1:otro-puerto)? Desde aquí no se puede bajar. */
+    private static boolean deOtraPc(Object propiedades) {
+        try {
+            for (Object p : (Iterable<?>) propiedades) {
+                String v = (String) llamar(p, "getValue", "value");
+                if (v == null) {
+                    continue;
+                }
+                Matcher m = URL_TEX.matcher(new String(java.util.Base64.getDecoder().decode(v), "UTF-8"));
+                while (m.find()) {
+                    String u = m.group(1);
+                    if (local(new URL(u).getHost()) && !u.startsWith(BASE + "/")) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Throwable e) {
+            // propiedad rara: se deja como venía
+        }
+        return false;
+    }
+
+    private static boolean local(String host) {
+        return "127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host) || "[::1]".equals(host);
+    }
+
+    /** Lo llaman las revisiones de firma de authlib: true si la firmó NexLauncher (la de Mojang la revisa authlib). */
+    public static boolean firma(Object propiedad) {
+        if (BASE == null || propiedad == null) {
+            return false;
+        }
+        try {
+            String v = (String) llamar(propiedad, "getValue", "value");
+            String f = (String) llamar(propiedad, "getSignature", "signature");
+            if (v == null || f == null) {
+                return false;
+            }
+            Boolean ok = FIRMAS.get(f);
+            if (ok == null) {
+                if (llave == null) {
+                    llave = java.security.KeyFactory.getInstance("RSA").generatePublic(new java.security.spec.RSAPublicKeySpec(
+                            new java.math.BigInteger(CLAVE_N, 16), java.math.BigInteger.valueOf(65537)));
+                }
+                java.security.Signature s = java.security.Signature.getInstance("SHA1withRSA");
+                s.initVerify(llave);
+                s.update(v.getBytes("UTF-8"));
+                ok = s.verify(java.util.Base64.getDecoder().decode(f));
+                if (FIRMAS.size() > 4096) {
+                    FIRMAS.clear();
+                }
+                FIRMAS.put(f, ok);
+            }
+            return ok;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    /** Lo llaman las listas de dominios de texturas: true para el launcher, NexSkins y los túneles de amigos. */
+    public static boolean dominio(String url) {
+        if (BASE == null || url == null) {
+            return false;
+        }
+        try {
+            String h = new URL(url).getHost().toLowerCase();
+            if (local(h)) {
+                return true;
+            }
+            for (String d : DOMINIOS) {
+                if (!d.isEmpty() && (h.equals(d) || (d.startsWith(".") && (h.endsWith(d) || h.equals(d.substring(1)))))) {
+                    return true;
+                }
+            }
+        } catch (Throwable e) {
+            // URL inválida: que authlib decida
+        }
+        return false;
     }
 
     private static Object llamar(Object o, String... nombres) throws Exception {
@@ -97,7 +193,9 @@ public final class Hooks {
         String[] r = null;
         boolean ok = false;
         try {
-            URL url = new URL(BASE + "/nexlauncher/perfil?name=" + URLEncoder.encode(nombre, "UTF-8"));
+            String[] partes = nombre.split("&", 2);
+            URL url = new URL(BASE + "/nexlauncher/perfil?name=" + URLEncoder.encode(partes[0], "UTF-8")
+                    + (partes.length > 1 ? "&" + partes[1] : ""));
             HttpURLConnection con = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
             con.setConnectTimeout(1500);
             con.setReadTimeout(4000);
