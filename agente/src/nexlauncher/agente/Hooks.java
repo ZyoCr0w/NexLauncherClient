@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public final class Hooks {
     private static final String BASE = System.getProperty("nexlauncher.skins");
     private static final ConcurrentHashMap<String, Object[]> CACHE = new ConcurrentHashMap<String, Object[]>();
-    private static final long VIGENTE = 60_000L, SIN_SKIN = 60_000L;  // cambios de skin: al volver a entrar
+    private static final long VIGENTE = 30_000L, SIN_SKIN = 30_000L;  // cambios de skin: al volver a entrar
     private static final Pattern VALOR = Pattern.compile("\"value\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
     private static final Pattern FIRMA = Pattern.compile("\"signature\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
     private static final Pattern NOMBRE = Pattern.compile("\\w{1,16}");
