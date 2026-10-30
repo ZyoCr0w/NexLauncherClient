@@ -13,6 +13,7 @@ public final class Catalogo {
             {"89Wsn8GD", "Capas", "Capes: ves las capas de OptiFine, MinecraftCapes y más, y los demás ven la tuya", "1"},
             {"zV5r3pPn", "3D Skin Layers", "Capas de skin en 3D", "1"},
             {"kYuIpRLv", "Wavey Capes", "Capas con movimiento", "1"},
+            {"idMHQ4n2", "Skins NexLauncher", "CustomSkinLoader: ves las skins offline de NexLauncher en cualquier servidor", "1"},
             {"MPCX6s5C", "Not Enough Anim.", "Not Enough Animations: animaciones en 3.ª persona", "0"},
             {"1IjD5062", "Continuity", "Texturas conectadas", "0"},
             {"BVzZfTc1", "ETF", "Entity Texture Features: texturas de packs", "0"},

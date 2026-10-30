@@ -11,6 +11,7 @@ public final class Catalogo {
             // id, nombre, descripción, recomendado (1 = viene activado)
             {"zV5r3pPn", "3D Skin Layers", "Capas de skin en 3D", "1"},
             {"kYuIpRLv", "Wavey Capes", "Capas con movimiento", "1"},
+            {"idMHQ4n2", "Skins NexLauncher", "CustomSkinLoader: ves las skins offline de NexLauncher en cualquier servidor", "1"},
             {"NNAgCjsB", "Entity Culling", "No dibuja entidades que no ves", "1"},
             {"YknNc5nN", "PolyPatcher", "Arreglos de 1.8.9 y más FPS con OptiFine", "1"},
             {"Nv2fQJo5", "ReplayMod", "Graba tus partidas", "0"},
