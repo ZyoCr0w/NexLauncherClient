@@ -25,6 +25,8 @@ public final class Hooks {
     private static final Pattern VALOR = Pattern.compile("\"value\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
     private static final Pattern FIRMA = Pattern.compile("\"signature\"\\s*:\\s*\"([A-Za-z0-9+/=]+)\"");
     private static final Pattern NOMBRE = Pattern.compile("\\w{1,16}");
+    private static final java.util.Set<String> AVISADOS = java.util.Collections.newSetFromMap(
+            new ConcurrentHashMap<String, Boolean>());
 
     private Hooks() {
     }
@@ -48,6 +50,9 @@ public final class Hooks {
             String[] t = buscar(nombre);
             if (t == null) {
                 return perfil;
+            }
+            if (AVISADOS.add(nombre.toLowerCase())) {
+                System.out.println("[NexLauncher] Skin de NexLauncher para " + nombre);
             }
             Class<?> cProp = Class.forName("com.mojang.authlib.properties.Property", false, cl);
             Object prop = cProp.getConstructor(String.class, String.class, String.class).newInstance("textures", t[0], t[1]);

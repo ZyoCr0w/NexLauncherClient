@@ -15,7 +15,8 @@ import java.util.jar.JarFile;
  * skin de NexLauncher si el servidor no mandó ninguna. Si algo falla, el juego sigue exactamente igual.
  */
 public final class Agente {
-    static final String CLASE = "com/mojang/authlib/yggdrasil/YggdrasilMinecraftSessionService";
+    static final String VERSION = "2";
+    static final String PAQUETE = "com/mojang/authlib/";
 
     private Agente() {
     }
@@ -36,24 +37,45 @@ public final class Agente {
         }
         // Hooks va al cargador de arranque: así lo ve authlib aunque la cargue Forge, Fabric o un módulo
         inst.appendToBootstrapClassLoaderSearch(new JarFile(args));
+        System.out.println("[NexLauncher] Agente de skins v" + VERSION + " cargado.");
         inst.addTransformer(new ClassFileTransformer() {
             @Override
             public byte[] transform(ClassLoader cl, String nombre, Class<?> redefinida, ProtectionDomain pd, byte[] bytes) {
-                if (!CLASE.equals(nombre)) {
+                // Barato: solo clases de authlib que mencionen los métodos de texturas
+                if (nombre == null || !nombre.startsWith(PAQUETE) || !contiene(bytes, "Textures")) {
                     return null;
                 }
                 try {
-                    // Si el cargador de authlib no ve Hooks, no se toca nada (mejor sin skins que sin juego)
-                    Class.forName("nexlauncher.agente.Hooks", false, cl);
-                    byte[] nuevo = Parche.aplicar(bytes);
-                    System.out.println("[NexLauncher] Skins de NexLauncher activadas en authlib"
-                            + (nuevo == null ? " (sin métodos que cambiar)" : "."));
-                    return nuevo;
+                    synchronized (Parche.class) {
+                        byte[] nuevo = Parche.aplicar(bytes);
+                        if (nuevo == null) {
+                            return null;
+                        }
+                        // Si el cargador de authlib no ve Hooks, no se toca nada (mejor sin skins que sin juego)
+                        Class.forName("nexlauncher.agente.Hooks", false, cl);
+                        System.out.println("[NexLauncher] Skins de NexLauncher activadas en " + nombre.replace('/', '.')
+                                + " " + Parche.CAMBIADOS);
+                        return nuevo;
+                    }
                 } catch (Throwable e) {
-                    System.err.println("[NexLauncher] No se pudo preparar authlib para las skins: " + e);
+                    System.err.println("[NexLauncher] No se pudo preparar " + nombre + " para las skins: " + e);
                     return null;
                 }
             }
         });
+    }
+
+    private static boolean contiene(byte[] b, String texto) {
+        byte[] t = texto.getBytes();
+        busqueda:
+        for (int i = 0; i + t.length <= b.length; i++) {
+            for (int j = 0; j < t.length; j++) {
+                if (b[i + j] != t[j]) {
+                    continue busqueda;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }

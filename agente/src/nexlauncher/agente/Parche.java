@@ -26,6 +26,7 @@ final class Parche {
     }
 
     static byte[] aplicar(byte[] c) throws IOException {
+        CAMBIADOS.clear();
         ByteBuffer b = ByteBuffer.wrap(c);
         b.position(8);
         int nCp = b.getShort() & 0xffff;
@@ -117,6 +118,7 @@ final class Parche {
                 if (elegido && "Code".equals(utf[an])) {
                     dato = codigo(dato, utf, insercion);
                     cambiados++;
+                    CAMBIADOS.add(utf[nom]);
                 }
                 o.writeShort(an);
                 o.writeInt(dato.length);
@@ -127,13 +129,18 @@ final class Parche {
         return cambiados == 0 ? null : out.toByteArray();
     }
 
+    /** Nombres de los métodos cambiados en la última clase (para el registro del juego). */
+    static final java.util.List<String> CAMBIADOS = new java.util.ArrayList<String>();
+
     private static boolean elegido(String nombre, String desc) {
         for (String[] m : METODOS) {
             if (m[0].equals(nombre) && m[1].equals(desc)) {
                 return true;
             }
         }
-        return false;
+        // versiones nuevas de authlib: el mismo método aunque cambie el tipo que devuelve o la clase
+        return (nombre.equals("getTextures") || nombre.equals("getPackedTextures"))
+                && desc.startsWith("(Lcom/mojang/authlib/GameProfile;");
     }
 
     private static void saltarAtributos(ByteBuffer b) {
