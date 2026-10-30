@@ -22,9 +22,13 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const ruta = decodeURIComponent(url.pathname);
+    const deCuentas = ruta.startsWith("/cuenta/") || ruta === "/amigos" || ruta.startsWith("/amigos/") || ruta === "/presencia";
+    if (!env.SKINS && !deCuentas && ruta !== "/") {
+      return json({ error: "Falta el KV de skins (binding SKINS) en el Worker." }, 503);
+    }
     try {
       if (req.method === "GET" || req.method === "HEAD") {
-        if (ruta === "/" ) return json({ servicio: "NexSkins", formato: "CustomSkinAPI" });
+        if (ruta === "/" ) return json({ servicio: "NexSkins", formato: "CustomSkinAPI", skins: !!env.SKINS, cuentas: !!env.DB });
         if (ruta === "/indice") {
           const nombres = (await env.SKINS.get("indice", "json")) || [];
           return json({ nombres }, 200, { "Cache-Control": "public, max-age=120" });
