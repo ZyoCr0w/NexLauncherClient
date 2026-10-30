@@ -28,6 +28,7 @@ public class MinecraftServicesSessionService {
     casos.put("Pepe(sin skin)", new GameProfile(UUID.randomUUID(), "Pepe", new PropertyMap(com.google.common.collect.LinkedHashMultimap.create())));
     casos.put("Nadie", new GameProfile(UUID.randomUUID(), "Nadie", new PropertyMap(com.google.common.collect.LinkedHashMultimap.create())));
     for (var e : casos.entrySet()) System.out.println(e.getKey() + " -> " + s.unpackTextures(s.getPackedTextures(e.getValue())));
+    System.out.println("ZyoCr0w directo a unpackTextures -> " + s.unpackTextures(new Property("textures", a[0], a[1])));
     // estilo viejo
     var k = java.security.KeyPairGenerator.getInstance("RSA"); k.initialize(2048);
     System.out.println("isSignatureValid(firma NexLauncher, otra clave) = " + new Property("textures", a[0], a[1]).isSignatureValid(k.generateKeyPair().getPublic()));

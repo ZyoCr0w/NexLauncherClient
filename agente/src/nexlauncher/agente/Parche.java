@@ -69,7 +69,7 @@ final class Parche {
         int k = nCp;
         int uHooks = k++, cHooks = k++, uNom = k++, uDesc = k++, nt = k++, mref = k++, uGp = k++, cGp = k++;
         int uDescZ = k++, uFirma = k++, ntFirma = k++, mFirma = k++, uDescS = k++, uDominio = k++, ntDominio = k++,
-                mDominio = k++, uSmt = k++;
+                mDominio = k++, uSmt = k++, uProp = k++, cProp = k++, uPropNom = k++, ntProp = k++, mProp = k++;
         ByteArrayOutputStream extra = new ByteArrayOutputStream();
         DataOutputStream e = new DataOutputStream(extra);
         e.writeByte(1); e.writeUTF("nexlauncher/agente/Hooks");
@@ -89,10 +89,17 @@ final class Parche {
         e.writeByte(12); e.writeShort(uDominio); e.writeShort(uDescS);
         e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntDominio);
         e.writeByte(1); e.writeUTF("StackMapTable");
+        e.writeByte(1); e.writeUTF("com/mojang/authlib/properties/Property");
+        e.writeByte(7); e.writeShort(uProp);
+        e.writeByte(1); e.writeUTF("propiedad");
+        e.writeByte(12); e.writeShort(uPropNom); e.writeShort(uDesc);
+        e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntProp);
         if (k > 0xffff) {
             throw new IOException("pool lleno");
         }
         byte[] insercion = {0x2b, (byte) 0xb8, (byte) (mref >> 8), (byte) mref, (byte) 0xc0, (byte) (cGp >> 8), (byte) cGp, 0x4c};
+        byte[] insercionProp = {0x2b, (byte) 0xb8, (byte) (mProp >> 8), (byte) mProp, (byte) 0xc0, (byte) (cProp >> 8),
+                (byte) cProp, 0x4c};
         int version = ((c[6] & 0xff) << 8) | (c[7] & 0xff);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream(c.length + 256);
@@ -141,7 +148,8 @@ final class Parche {
                 byte[] dato = new byte[largo];
                 b.get(dato);
                 if (elegido && "Code".equals(utf[an])) {
-                    dato = codigo(dato, utf, insercion, N_PERFIL, -1);
+                    boolean prop = prueba == null && utf[desc].startsWith("(Lcom/mojang/authlib/properties/Property;");
+                    dato = codigo(dato, utf, prop ? insercionProp : insercion, N_PERFIL, -1);
                     cambiados++;
                     CAMBIADOS.add(utf[nom]);
                 } else if (aceptar != 0 && "Code".equals(utf[an])) {
@@ -170,8 +178,12 @@ final class Parche {
             }
         }
         // versiones nuevas de authlib: el mismo método aunque cambie el tipo que devuelve o la clase
-        return (nombre.equals("getTextures") || nombre.equals("getPackedTextures"))
-                && desc.startsWith("(Lcom/mojang/authlib/GameProfile;");
+        if ((nombre.equals("getTextures") || nombre.equals("getPackedTextures"))
+                && desc.startsWith("(Lcom/mojang/authlib/GameProfile;")) {
+            return true;
+        }
+        // authlib 5+ (1.20.2+): la skin que se baja sale de aquí aunque el perfil no pase por los de arriba
+        return nombre.equals("unpackTextures") && desc.startsWith("(Lcom/mojang/authlib/properties/Property;");
     }
 
     /** Revisiones de authlib que rechazan las skins de NexLauncher: devuelve el Methodref del Hook (o 0). */

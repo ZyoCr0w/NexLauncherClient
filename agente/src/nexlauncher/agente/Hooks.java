@@ -92,6 +92,40 @@ public final class Hooks {
         }
     }
 
+    private static final Pattern NOMBRE_TEX = Pattern.compile("\"profileName\"\\s*:\\s*\"(\\w{1,16})\"");
+
+    /**
+     * unpackTextures(Property): si la skin apunta al launcher de otra PC, devuelve la misma persona pero con la
+     * skin que da tu launcher (NexSkins o su cuenta premium). No depende de cómo sea el perfil en cada versión.
+     */
+    public static Object propiedad(Object p) {
+        if (BASE == null || p == null) {
+            return p;
+        }
+        try {
+            java.util.List<Object> una = java.util.Collections.singletonList(p);
+            if (!deOtraPc(una)) {
+                return p;
+            }
+            String v = (String) llamar(p, "getValue", "value");
+            Matcher m = NOMBRE_TEX.matcher(new String(java.util.Base64.getDecoder().decode(v), "UTF-8"));
+            if (!m.find()) {
+                return p;
+            }
+            String nombre = m.group(1);
+            String[] t = buscar(nombre + "&mojang=1");
+            if (t == null) {
+                return p;
+            }
+            if (AVISADOS.add(nombre.toLowerCase())) {
+                System.out.println("[NexLauncher] Skin de NexLauncher para " + nombre + " (la del servidor apuntaba a otra PC)");
+            }
+            return p.getClass().getConstructor(String.class, String.class, String.class).newInstance("textures", t[0], t[1]);
+        } catch (Throwable e) {
+            return p;
+        }
+    }
+
     /** ¿La skin apunta al launcher de otra PC (http://127.0.0.1:otro-puerto)? Desde aquí no se puede bajar. */
     private static boolean deOtraPc(Object propiedades) {
         try {
