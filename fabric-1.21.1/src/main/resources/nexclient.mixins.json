@@ -16,6 +16,7 @@
 		"OptionInstanceAccessor",
 		"OverlayTextureAccessor",
 		"PlayerTabOverlayMixin",
+		"PlayerListMixin",
 		"ScreenEffectRendererMixin"
 	],
 	"injectors": {
