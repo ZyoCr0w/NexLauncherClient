@@ -16,7 +16,7 @@ import java.util.jar.JarFile;
  * texturas (que acepten las de NexLauncher también con cuenta premium). Si algo falla, el juego sigue igual.
  */
 public final class Agente {
-    static final String VERSION = "4";
+    static final String VERSION = "5";
     static final String PAQUETE = "com/mojang/authlib/";
 
     private Agente() {
@@ -39,8 +39,8 @@ public final class Agente {
         // Hooks va al cargador de arranque: así lo ve authlib aunque la cargue Forge, Fabric o un módulo
         inst.appendToBootstrapClassLoaderSearch(new JarFile(args));
         System.out.println("[NexLauncher] Agente de skins v" + VERSION + " cargado."
-                + (System.getProperty("nexlauncher.miskin") != null
-                ? " Mi skin encima: " + System.getProperty("nexlauncher.miskin") : ""));
+                + (Boolean.getBoolean("nexlauncher.encima") || System.getProperty("nexlauncher.miskin") != null
+                ? " Skins del launcher encima: sí (" + System.getProperty("nexlauncher.miskin") + ")." : ""));
         inst.addTransformer(new ClassFileTransformer() {
             @Override
             public byte[] transform(ClassLoader cl, String nombre, Class<?> redefinida, ProtectionDomain pd, byte[] bytes) {
