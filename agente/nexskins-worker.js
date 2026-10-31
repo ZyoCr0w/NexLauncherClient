@@ -17,7 +17,6 @@
 //
 // Tendencias de la semana (D1): qué jugadores y capas se buscan y se ponen más en NexLauncher.
 //   GET  /tendencias              -> {semana, jugadores: [{nombre, n}], capas: [{hash, nombre, n}]}
-//   GET  /tendencias/buscar?q=ab  -> {nombres: [...]}: jugadores que alguien ya buscó y contienen «ab»
 //   POST /tendencias {tipo: "jugador"|"capa", nombre, hash?}: cada PC cuenta una vez por semana y por skin/capa
 //
 // CurseForge: /cf/v1/... reenvía a api.curseforge.com con la clave de la API guardada como secreto
@@ -32,11 +31,11 @@ export default {
     const url = new URL(req.url);
     const ruta = decodeURIComponent(url.pathname);
     if (ruta.startsWith("/cf/")) return await curseforge(req, env, url, ruta.slice(3));
-    if (ruta === "/tendencias" || ruta === "/tendencias/buscar") {
+    if (ruta === "/tendencias") {
       if (!env.DB) return json({ error: "Falta la base de datos D1 (binding DB) en el Worker." }, 503);
       try {
         await esquemaTendencias(env);
-        return await tendencias(req, env, url, ruta);
+        return await tendencias(req, env);
       } catch (e) {
         return json({ error: "interno" }, 500);
       }
@@ -358,21 +357,13 @@ async function esquemaTendencias(env) {
   await env.DB.batch([
     env.DB.prepare("CREATE TABLE IF NOT EXISTS tend (semana INTEGER NOT NULL, tipo TEXT NOT NULL, clave TEXT NOT NULL, nombre TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (semana, tipo, clave))"),
     env.DB.prepare("CREATE TABLE IF NOT EXISTS tend_votos (semana INTEGER NOT NULL, tipo TEXT NOT NULL, clave TEXT NOT NULL, quien TEXT NOT NULL, PRIMARY KEY (semana, tipo, clave, quien))"),
-    env.DB.prepare("CREATE TABLE IF NOT EXISTS jugadores_vistos (nombre TEXT PRIMARY KEY COLLATE NOCASE, total INTEGER NOT NULL)"),
     env.DB.prepare("CREATE INDEX IF NOT EXISTS tend_top ON tend (semana, tipo, n)"),
   ]);
   tendenciasListas = true;
 }
 
-async function tendencias(req, env, url, ruta) {
+async function tendencias(req, env) {
   const semana = semanaActual();
-  if (req.method === "GET" && ruta === "/tendencias/buscar") {
-    const q = (url.searchParams.get("q") || "").replace(/[^\w]/g, "").slice(0, 16);
-    if (q.length < 2) return json({ nombres: [] });
-    const r = await env.DB.prepare("SELECT nombre FROM jugadores_vistos WHERE nombre LIKE ?1 ESCAPE '\\' ORDER BY (nombre LIKE ?2 ESCAPE '\\') DESC, total DESC LIMIT 16")
-      .bind("%" + q.replace(/_/g, "\\_") + "%", q.replace(/_/g, "\\_") + "%").all();
-    return json({ nombres: r.results.map((x) => x.nombre) }, 200, { "Cache-Control": "public, max-age=60" });
-  }
   if (req.method === "GET") {
     const top = async (tipo, s) => (await env.DB.prepare("SELECT clave, nombre, n FROM tend WHERE semana = ? AND tipo = ? ORDER BY n DESC LIMIT 48").bind(s, tipo).all()).results;
     const unir = async (tipo) => {
@@ -399,9 +390,6 @@ async function tendencias(req, env, url, ruta) {
   if (voto.meta.changes) {
     const pasos = [env.DB.prepare("INSERT INTO tend (semana, tipo, clave, nombre, n) VALUES (?, ?, ?, ?, 1) ON CONFLICT(semana, tipo, clave) DO UPDATE SET n = n + 1, nombre = excluded.nombre")
       .bind(semana, tipo, clave, nombre)];
-    if (tipo === "jugador") {
-      pasos.push(env.DB.prepare("INSERT INTO jugadores_vistos (nombre, total) VALUES (?, 1) ON CONFLICT(nombre) DO UPDATE SET total = total + 1").bind(nombre));
-    }
     if (Math.random() < 0.02) {  // limpieza: solo hacen falta esta semana y la anterior
       pasos.push(env.DB.prepare("DELETE FROM tend_votos WHERE semana < ?").bind(semana - 1));
       pasos.push(env.DB.prepare("DELETE FROM tend WHERE semana < ?").bind(semana - 1));
