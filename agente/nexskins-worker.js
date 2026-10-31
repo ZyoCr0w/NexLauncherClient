@@ -14,6 +14,15 @@
 //   POST /amigos/solicitar {usuario}  POST /amigos/responder {usuario, aceptar}  POST /amigos/quitar {usuario}
 //   POST /presencia {estado}
 // «clave» llega ya derivada por NexLauncher (PBKDF2, 200 000 vueltas): aquí solo se guarda su SHA-256.
+//
+// Tendencias de la semana (D1): qué jugadores y capas se buscan y se ponen más en NexLauncher.
+//   GET  /tendencias              -> {semana, jugadores: [{nombre, n}], capas: [{hash, nombre, n}]}
+//   GET  /tendencias/buscar?q=ab  -> {nombres: [...]}: jugadores que alguien ya buscó y contienen «ab»
+//   POST /tendencias {tipo: "jugador"|"capa", nombre, hash?}: cada PC cuenta una vez por semana y por skin/capa
+//
+// CurseForge: /cf/v1/... reenvía a api.curseforge.com con la clave de la API guardada como secreto
+// CF_API_KEY (Settings → Variables and Secrets), así la clave no va dentro del launcher. Solo deja pasar
+// lo que usa la sección de mods (buscar, ver proyectos y bajar archivos).
 
 const MAX_PNG = 64 * 1024;
 const NOMBRE = /^\w{1,16}$/;
@@ -22,6 +31,16 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const ruta = decodeURIComponent(url.pathname);
+    if (ruta.startsWith("/cf/")) return await curseforge(req, env, url, ruta.slice(3));
+    if (ruta === "/tendencias" || ruta === "/tendencias/buscar") {
+      if (!env.DB) return json({ error: "Falta la base de datos D1 (binding DB) en el Worker." }, 503);
+      try {
+        await esquemaTendencias(env);
+        return await tendencias(req, env, url, ruta);
+      } catch (e) {
+        return json({ error: "interno" }, 500);
+      }
+    }
     const deCuentas = ruta.startsWith("/cuenta/") || ruta === "/amigos" || ruta.startsWith("/amigos/") || ruta === "/presencia";
     if (!env.SKINS && !deCuentas && ruta !== "/") {
       return json({ error: "Falta el KV de skins (binding SKINS) en el Worker." }, 503);
@@ -289,4 +308,105 @@ async function cuentas(req, env, ruta) {
     return json({ ok: true });
   }
   return json({ error: "no existe" }, 404);
+}
+
+
+// ---- CurseForge (proxy con la clave del Worker)
+const CF_PERMITIDO = [
+  /^\/v1\/mods\/search$/,            // GET  buscar
+  /^\/v1\/mods\/\d+$/,               // GET  un proyecto
+  /^\/v1\/mods\/\d+\/files$/,        // GET  archivos de un proyecto
+  /^\/v1\/mods\/\d+\/files\/\d+$/,   // GET  un archivo
+  /^\/v1\/mods$/,                    // POST varios proyectos {modIds}
+  /^\/v1\/mods\/files$/,              // POST varios archivos {fileIds}
+];
+
+async function curseforge(req, env, url, ruta) {
+  if (!env.CF_API_KEY) return json({ error: "Falta el secreto CF_API_KEY en el Worker." }, 503);
+  if (!CF_PERMITIDO.some((r) => r.test(ruta))) return json({ error: "ruta no permitida" }, 404);
+  const metodo = req.method;
+  if (metodo !== "GET" && metodo !== "POST") return json({ error: "método no permitido" }, 405);
+  if (metodo === "POST" && !/^\/v1\/mods(\/files)?$/.test(ruta)) return json({ error: "método no permitido" }, 405);
+  const destino = "https://api.curseforge.com" + ruta + url.search;
+  const cache = caches.default;
+  const clave = new Request(destino, { method: "GET" });
+  if (metodo === "GET") {  // las búsquedas se repiten mucho: 10 minutos en la caché de Cloudflare
+    const guardada = await cache.match(clave);
+    if (guardada) return guardada;
+  }
+  const cuerpo = metodo === "POST" ? await req.text() : undefined;
+  if (cuerpo && cuerpo.length > 64 * 1024) return json({ error: "demasiado grande" }, 413);
+  const r = await fetch(destino, {
+    method: metodo,
+    headers: { "x-api-key": env.CF_API_KEY, "Accept": "application/json", "Content-Type": "application/json" },
+    body: cuerpo,
+  });
+  const resp = new Response(r.body, { status: r.status, headers: {
+    "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=600" } });
+  if (metodo === "GET" && r.ok) await cache.put(clave, resp.clone());
+  return resp;
+}
+
+
+// ---- Tendencias de la semana
+let tendenciasListas = false;
+const HASH_TEX = /^[0-9a-f]{20,80}$/;
+const semanaActual = () => Math.floor((Date.now() / 86400000 + 3) / 7);  // semanas que empiezan en lunes
+
+async function esquemaTendencias(env) {
+  if (tendenciasListas) return;
+  await env.DB.batch([
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS tend (semana INTEGER NOT NULL, tipo TEXT NOT NULL, clave TEXT NOT NULL, nombre TEXT NOT NULL, n INTEGER NOT NULL, PRIMARY KEY (semana, tipo, clave))"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS tend_votos (semana INTEGER NOT NULL, tipo TEXT NOT NULL, clave TEXT NOT NULL, quien TEXT NOT NULL, PRIMARY KEY (semana, tipo, clave, quien))"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS jugadores_vistos (nombre TEXT PRIMARY KEY COLLATE NOCASE, total INTEGER NOT NULL)"),
+    env.DB.prepare("CREATE INDEX IF NOT EXISTS tend_top ON tend (semana, tipo, n)"),
+  ]);
+  tendenciasListas = true;
+}
+
+async function tendencias(req, env, url, ruta) {
+  const semana = semanaActual();
+  if (req.method === "GET" && ruta === "/tendencias/buscar") {
+    const q = (url.searchParams.get("q") || "").replace(/[^\w]/g, "").slice(0, 16);
+    if (q.length < 2) return json({ nombres: [] });
+    const r = await env.DB.prepare("SELECT nombre FROM jugadores_vistos WHERE nombre LIKE ?1 ESCAPE '\\' ORDER BY (nombre LIKE ?2 ESCAPE '\\') DESC, total DESC LIMIT 16")
+      .bind("%" + q.replace(/_/g, "\\_") + "%", q.replace(/_/g, "\\_") + "%").all();
+    return json({ nombres: r.results.map((x) => x.nombre) }, 200, { "Cache-Control": "public, max-age=60" });
+  }
+  if (req.method === "GET") {
+    const top = async (tipo, s) => (await env.DB.prepare("SELECT clave, nombre, n FROM tend WHERE semana = ? AND tipo = ? ORDER BY n DESC LIMIT 48").bind(s, tipo).all()).results;
+    const unir = async (tipo) => {
+      const esta = await top(tipo, semana);
+      if (esta.length >= 24) return esta;
+      const vistas = new Set(esta.map((x) => x.clave));  // semana nueva: se completa con la anterior
+      return esta.concat((await top(tipo, semana - 1)).filter((x) => !vistas.has(x.clave)).map((x) => ({ ...x, n: 0 })));
+    };
+    const [jug, cap] = [await unir("jugador"), await unir("capa")];
+    return json({ semana, jugadores: jug.map((x) => ({ nombre: x.nombre, n: x.n })),
+                  capas: cap.map((x) => ({ hash: x.clave, nombre: x.nombre, n: x.n })) }, 200, { "Cache-Control": "public, max-age=300" });
+  }
+  if (req.method !== "POST") return json({ error: "método no permitido" }, 405);
+  let b;
+  try { b = await cuerpo(req); } catch { return json({ error: "JSON inválido" }, 400); }
+  const tipo = b.tipo === "capa" ? "capa" : b.tipo === "jugador" ? "jugador" : null;
+  const nombre = String(b.nombre || "");
+  if (!tipo || !NOMBRE.test(nombre)) return json({ error: "datos inválidos" }, 400);
+  const clave = tipo === "capa" ? String(b.hash || "").toLowerCase() : nombre.toLowerCase();
+  if (tipo === "capa" && !HASH_TEX.test(clave)) return json({ error: "datos inválidos" }, 400);
+  const quien = await sha256("tend:" + (req.headers.get("CF-Connecting-IP") || "?") + ":" + semana);
+  const voto = await env.DB.prepare("INSERT OR IGNORE INTO tend_votos (semana, tipo, clave, quien) VALUES (?, ?, ?, ?)")
+    .bind(semana, tipo, clave, quien).run();
+  if (voto.meta.changes) {
+    const pasos = [env.DB.prepare("INSERT INTO tend (semana, tipo, clave, nombre, n) VALUES (?, ?, ?, ?, 1) ON CONFLICT(semana, tipo, clave) DO UPDATE SET n = n + 1, nombre = excluded.nombre")
+      .bind(semana, tipo, clave, nombre)];
+    if (tipo === "jugador") {
+      pasos.push(env.DB.prepare("INSERT INTO jugadores_vistos (nombre, total) VALUES (?, 1) ON CONFLICT(nombre) DO UPDATE SET total = total + 1").bind(nombre));
+    }
+    if (Math.random() < 0.02) {  // limpieza: solo hacen falta esta semana y la anterior
+      pasos.push(env.DB.prepare("DELETE FROM tend_votos WHERE semana < ?").bind(semana - 1));
+      pasos.push(env.DB.prepare("DELETE FROM tend WHERE semana < ?").bind(semana - 1));
+    }
+    await env.DB.batch(pasos);
+  }
+  return json({ ok: true });
 }
