@@ -72,7 +72,15 @@ public final class Hooks {
             }
             String[] t = buscar(nombre + extra);
             if (mia && (t == null || !conTextura(t[0]))) {
+                if (AVISADOS.add("?" + nombre.toLowerCase())) {
+                    System.out.println("[NexLauncher] Mi skin encima: el launcher no tiene skin para " + nombre
+                            + " (" + (t == null ? "sin respuesta" : "sin textura") + "); se queda la del servidor.");
+                }
                 return perfil;  // sin skin en el launcher: la del servidor
+            }
+            if (mia && AVISADOS.add("=" + nombre.toLowerCase())) {
+                System.out.println("[NexLauncher] Mi skin encima: " + nombre + " usa la skin del launcher"
+                        + (reemplazar ? " en lugar de la del servidor." : " (el servidor no mandó ninguna)."));
             }
             if (t == null && reemplazar) {
                 avisarSinSkin(nombre);

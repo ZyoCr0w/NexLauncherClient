@@ -38,7 +38,9 @@ public final class Agente {
         }
         // Hooks va al cargador de arranque: así lo ve authlib aunque la cargue Forge, Fabric o un módulo
         inst.appendToBootstrapClassLoaderSearch(new JarFile(args));
-        System.out.println("[NexLauncher] Agente de skins v" + VERSION + " cargado.");
+        System.out.println("[NexLauncher] Agente de skins v" + VERSION + " cargado."
+                + (System.getProperty("nexlauncher.miskin") != null
+                ? " Mi skin encima: " + System.getProperty("nexlauncher.miskin") : ""));
         inst.addTransformer(new ClassFileTransformer() {
             @Override
             public byte[] transform(ClassLoader cl, String nombre, Class<?> redefinida, ProtectionDomain pd, byte[] bytes) {
