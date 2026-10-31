@@ -31,6 +31,8 @@ public final class Hooks {
     private static volatile java.security.PublicKey llave;
     private static final ConcurrentHashMap<String, Boolean> FIRMAS = new ConcurrentHashMap<String, Boolean>();
     private static final String[] DOMINIOS = System.getProperty("nexlauncher.dominios", "").toLowerCase().split(",");
+    /** Tu nombre si elegiste «ver siempre mi skin del launcher»: tu jugador se ve con ella (solo en tu juego). */
+    private static final String MI_NOMBRE = System.getProperty("nexlauncher.miskin");
     private static final java.util.Set<String> AVISADOS = java.util.Collections.newSetFromMap(
             new ConcurrentHashMap<String, Boolean>());
 
@@ -50,21 +52,28 @@ public final class Hooks {
                 return perfil;
             }
             boolean reemplazar = (Boolean) multimap.getMethod("containsKey", Object.class).invoke(props, "textures");
-            if (reemplazar && !deOtraPc(multimap.getMethod("get", Object.class).invoke(props, "textures"))) {
-                return perfil;
-            }
             String nombre = (String) llamar(perfil, "getName", "name");
             if (nombre == null || !NOMBRE.matcher(nombre).matches()) {
                 return perfil;
             }
+            // tu propio jugador con «mi skin del launcher encima»: aunque el servidor mande otra (p. ej. SkinsRestorer)
+            boolean mia = MI_NOMBRE != null && nombre.equalsIgnoreCase(MI_NOMBRE);
+            if (reemplazar && !mia && !deOtraPc(multimap.getMethod("get", Object.class).invoke(props, "textures"))) {
+                return perfil;
+            }
             String extra = "";
-            if (reemplazar) {
+            if (mia) {
+                extra = "&propia=1";
+            } else if (reemplazar) {
                 for (Object p : (Iterable<?>) multimap.getMethod("get", Object.class).invoke(props, "textures")) {
                     extra = datosOtraPc((String) llamar(p, "getValue", "value"));
                     break;
                 }
             }
             String[] t = buscar(nombre + extra);
+            if (mia && (t == null || !conTextura(t[0]))) {
+                return perfil;  // sin skin en el launcher: la del servidor
+            }
             if (t == null && reemplazar) {
                 avisarSinSkin(nombre);
             }
@@ -164,6 +173,14 @@ public final class Hooks {
             // sin hashes: se busca solo por nombre
         }
         return q.toString();
+    }
+
+    private static boolean conTextura(String valor) {
+        try {
+            return URL_TEX.matcher(new String(java.util.Base64.getDecoder().decode(valor), "UTF-8")).find();
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
     private static void avisarSinSkin(String nombre) {
