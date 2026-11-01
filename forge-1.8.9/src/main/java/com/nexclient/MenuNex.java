@@ -158,6 +158,14 @@ public class MenuNex extends GuiScreen {
             deslizador("Grosor: ", "", 1, 8, c.contornoGrosor, new Numero() {
                 public void poner(double v) { c.contornoGrosor = (float) (Math.round(v * 2) / 2.0); } }, true);
             interruptor("Etiquetas NexLauncher", c.etiquetas, new Escritor() { public void poner(boolean v) { c.etiquetas = v; } });
+            final String[] ver = {"De todos", "Solo los míos", "Ninguno"};
+            final GuiButton[] cos = new GuiButton[1];
+            cos[0] = boton(x(), y(), 150, "Cosméticos: " + ver[c.cosmeticosVer], new Runnable() {
+                public void run() {
+                    c.cosmeticosVer = (c.cosmeticosVer + 1) % 3;
+                    cos[0].displayString = "Cosméticos: " + ver[c.cosmeticosVer];
+                }
+            });
         }
         boton(cx - 100, height - 26, 200, "Listo", new Runnable() { public void run() { cerrar(); } });
     }

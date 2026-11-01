@@ -152,6 +152,11 @@ public class MenuScreen extends Screen {
                 color("Color del contorno", c.contornoColor, v -> c.contornoColor = v);
                 interruptor("Etiquetas NexLauncher", c.etiquetas, v -> c.etiquetas = v,
                         "La línea debajo del nombre de quienes juegan con NexLauncher.");
+                addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(new String[]{"De todos", "Solo los míos", "Ninguno"}[i]))
+                        .withValues(java.util.Arrays.asList(0, 1, 2)).withInitialValue(c.cosmeticosVer)
+                        .withTooltip(i -> Tooltip.create(Component.literal("Alas, aureolas, auras, capas animadas y escudos de "
+                                + "NexLauncher. Se eligen en NexLauncher → Skins → Cosméticos.")))
+                        .create(x(), y(), 150, 20, Component.literal("Cosméticos"), (b, v) -> c.cosmeticosVer = v));
                 break;
         }
         addRenderableWidget(Button.builder(Component.literal("Listo"), b -> onClose())
