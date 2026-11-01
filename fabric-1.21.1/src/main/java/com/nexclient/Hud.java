@@ -141,7 +141,7 @@ public final class Hud {
                 LocalTime t = LocalTime.now();
                 int h = t.getHour();
                 l.add(c.reloj24 ? String.format("%02d:%02d", h, t.getMinute())
-                        : String.format("%d:%02d %s", h % 12 == 0 ? 12 : h % 12, t.getMinute(), h < 12 ? "a. m." : "p. m."));
+                        : String.format("%d:%02d %s", h % 12 == 0 ? 12 : h % 12, t.getMinute(), Tr.t(h < 12 ? "a. m." : "p. m.")));
                 break;
             }
             case "velocidad":

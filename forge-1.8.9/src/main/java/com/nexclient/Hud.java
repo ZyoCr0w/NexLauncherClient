@@ -145,7 +145,7 @@ public final class Hud {
             Calendar t = Calendar.getInstance();
             int h = t.get(Calendar.HOUR_OF_DAY), m = t.get(Calendar.MINUTE);
             l.add(c.reloj24 ? String.format("%02d:%02d", h, m)
-                    : String.format("%d:%02d %s", h % 12 == 0 ? 12 : h % 12, m, h < 12 ? "a. m." : "p. m."));
+                    : String.format("%d:%02d %s", h % 12 == 0 ? 12 : h % 12, m, Tr.t(h < 12 ? "a. m." : "p. m.")));
         } else if (id.equals("velocidad")) {
             l.add(String.format("%.2f b/s", Efectos.velocidad));
         } else if (id.equals("combo")) {

@@ -96,7 +96,13 @@ public class MenuNex extends PantallaLateral {
             interruptor("Dirección (N, S…)", c.coordsDireccion, new Escritor() { public void poner(boolean v) { c.coordsDireccion = v; } });
             interruptor("Ping", c.ping, new Escritor() { public void poner(boolean v) { c.ping = v; } });
             interruptor("Reloj", c.reloj, new Escritor() { public void poner(boolean v) { c.reloj = v; } });
-            interruptor("Reloj de 24 horas", c.reloj24, new Escritor() { public void poner(boolean v) { c.reloj24 = v; } });
+            final GuiButton[] fmt = new GuiButton[1];
+            fmt[0] = boton(x(), y(), 150, "Formato del reloj: " + (c.reloj24 ? "24 horas" : "12 horas"), new Runnable() {
+                public void run() {
+                    c.reloj24 = !c.reloj24;
+                    fmt[0].displayString = "Formato del reloj: " + (c.reloj24 ? "24 horas" : "12 horas");
+                }
+            });
             interruptor("Velocidad", c.velocidad, new Escritor() { public void poner(boolean v) { c.velocidad = v; } });
             interruptor("Combo", c.combo, new Escritor() { public void poner(boolean v) { c.combo = v; } });
             interruptor("Alcance", c.alcance, new Escritor() { public void poner(boolean v) { c.alcance = v; } });

@@ -84,7 +84,10 @@ public class MenuScreen extends PantallaLateral {
                 interruptor("Dirección (N, S…)", c.coordsDireccion, v -> c.coordsDireccion = v, null);
                 interruptor("Ping", c.ping, v -> c.ping = v, null);
                 interruptor("Reloj", c.reloj, v -> c.reloj = v, null);
-                interruptor("Reloj de 24 horas", c.reloj24, v -> c.reloj24 = v, null);
+                addRenderableWidget(CycleButton.<Boolean>builder(v -> Component.literal(v ? "24 horas" : "12 horas"))
+                        .withValues(java.util.Arrays.asList(true, false)).withInitialValue(c.reloj24)
+                        .withTooltip(v -> Tooltip.create(Component.literal("24 horas: 18:30 · 12 horas: 6:30 p. m.")))
+                        .create(x(), y(), 150, 20, Component.literal("Formato del reloj"), (b, v) -> c.reloj24 = v));
                 interruptor("Velocidad", c.velocidad, v -> c.velocidad = v, "Bloques por segundo.");
                 interruptor("Combo", c.combo, v -> c.combo = v, "Golpes seguidos sin que te peguen.");
                 interruptor("Alcance", c.alcance, v -> c.alcance = v, "Distancia de tu último golpe.");
