@@ -47,6 +47,10 @@ public class Config {
     public boolean armadura = false;
     /** Posición de cada elemento nuevo: id -> {x, y}. Una x enorme lo pega al borde derecho. */
     public Map<String, int[]> pos = new HashMap<String, int[]>();
+    /** Ancla de cada elemento movido en el editor: {izq/centro/der, arriba/medio/abajo, distancia x, distancia y}. */
+    public Map<String, int[]> anclas = new HashMap<String, int[]>();
+    /** Cuadrícula del editor del HUD: 0 sin cuadrícula, o su tamaño en píxeles. */
+    public int rejilla = 0;
     public boolean hudFondo = true;
     public boolean hudSombra = true;
     public int hudColor = 0;
@@ -215,6 +219,10 @@ public class Config {
         if (pos == null) {
             pos = new HashMap<String, int[]>();
         }
+        if (anclas == null) {
+            anclas = new HashMap<String, int[]>();
+        }
+        rejilla = Math.max(0, Math.min(40, rejilla));
         if (estilos == null) {
             estilos = new HashMap<String, Estilo>();
         }
@@ -246,6 +254,48 @@ public class Config {
     public static String nombreSonido(String id) {
         int i = indiceSonido(id);
         return i < 0 ? id : NOMBRES[i];
+    }
+
+    // ---- deshacer / rehacer en el editor del HUD: se guarda solo lo que el editor cambia
+    private static final class HudGuardado {
+        Map<String, int[]> pos, anclas;
+        Map<String, Estilo> estilos;
+        int teclasX, teclasY, cpsX, cpsY, fpsX, fpsY;
+        float teclasEscala;
+        boolean[] activos;
+    }
+
+    public String instantaneaHud(boolean[] activos) {
+        HudGuardado h = new HudGuardado();
+        h.pos = pos;
+        h.anclas = anclas;
+        h.estilos = estilos;
+        h.teclasX = teclasX;
+        h.teclasY = teclasY;
+        h.cpsX = cpsX;
+        h.cpsY = cpsY;
+        h.fpsX = fpsX;
+        h.fpsY = fpsY;
+        h.teclasEscala = teclasEscala;
+        h.activos = activos;
+        return GSON.toJson(h);
+    }
+
+    /** Vuelve a una instantánea; devuelve qué elementos estaban visibles (o null). */
+    public boolean[] restaurarHud(String texto) {
+        HudGuardado h = GSON.fromJson(texto, HudGuardado.class);
+        pos = h.pos;
+        anclas = h.anclas;
+        estilos = h.estilos;
+        teclasX = h.teclasX;
+        teclasY = h.teclasY;
+        cpsX = h.cpsX;
+        cpsY = h.cpsY;
+        fpsX = h.fpsX;
+        fpsY = h.fpsY;
+        teclasEscala = h.teclasEscala;
+        limitar();
+        return h.activos;
     }
 
     public int colorTexto() {

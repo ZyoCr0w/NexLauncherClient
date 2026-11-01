@@ -242,10 +242,15 @@ public final class Hud {
                 indice = i;
             }
         }
-        int[] p = posGuardada(c, id, indice);
         int[] b = base(id, mc, c);
         float e = c.estilo(id).escala;
         int w = Math.round(b[0] * e), h = Math.round(b[1] * e);
+        int[] a = c.anclas.get(id);
+        if (a != null && a.length == 4) {  // movido en el editor: sigue pegado a su esquina, borde o centro
+            int[] p = Guias.desanclar(a, w, h, sw, sh);
+            return new int[]{p[0], p[1], w, h};
+        }
+        int[] p = posGuardada(c, id, indice);
         int x = Math.max(0, Math.min(p[0], sw - w));
         int y = Math.max(0, Math.min(p[1], sh - h));
         return new int[]{x, y, w, h};
@@ -254,6 +259,7 @@ public final class Hud {
     public static void restablecer(String id) {
         Config c = Config.get();
         c.estilos.remove(id);
+        c.anclas.remove(id);
         if (id.equals("teclas")) {
             c.teclasX = 6;
             c.teclasY = 6;
@@ -288,8 +294,16 @@ public final class Hud {
         return true;
     }
 
+    /** Tamaño de la pantalla en coordenadas de la interfaz. */
+    public static int[] pantalla(Minecraft mc) {
+        return new int[]{mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight()};
+    }
+
     public static void mover(String id, int x, int y) {
         Config c = Config.get();
+        int[] r = rect(id, Minecraft.getInstance());
+        int[] p = pantalla(Minecraft.getInstance());
+        c.anclas.put(id, Guias.anclar(x, y, r[2], r[3], p[0], p[1]));
         if (id.equals("teclas")) {
             c.teclasX = x;
             c.teclasY = y;

@@ -5,24 +5,35 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 
 /**
- * Editor del HUD estilo Lunar: arrastra cada elemento, la rueda cambia su tamaño y al hacer clic aparece su
- * panel con escala, fondo, borde, colores y sombra.
+ * Editor del HUD: arrastra cada elemento (se pega a las guías: centro, bordes, tercios y otros elementos; con Shift
+ * se mueve libre), cambia su tamaño con la rueda o con la esquina, muévelo de a 1 píxel con las flechas y deshaz
+ * con Ctrl+Z. Al hacer clic aparece su panel con escala, fondo, borde, colores y sombra.
  */
 public class EditorHudScreen extends Screen {
+    private static final int[] REJILLAS = {0, 5, 10, 20};
     private final Screen padre;
-    private String arrastrando, elegido;
+    private String arrastrando, elegido, redimensionando;
     private double dx, dy;
+    private int x0, y0;                  // esquina fija al cambiar el tamaño con la esquina
     private boolean ocultos = true;
+    private String antes;                // estado al empezar a arrastrar (se guarda en «deshacer» si algo cambió)
+    private final Deque<String> deshacer = new ArrayDeque<String>(), rehacer = new ArrayDeque<String>();
+    private List<Guias.Linea> lineas = new ArrayList<Guias.Linea>();
 
     public EditorHudScreen(Screen padre) {
         super(Component.literal("Editar HUD"));
@@ -32,43 +43,67 @@ public class EditorHudScreen extends Screen {
     @Override
     protected void init() {
         Config c = Config.get();
-        addRenderableWidget(Button.builder(Component.literal("Listo"), b -> onClose())
-                .bounds(width / 2 - 75, height - 24, 70, 20).build());
-        addRenderableWidget(CycleButton.onOffBuilder(ocultos).create(width / 2 + 5, height - 24, 140, 20,
-                Component.literal("Ver ocultos"), (b, v) -> ocultos = v));
+        int y = height - 24, x = width / 2 - 187;
+        addRenderableWidget(Button.builder(Component.literal("Listo"), b -> onClose()).bounds(x, y, 46, 20).build());
+        addRenderableWidget(CycleButton.onOffBuilder(ocultos).create(x + 50, y, 80, 20,
+                Component.literal("Ocultos"), (b, v) -> ocultos = v));
+        List<Integer> rejillas = Arrays.asList(0, 5, 10, 20);
+        addRenderableWidget(CycleButton.<Integer>builder(v -> Component.literal(v == 0 ? "No" : v + " px"))
+                .withValues(rejillas).withInitialValue(rejillas.contains(c.rejilla) ? c.rejilla : 0)
+                .withTooltip(v -> Tooltip.create(Component.literal("Tecla G. Sin guía cerca, el elemento se pega a la cuadrícula.")))
+                .create(x + 134, y, 100, 20, Component.literal("Cuadrícula"), (b, v) -> c.rejilla = v));
+        Button d = Button.builder(Component.literal("↶"), b -> deshacer()).bounds(x + 238, y, 20, 20)
+                .tooltip(Tooltip.create(Component.literal("Deshacer (Ctrl+Z)"))).build();
+        d.active = !deshacer.isEmpty();
+        addRenderableWidget(d);
+        Button r = Button.builder(Component.literal("↷"), b -> rehacer()).bounds(x + 260, y, 20, 20)
+                .tooltip(Tooltip.create(Component.literal("Rehacer (Ctrl+Y)"))).build();
+        r.active = !rehacer.isEmpty();
+        addRenderableWidget(r);
+        addRenderableWidget(Button.builder(Component.literal("Restablecer todo"), b -> {
+            guardarParaDeshacer();
+            for (String id : Hud.IDS) {
+                Hud.restablecer(id);
+            }
+            rebuildWidgets();
+        }).bounds(x + 284, y, 90, 20).tooltip(Tooltip.create(Component.literal("Todo vuelve a su lugar y tamaño de fábrica."))).build());
         if (elegido == null) {
             return;
         }
         Config.Estilo e = c.estilo(elegido);
-        int[] r = Hud.rect(elegido, minecraft);
-        int x = r[0] + r[2] / 2 < width / 2 ? width - 156 : 6;
-        int y = 24;
-        addRenderableWidget(CycleButton.onOffBuilder(Hud.activo(c, elegido)).create(x, y, 150, 20,
-                Component.literal("Mostrar"), (b, v) -> Hud.poner(c, elegido, v)));
-        y += 22;
-        addRenderableWidget(new Deslizador(x, y, "Escala", 0.5, 3, 0.05, e.escala, v -> e.escala = (float) v,
+        int[] rr = Hud.rect(elegido, minecraft);
+        int px = rr[0] + rr[2] / 2 < width / 2 ? width - 156 : 6;
+        int py = 24;
+        addRenderableWidget(CycleButton.onOffBuilder(Hud.activo(c, elegido)).create(px, py, 150, 20,
+                Component.literal("Mostrar"), (b, v) -> {
+                    guardarParaDeshacer();
+                    Hud.poner(c, elegido, v);
+                }));
+        py += 22;
+        addRenderableWidget(new Deslizador(px, py, "Escala", 0.5, 3, 0.05, e.escala, v -> e.escala = (float) v,
                 v -> Math.round(v * 100) + "%"));
-        y += 22;
-        addRenderableWidget(new Deslizador(x, y, "Fondo", 0, 100, 5, e.fondo, v -> e.fondo = (int) Math.round(v),
+        py += 22;
+        addRenderableWidget(new Deslizador(px, py, "Fondo", 0, 100, 5, e.fondo, v -> e.fondo = (int) Math.round(v),
                 v -> Math.round(v) + "%"));
-        y += 22;
-        addRenderableWidget(color(x, y, "Texto", e.colorTexto, v -> e.colorTexto = v));
-        y += 22;
-        addRenderableWidget(CycleButton.onOffBuilder(e.arcoiris).create(x, y, 150, 20,
+        py += 22;
+        addRenderableWidget(color(px, py, "Texto", e.colorTexto, v -> e.colorTexto = v));
+        py += 22;
+        addRenderableWidget(CycleButton.onOffBuilder(e.arcoiris).create(px, py, 150, 20,
                 Component.literal("Arcoíris"), (b, v) -> e.arcoiris = v));
-        y += 22;
-        addRenderableWidget(CycleButton.onOffBuilder(e.sombra).create(x, y, 150, 20, Component.literal("Sombra"),
+        py += 22;
+        addRenderableWidget(CycleButton.onOffBuilder(e.sombra).create(px, py, 150, 20, Component.literal("Sombra"),
                 (b, v) -> e.sombra = v));
-        y += 22;
-        addRenderableWidget(CycleButton.onOffBuilder(e.borde).create(x, y, 150, 20, Component.literal("Borde"),
+        py += 22;
+        addRenderableWidget(CycleButton.onOffBuilder(e.borde).create(px, py, 150, 20, Component.literal("Borde"),
                 (b, v) -> e.borde = v));
-        y += 22;
-        addRenderableWidget(color(x, y, "Color del borde", e.colorBorde, v -> e.colorBorde = v));
-        y += 22;
+        py += 22;
+        addRenderableWidget(color(px, py, "Color del borde", e.colorBorde, v -> e.colorBorde = v));
+        py += 22;
         addRenderableWidget(Button.builder(Component.literal("Restablecer"), b -> {
+            guardarParaDeshacer();
             Hud.restablecer(elegido);
             rebuildWidgets();
-        }).bounds(x, y, 150, 20).build());
+        }).bounds(px, py, 150, 20).build());
     }
 
     private CycleButton<Integer> color(int x, int y, String texto, int valor, java.util.function.IntConsumer poner) {
@@ -82,6 +117,58 @@ public class EditorHudScreen extends Screen {
                 .create(x, y, 150, 20, Component.literal(texto), (b, v) -> poner.accept(v));
     }
 
+    // ---- deshacer / rehacer
+    private boolean[] activos() {
+        Config c = Config.get();
+        boolean[] a = new boolean[Hud.IDS.length];
+        for (int i = 0; i < a.length; i++) {
+            a[i] = Hud.activo(c, Hud.IDS[i]);
+        }
+        return a;
+    }
+
+    private String instantanea() {
+        return Config.get().instantaneaHud(activos());
+    }
+
+    private void guardarParaDeshacer() {
+        guardarParaDeshacer(instantanea());
+    }
+
+    private void guardarParaDeshacer(String estado) {
+        if (!deshacer.isEmpty() && deshacer.peek().equals(estado)) {
+            return;
+        }
+        deshacer.push(estado);
+        while (deshacer.size() > 60) {
+            deshacer.removeLast();
+        }
+        rehacer.clear();
+    }
+
+    private void volver(Deque<String> de, Deque<String> a) {
+        if (de.isEmpty()) {
+            return;
+        }
+        a.push(instantanea());
+        boolean[] v = Config.get().restaurarHud(de.pop());
+        if (v != null) {
+            for (int i = 0; i < v.length && i < Hud.IDS.length; i++) {
+                Hud.poner(Config.get(), Hud.IDS[i], v[i]);
+            }
+        }
+        rebuildWidgets();
+    }
+
+    private void deshacer() {
+        volver(deshacer, rehacer);
+    }
+
+    private void rehacer() {
+        volver(rehacer, deshacer);
+    }
+
+    // ---- dibujo
     @Override
     public void renderBackground(GuiGraphics g, int mx, int my, float delta) {
         g.fill(0, 0, width, height, 0x55000000);  // sin desenfoque: se ve el juego detrás
@@ -91,6 +178,24 @@ public class EditorHudScreen extends Screen {
     public void render(GuiGraphics g, int mx, int my, float delta) {
         renderBackground(g, mx, my, delta);
         Config c = Config.get();
+        if (c.rejilla > 0) {
+            for (int x = c.rejilla; x < width; x += c.rejilla) {
+                g.fill(x, 0, x + 1, height, x % (c.rejilla * 5) == 0 ? 0x30FFFFFF : 0x16FFFFFF);
+            }
+            for (int y = c.rejilla; y < height; y += c.rejilla) {
+                g.fill(0, y, width, y + 1, y % (c.rejilla * 5) == 0 ? 0x30FFFFFF : 0x16FFFFFF);
+            }
+        }
+        // centro de la pantalla, siempre tenue (como referencia)
+        g.fill(width / 2, 0, width / 2 + 1, height, 0x22FF55FF);
+        g.fill(0, height / 2, width, height / 2 + 1, 0x22FF55FF);
+        for (Guias.Linea l : lineas) {
+            if (l.vertical) {
+                g.fill(l.pos, l.desde, l.pos + 1, l.hasta, l.color);
+            } else {
+                g.fill(l.desde, l.pos, l.hasta, l.pos + 1, l.color);
+            }
+        }
         for (String id : Hud.IDS) {
             boolean activo = Hud.activo(c, id);
             if (!activo && !ocultos) {
@@ -108,6 +213,16 @@ public class EditorHudScreen extends Screen {
             g.renderOutline(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2,
                     sel ? 0xFFFFFF55 : encima ? 0xFFFFFFFF : 0x66FFFFFF);
             if (sel || encima) {
+                int[] q = esquina(r);
+                g.fill(q[0], q[1], q[0] + q[2], q[1] + q[3], sel ? 0xFFFFFF55 : 0xFFFFFFFF);
+            }
+            if (id.equals(arrastrando) || id.equals(redimensionando)) {
+                String info = r[0] + ", " + r[1] + "  ·  " + r[2] + "×" + r[3] + "  ·  "
+                        + Math.round(c.estilo(id).escala * 100) + "%";
+                int ty = r[1] + r[3] + 4 + 9 < height - 28 ? r[1] + r[3] + 4 : Math.max(0, r[1] - 12);
+                g.fill(r[0] - 1, ty - 1, r[0] + font.width(info) + 2, ty + 9, 0xAA000000);
+                g.drawString(font, info, r[0] + 1, ty, 0xFFFFFFFF, false);
+            } else if (sel || encima) {
                 g.drawString(font, Hud.nombre(id) + (activo ? "" : " (oculto)"), r[0], Math.max(0, r[1] - 10),
                         0xFFFFFFFF, true);
             }
@@ -117,7 +232,13 @@ public class EditorHudScreen extends Screen {
                 ((Renderable) w).render(g, mx, my, delta);
             }
         }
-        g.drawCenteredString(font, "Clic: elegir · Arrastra: mover · Rueda: tamaño", width / 2, 6, 0xFFFFFFFF);
+        g.drawCenteredString(font, "Arrastra: mover (Shift: libre) · Rueda o esquina: tamaño · Flechas: 1 px · Ctrl+Z",
+                width / 2, 6, 0xFFFFFFFF);
+    }
+
+    /** Cuadrito de la esquina inferior derecha para cambiar el tamaño. */
+    private static int[] esquina(int[] r) {
+        return new int[]{r[0] + r[2] - 2, r[1] + r[3] - 2, 5, 5};
     }
 
     private static boolean dentro(int[] r, double x, double y) {
@@ -135,34 +256,70 @@ public class EditorHudScreen extends Screen {
         return null;
     }
 
+    private List<int[]> otros(String id) {
+        Config c = Config.get();
+        List<int[]> l = new ArrayList<int[]>();
+        for (String o : Hud.IDS) {
+            if (!o.equals(id) && Hud.activo(c, o)) {
+                l.add(Hud.rect(o, minecraft));
+            }
+        }
+        return l;
+    }
+
+    // ---- ratón y teclado
     @Override
     public boolean mouseClicked(double mx, double my, int boton) {
         if (super.mouseClicked(mx, my, boton)) {
             return true;
         }
-        if (boton == 0) {
-            String id = bajo(mx, my);
+        if (boton != 0) {
+            return false;
+        }
+        for (String id : new String[]{elegido, bajo(mx, my)}) {  // primero la esquina del elegido
             if (id != null) {
                 int[] r = Hud.rect(id, minecraft);
-                arrastrando = id;
-                dx = mx - r[0];
-                dy = my - r[1];
+                int[] q = esquina(r);
+                if (mx >= q[0] - 1 && my >= q[1] - 1 && mx < q[0] + q[2] + 1 && my < q[1] + q[3] + 1) {
+                    antes = instantanea();
+                    redimensionando = id;
+                    x0 = r[0];
+                    y0 = r[1];
+                    return true;
+                }
             }
-            if (id == null ? elegido != null : !id.equals(elegido)) {
-                elegido = id;
-                rebuildWidgets();
-            }
-            return id != null;
         }
-        return false;
+        String id = bajo(mx, my);
+        if (id != null) {
+            int[] r = Hud.rect(id, minecraft);
+            antes = instantanea();
+            arrastrando = id;
+            dx = mx - r[0];
+            dy = my - r[1];
+        }
+        if (id == null ? elegido != null : !id.equals(elegido)) {
+            elegido = id;
+            rebuildWidgets();
+        }
+        return id != null;
     }
 
     @Override
     public boolean mouseDragged(double mx, double my, int boton, double ddx, double ddy) {
+        if (redimensionando != null) {
+            Config c = Config.get();
+            int[] b = Hud.base(redimensionando, minecraft, c);
+            float escala = (float) Math.max(0.5, Math.min(3.0, (mx - x0) / Math.max(1, b[0])));
+            c.estilo(redimensionando).escala = Math.round(escala * 20) / 20f;
+            Hud.mover(redimensionando, x0, y0);  // la esquina de arriba a la izquierda no se mueve
+            return true;
+        }
         if (arrastrando != null) {
-            Hud.mover(arrastrando, (int) Math.round(mx - dx), (int) Math.round(my - dy));
-            int[] r = Hud.rect(arrastrando, minecraft);  // ya ajustado a la pantalla
-            Hud.mover(arrastrando, r[0], r[1]);
+            int[] r = Hud.rect(arrastrando, minecraft);
+            Guias.Resultado a = Guias.ajustar((int) Math.round(mx - dx), (int) Math.round(my - dy), r[2], r[3], width,
+                    height, otros(arrastrando), !hasShiftDown(), Config.get().rejilla);
+            Hud.mover(arrastrando, a.x, a.y);
+            lineas = a.lineas;
             return true;
         }
         return super.mouseDragged(mx, my, boton, ddx, ddy);
@@ -170,8 +327,14 @@ public class EditorHudScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mx, double my, int boton) {
-        if (arrastrando != null) {
+        if (arrastrando != null || redimensionando != null) {
+            if (antes != null && !antes.equals(instantanea())) {
+                guardarParaDeshacer(antes);
+            }
+            antes = null;
             arrastrando = null;
+            redimensionando = null;
+            lineas = new ArrayList<Guias.Linea>();
             rebuildWidgets();  // el panel se pasa al otro lado si hace falta
             return true;
         }
@@ -182,14 +345,54 @@ public class EditorHudScreen extends Screen {
     public boolean mouseScrolled(double mx, double my, double sx, double sy) {
         String id = bajo(mx, my);
         if (id != null && sy != 0) {
+            guardarParaDeshacer();
+            int[] r = Hud.rect(id, minecraft);
             Config.Estilo e = Config.get().estilo(id);
             e.escala = Math.max(0.5f, Math.min(3f, Math.round((e.escala + (sy > 0 ? 0.1f : -0.1f)) * 20) / 20f));
+            Hud.mover(id, r[0], r[1]);
             if (id.equals(elegido)) {
                 rebuildWidgets();
             }
             return true;
         }
         return super.mouseScrolled(mx, my, sx, sy);
+    }
+
+    @Override
+    public boolean keyPressed(int tecla, int codigo, int mods) {
+        if (hasControlDown() && tecla == GLFW.GLFW_KEY_Z) {
+            if (hasShiftDown()) {
+                rehacer();
+            } else {
+                deshacer();
+            }
+            return true;
+        }
+        if (hasControlDown() && tecla == GLFW.GLFW_KEY_Y) {
+            rehacer();
+            return true;
+        }
+        if (tecla == GLFW.GLFW_KEY_G && !hasControlDown()) {
+            Config c = Config.get();
+            int i = 0;
+            while (i < REJILLAS.length && REJILLAS[i] != c.rejilla) {
+                i++;
+            }
+            c.rejilla = REJILLAS[(i + 1) % REJILLAS.length];
+            rebuildWidgets();
+            return true;
+        }
+        if (elegido != null && (tecla == GLFW.GLFW_KEY_LEFT || tecla == GLFW.GLFW_KEY_RIGHT
+                || tecla == GLFW.GLFW_KEY_UP || tecla == GLFW.GLFW_KEY_DOWN)) {
+            guardarParaDeshacer();
+            int paso = hasShiftDown() ? 10 : 1;
+            int[] r = Hud.rect(elegido, minecraft);
+            int x = r[0] + (tecla == GLFW.GLFW_KEY_LEFT ? -paso : tecla == GLFW.GLFW_KEY_RIGHT ? paso : 0);
+            int y = r[1] + (tecla == GLFW.GLFW_KEY_UP ? -paso : tecla == GLFW.GLFW_KEY_DOWN ? paso : 0);
+            Hud.mover(elegido, Math.max(0, Math.min(x, width - r[2])), Math.max(0, Math.min(y, height - r[3])));
+            return true;
+        }
+        return super.keyPressed(tecla, codigo, mods);
     }
 
     @Override
