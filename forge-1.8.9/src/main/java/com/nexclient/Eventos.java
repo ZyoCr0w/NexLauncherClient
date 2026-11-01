@@ -4,10 +4,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiIngameMenu;
 import net.minecraft.client.settings.KeyBinding;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -161,6 +163,32 @@ public class Eventos {
         }
     }
 
+    /**
+     * Ranuras de la barra puestas en un botón del ratón (los laterales, por ejemplo): se cambia de objeto en cuanto
+     * llega el clic, también caminando o agachado y aunque otro mod cancele el evento.
+     */
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
+    public void ranuraRaton(MouseEvent e) {
+        if (!e.buttonstate || e.button < 0 || mc.currentScreen != null || mc.thePlayer == null || mc.thePlayer.isSpectator()) {
+            return;
+        }
+        KeyBinding[] barra = mc.gameSettings.keyBindsHotbar;
+        for (int i = 0; i < barra.length; i++) {
+            if (barra[i].getKeyCode() == e.button - 100) {
+                mc.thePlayer.inventory.currentItem = i;
+                return;
+            }
+        }
+    }
+
+    /** Autotexto: lee el chat para saber cuándo termina una partida (no la barra de acción). */
+    @SubscribeEvent
+    public void chat(ClientChatReceivedEvent e) {
+        if (e.type != 2 && e.message != null) {
+            AutoTexto.mensaje(e.message.getUnformattedText());
+        }
+    }
+
     @SubscribeEvent
     public void raton(MouseEvent e) {
         if (e.dwheel != 0 && Movimiento.zoomActivo && mc.currentScreen == null) {
@@ -227,6 +255,8 @@ public class Eventos {
             }
         } else {
             Efectos.tick();
+            AutoTexto.tick(mc);
+            Saturacion.tick(mc);
             Lan.tick(mc);
             Rastros.tick(mc);
             if (mc.thePlayer != null && mc.theWorld != null) {  // etiquetas y cosméticos de los jugadores cercanos

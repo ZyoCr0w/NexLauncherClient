@@ -30,7 +30,9 @@
 		"EntityRenderDispatcherMixin",
 		"PlayerTabOverlayMixin",
 		"ScreenEffectRendererMixin",
-		"ScreenFondoMixin"
+		"ScreenFondoMixin",
+		"GameRendererAccessor",
+		"PostChainAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

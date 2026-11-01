@@ -76,8 +76,9 @@ public class MenuScreen extends PantallaLateral {
                 interruptor("Barra espaciadora", c.teclasEspacio, v -> c.teclasEspacio = v, null);
                 interruptor("Contador de CPS", c.cps, v -> c.cps = v, null);
                 interruptor("Contador de FPS", c.fps, v -> c.fps = v, null);
-                interruptor("Solo números (FPS, CPS, ms)", c.soloNumeros, v -> c.soloNumeros = v,
-                        "Quita «FPS», «CPS» y «ms»: se ven solo los números.");
+                interruptor("Texto «CPS»", c.conTextoCps(), v -> c.textoCps = v, "Apagado: solo los números de los clics.");
+                interruptor("Texto «FPS»", c.conTextoFps(), v -> c.textoFps = v, "Apagado: solo el número de FPS.");
+                interruptor("Texto «ms» del ping", c.conTextoPing(), v -> c.textoPing = v, "Apagado: solo el número del ping.");
                 break;
             case 1:
                 interruptor("Coordenadas", c.coords, v -> c.coords = v, null);
@@ -115,8 +116,13 @@ public class MenuScreen extends PantallaLateral {
                             c.sonidoId = v;
                             Efectos.sonar();
                         }));
-                interruptor("Sonar en cada golpe", c.sonidoCadaGolpe, v -> c.sonidoCadaGolpe = v,
-                        "Apagado: solo suena al hacer blockhit.");
+                addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(Config.MODOS_SONIDO[i]))
+                        .withValues(Arrays.asList(0, 1, 2)).withInitialValue(c.cuandoSuena())
+                        .withTooltip(i -> Tooltip.create(Component.literal(Tr.t(new String[]{
+                                "Solo cuando te pegan mientras bloqueas con la espada.",
+                                "Al golpear mientras bloqueas con la espada.",
+                                "Con cada golpe que das."}[i]))))
+                        .create(x(), y(), 150, 20, Component.literal("Suena"), (b, v) -> c.sonidoCuando = v));
                 deslizador("Volumen", 0, 2, 0.05, c.volumen, v -> c.volumen = (float) v, v -> Math.round(v * 100) + "%");
                 deslizador("Tono", 0.5, 2, 0.05, c.tono, v -> c.tono = (float) v, v -> String.format("%.2f", v));
                 addRenderableWidget(Button.builder(Component.literal("Probar sonido"), b -> Efectos.sonar())
@@ -142,6 +148,17 @@ public class MenuScreen extends PantallaLateral {
                         .withTooltip(i -> Tooltip.create(Component.literal("Cámara libre en tercera persona: mueves el "
                                 + "ratón y miras alrededor sin girar a tu personaje. Tecla en Opciones → Controles.")))
                         .create(x(), y(), 150, 20, Component.literal("Vista libre"), (b, v) -> c.vistaLibre = v));
+                interruptor("Autotexto al terminar", c.autoTexto, v -> c.autoTexto = v,
+                        "Al terminar una partida manda tu mensaje solo (por ejemplo gg; si empieza con / es un comando).");
+                {
+                    net.minecraft.client.gui.components.EditBox campo = new net.minecraft.client.gui.components.EditBox(
+                            font, x() + 1, y() + 1, 148, 18, Component.literal("Autotexto"));
+                    campo.setMaxLength(100);
+                    campo.setValue(c.autoTextoMensaje);
+                    campo.setHint(Component.literal(Tr.t("Mensaje (gg)")).withStyle(net.minecraft.ChatFormatting.DARK_GRAY));
+                    campo.setResponder(v -> c.autoTextoMensaje = v);
+                    addRenderableWidget(campo);
+                }
                 break;
             case 5:
                 interruptor("Mira personalizada", c.mira, v -> c.mira = v, "Reemplaza la mira del juego.");
@@ -175,6 +192,8 @@ public class MenuScreen extends PantallaLateral {
                         v -> "x" + Math.round(v));
                 interruptor("Siempre crítico", c.siempreCritico, v -> c.siempreCritico = v, "Solo visual.");
                 interruptor("Siempre filo", c.siempreFilo, v -> c.siempreFilo = v, "Solo visual.");
+                deslizador("Saturación", 0, 200, 5, c.saturacion, v -> c.saturacion = (int) Math.round(v),
+                        v -> Math.round(v) + "%");
                 interruptor("Contorno de bloque", c.contorno, v -> c.contorno = v, "Color propio al mirar un bloque.");
                 color("Color del contorno", c.contornoColor, v -> c.contornoColor = v);
                 interruptor("Etiquetas NexLauncher", c.etiquetas, v -> c.etiquetas = v,

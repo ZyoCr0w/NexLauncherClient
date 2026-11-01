@@ -119,9 +119,9 @@ public final class Hud {
         List<String> l = new ArrayList<String>();
         EntityPlayerSP p = mc.thePlayer;
         if (id.equals("cps")) {
-            l.add(Cps.izquierdo() + " | " + Cps.derecho() + (Config.get().soloNumeros ? "" : " CPS"));
+            l.add(Cps.izquierdo() + " | " + Cps.derecho() + (Config.get().conTextoCps() ? " CPS" : ""));
         } else if (id.equals("fps")) {
-            l.add(Minecraft.getDebugFPS() + (Config.get().soloNumeros ? "" : " FPS"));
+            l.add(Minecraft.getDebugFPS() + (Config.get().conTextoFps() ? " FPS" : ""));
         } else if (id.equals("coords")) {
             if (p != null) {
                 String s = "XYZ: " + MathHelper.floor_double(p.posX) + " " + MathHelper.floor_double(p.posY) + " "
@@ -140,7 +140,7 @@ public final class Hud {
                 NetworkPlayerInfo info = mc.getNetHandler().getPlayerInfo(p.getUniqueID());
                 ms = info == null ? 0 : info.getResponseTime();
             }
-            l.add(ms + (Config.get().soloNumeros ? "" : " ms"));
+            l.add(ms + (Config.get().conTextoPing() ? " ms" : ""));
         } else if (id.equals("reloj")) {
             Calendar t = Calendar.getInstance();
             int h = t.get(Calendar.HOUR_OF_DAY), m = t.get(Calendar.MINUTE);
@@ -358,8 +358,8 @@ public final class Hud {
         tecla(f, 48, 24, 22, 22, nombre(k[3]), null, BRILLO[3], fondo, texto, borde, e.sombra);
         int y = 48;
         if (c.teclasRaton) {
-            tecla(f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + (c.soloNumeros ? "" : " CPS") : null, BRILLO[4], fondo, texto, borde, e.sombra);
-            tecla(f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + (c.soloNumeros ? "" : " CPS") : null, BRILLO[5], fondo, texto, borde, e.sombra);
+            tecla(f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + (c.conTextoCps() ? " CPS" : "") : null, BRILLO[4], fondo, texto, borde, e.sombra);
+            tecla(f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + (c.conTextoCps() ? " CPS" : "") : null, BRILLO[5], fondo, texto, borde, e.sombra);
             y += 24;
         }
         if (c.teclasEspacio) {

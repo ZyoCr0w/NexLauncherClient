@@ -2,6 +2,7 @@ package com.nexclient;
 
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
 import net.minecraftforge.fml.client.config.GuiSlider;
 import org.lwjgl.input.Keyboard;
 
@@ -17,6 +18,8 @@ public class MenuNex extends PantallaLateral {
     private final List<Runnable> acciones = new ArrayList<Runnable>();
     private int fila;
     private String ayuda = "";
+    /** Mensaje del autotexto (página Juego). */
+    private net.minecraft.client.gui.GuiTextField campo;
 
     public MenuNex(GuiScreen padre) {
         super(false);
@@ -72,6 +75,8 @@ public class MenuNex extends PantallaLateral {
     public void initGui() {
         super.initGui();
         acciones.clear();
+        campo = null;
+        Keyboard.enableRepeatEvents(true);
         menu.fondoPropio = mc.theWorld == null;
         menu.subtitulo = "Ajustes";
         final Config c = Config.get();
@@ -89,7 +94,9 @@ public class MenuNex extends PantallaLateral {
             interruptor("Barra espaciadora", c.teclasEspacio, new Escritor() { public void poner(boolean v) { c.teclasEspacio = v; } });
             interruptor("Contador de CPS", c.cps, new Escritor() { public void poner(boolean v) { c.cps = v; } });
             interruptor("Contador de FPS", c.fps, new Escritor() { public void poner(boolean v) { c.fps = v; } });
-            interruptor("Solo números (FPS, CPS, ms)", c.soloNumeros, new Escritor() { public void poner(boolean v) { c.soloNumeros = v; } });
+            interruptor("Texto «CPS»", c.conTextoCps(), new Escritor() { public void poner(boolean v) { c.textoCps = v; } });
+            interruptor("Texto «FPS»", c.conTextoFps(), new Escritor() { public void poner(boolean v) { c.textoFps = v; } });
+            interruptor("Texto «ms» del ping", c.conTextoPing(), new Escritor() { public void poner(boolean v) { c.textoPing = v; } });
         } else if (pagina == 1) {
             ayuda = "Activa lo que quieras ver y acomódalo con «Mover elementos del HUD».";
             interruptor("Coordenadas", c.coords, new Escritor() { public void poner(boolean v) { c.coords = v; } });
@@ -111,7 +118,7 @@ public class MenuNex extends PantallaLateral {
             interruptor("Armadura", c.armadura, new Escritor() { public void poner(boolean v) { c.armadura = v; } });
             interruptor("Ping en el Tab", c.pingTab, new Escritor() { public void poner(boolean v) { c.pingTab = v; } });
         } else if (pagina == 2) {
-            ayuda = "Blockhit: golpea y bloquea con la espada. «Estilo 1.7» mueve la espada al golpear bloqueando.";
+            ayuda = "«Suena: Al recibir daño»: el sonido sale solo cuando te pegan mientras bloqueas con la espada.";
             interruptor("Blockhit visual", c.blockhit, new Escritor() { public void poner(boolean v) { c.blockhit = v; } });
             interruptor("Estilo 1.7", c.estilo17, new Escritor() { public void poner(boolean v) { c.estilo17 = v; } });
             interruptor("Mantener = spam", c.blockhitMantener, new Escritor() { public void poner(boolean v) { c.blockhitMantener = v; } });
@@ -126,7 +133,13 @@ public class MenuNex extends PantallaLateral {
                     Efectos.sonar();
                 }
             });
-            interruptor("Sonar en cada golpe", c.sonidoCadaGolpe, new Escritor() { public void poner(boolean v) { c.sonidoCadaGolpe = v; } });
+            final GuiButton[] cuando = new GuiButton[1];
+            cuando[0] = boton(x(), y(), 150, "Suena: " + Config.MODOS_SONIDO[c.cuandoSuena()], new Runnable() {
+                public void run() {
+                    c.sonidoCuando = (c.cuandoSuena() + 1) % Config.MODOS_SONIDO.length;
+                    cuando[0].displayString = "Suena: " + Config.MODOS_SONIDO[c.sonidoCuando];
+                }
+            });
             deslizador("Volumen: ", "%", 0, 100, c.volumen * 100, new Numero() {
                 public void poner(double v) { c.volumen = (float) (Math.round(v) / 100.0); } });
             deslizador("Tono: ", "%", 50, 200, c.tono * 100, new Numero() {
@@ -151,6 +164,11 @@ public class MenuNex extends PantallaLateral {
                     vista[0].displayString = "Vista libre: " + Config.MODOS_VISTA[c.vistaLibre];
                 }
             });
+            interruptor("Autotexto al terminar", c.autoTexto, new Escritor() { public void poner(boolean v) { c.autoTexto = v; } });
+            campo = new GuiTextField(9000, fontRendererObj, x() + 1, y() + 1, 148, 18);
+            campo.setMaxStringLength(100);
+            campo.setText(c.autoTextoMensaje);
+            ayuda = "Autotexto: al terminar una partida manda tu mensaje (por ejemplo gg; con / es un comando).";
         } else if (pagina == 5) {
             ayuda = "«Color de golpe» cambia el rojo con el que parpadean al recibir daño.";
             interruptor("Mira personalizada", c.mira, new Escritor() { public void poner(boolean v) { c.mira = v; } });
@@ -183,6 +201,8 @@ public class MenuNex extends PantallaLateral {
                 public void poner(double v) { c.multiplicador = (int) Math.round(v); } });
             interruptor("Siempre crítico", c.siempreCritico, new Escritor() { public void poner(boolean v) { c.siempreCritico = v; } });
             interruptor("Siempre filo", c.siempreFilo, new Escritor() { public void poner(boolean v) { c.siempreFilo = v; } });
+            deslizador("Saturación: ", "%", 0, 200, c.saturacion, new Numero() {
+                public void poner(double v) { c.saturacion = (int) (Math.round(v / 5.0) * 5); } });
             interruptor("Contorno de bloque", c.contorno, new Escritor() { public void poner(boolean v) { c.contorno = v; } });
             color("Color del contorno", false);
             deslizador("Grosor: ", "", 1, 8, c.contornoGrosor, new Numero() {
@@ -315,11 +335,36 @@ public class MenuNex extends PantallaLateral {
 
     @Override
     protected void keyTyped(char c, int tecla) throws IOException {
+        if (campo != null && campo.isFocused() && tecla != Keyboard.KEY_ESCAPE) {
+            if (tecla == Keyboard.KEY_RETURN || tecla == Keyboard.KEY_NUMPADENTER) {
+                campo.setFocused(false);
+            } else {
+                campo.textboxKeyTyped(c, tecla);
+                Config.get().autoTextoMensaje = campo.getText();
+            }
+            return;
+        }
         if (tecla == Keyboard.KEY_ESCAPE) {
             cerrar();
             return;
         }
         super.keyTyped(c, tecla);
+    }
+
+    @Override
+    protected void mouseClicked(int mx, int my, int boton) throws IOException {
+        super.mouseClicked(mx, my, boton);
+        if (campo != null) {
+            campo.mouseClicked(mx, my, boton);
+        }
+    }
+
+    @Override
+    public void updateScreen() {
+        super.updateScreen();
+        if (campo != null) {
+            campo.updateCursorCounter();
+        }
     }
 
     private void cerrar() {
@@ -329,6 +374,7 @@ public class MenuNex extends PantallaLateral {
 
     @Override
     public void onGuiClosed() {
+        Keyboard.enableRepeatEvents(false);
         Config.get().guardar();
     }
 
@@ -344,6 +390,12 @@ public class MenuNex extends PantallaLateral {
         }
         if (pagina == 5 && Config.get().mira) {
             Hud.mira(cx, height - 40);
+        }
+        if (campo != null) {
+            campo.drawTextBox();
+            if (campo.getText().isEmpty() && !campo.isFocused()) {
+                fontRendererObj.drawStringWithShadow(Tr.t("Mensaje (gg)"), campo.xPosition + 4, campo.yPosition + 5, 0x707078);
+            }
         }
     }
 }

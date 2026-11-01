@@ -23,10 +23,34 @@ public class MouseHandlerMixin {
         }
     }
 
+    /**
+     * Ranuras de la barra puestas en un botón del ratón (los laterales, por ejemplo): se cambia de objeto en cuanto
+     * llega el clic, también caminando o agachado.
+     */
+    private static void ranura(Minecraft mc, int boton) {
+        if (mc.player == null || mc.player.isSpectator()) {
+            return;
+        }
+        net.minecraft.client.KeyMapping[] barra = mc.options.keyHotbarSlots;
+        for (int i = 0; i < barra.length; i++) {
+            com.mojang.blaze3d.platform.InputConstants.Key k =
+                    net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.getBoundKeyOf(barra[i]);
+            if (k.getType() == com.mojang.blaze3d.platform.InputConstants.Type.MOUSE && k.getValue() == boton) {
+                boolean guardarBarra = mc.player.isCreative()
+                        && (mc.options.keySaveHotbarActivator.isDown() || mc.options.keyLoadHotbarActivator.isDown());
+                if (!guardarBarra) {  // en creativo, C/X + número guarda o carga una barra: eso lo hace el juego
+                    mc.player.getInventory().selected = i;
+                }
+                return;
+            }
+        }
+    }
+
     @Inject(method = "onPress", at = @At("HEAD"))
     private void nexclient$clic(long ventana, int boton, int accion, int mods, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         if (accion == GLFW.GLFW_PRESS && mc.screen == null) {
+            ranura(mc, boton);
             Cps.clic(boton);
             if (boton == 0) {
                 Efectos.clicIzquierdo(mc);

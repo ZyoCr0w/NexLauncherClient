@@ -31,8 +31,10 @@ public class Config {
     public boolean cps = false;
     public int cpsX = 6, cpsY = 100;
     public boolean fps = false;
-    /** FPS, CPS y ping sin texto: solo los números. */
+    /** Versión anterior: FPS, CPS y ping sin texto (ahora cada uno tiene el suyo; se usa solo para migrar). */
     public boolean soloNumeros = false;
+    /** La palabra de cada contador: «FPS», «CPS» y «ms». null = todavía no se eligió (sale de soloNumeros). */
+    public Boolean textoFps, textoCps, textoPing;
     public int fpsX = 6, fpsY = 114;
 
     // ---- HUD: información
@@ -87,8 +89,10 @@ public class Config {
     public String sonidoId = "metal";
     public float volumen = 1.0f;
     public float tono = 1.0f;
-    /** false: solo suena al hacer blockhit; true: en cada golpe. */
+    /** Versión anterior: true = sonaba en cada golpe (se usa solo para migrar a sonidoCuando). */
     public boolean sonidoCadaGolpe = false;
+    /** Cuándo suena: 0 al recibir daño mientras bloqueas con la espada, 1 al golpear bloqueando, 2 en cada golpe. */
+    public Integer sonidoCuando;
 
     // ---- Partículas
     public boolean particulas = true;
@@ -113,6 +117,11 @@ public class Config {
     public boolean pingTab = true;
     /** Al abrir el mundo en LAN (Jugar con amigos de NexLauncher), dejar entrar cuentas no premium. */
     public boolean lanSinPremium = true;
+    /** Autotexto: al terminar una partida se manda este mensaje solo (o un comando si empieza con /). */
+    public boolean autoTexto = false;
+    public String autoTextoMensaje = "gg";
+    /** Frases del chat que anuncian el final de una partida (se pueden editar en nexclient.json). */
+    public List<String> autoTextoFrases;
 
     // ---- Mira y color de golpe
     public boolean mira = false;
@@ -159,6 +168,8 @@ public class Config {
     // ---- Visual
     /** Menú principal y de pausa propios de NexClient (si no, los de Minecraft o del paquete de texturas). */
     public boolean menuNex = true;
+    /** Saturación del color del juego en %: 100 normal, 0 blanco y negro, 200 colores muy vivos. */
+    public int saturacion = 100;
     public boolean contorno = false;
     public int contornoColor = 0;
     public float contornoGrosor = 2.0f;
@@ -166,6 +177,12 @@ public class Config {
     public static final String[] SONIDOS = {"metal", "escudo", "golpe", "orbe", "pling", "click"};
     public static final String[] NOMBRES = {"Metal", "Escudo", "Golpe", "Experiencia", "Pling", "Click"};
     public static final String[] MODOS_VISTA = {"Apagada", "Mantener R", "Alternar R"};
+    public static final String[] MODOS_SONIDO = {"Al recibir daño", "Al golpear", "En cada golpe"};
+    /** Finales de partida de los servidores PvP más comunes (Hypixel, minijuegos en español…). */
+    public static final String[] FRASES_FIN = {"1st Killer -", "1st Place -", "Winner:", "Winners:", "Winning Team -",
+            "Winning Team:", "Winners -", " won the game!", "Top Survivors", "Your Overall Winstreak:", "Victory!",
+            "VICTORY!", "You won", "Ganador:", "Ganadores:", "Ganador -", "¡Victoria!", "ha ganado la partida",
+            "han ganado la partida", "Ganaste la partida", "¡Has ganado!"};
     public static final String[] ESTILOS_MIRA = Miras.ESTILOS;
     public static final int[] COLORES = {0xFFFFFFFF, 0xFF55FFFF, 0xFF55FF55, 0xFFFFFF55, 0xFFFF5555, 0xFFFF55FF,
             0xFFFFAA00, 0xFF5555FF, 0xFF000000};
@@ -266,6 +283,46 @@ public class Config {
         if (indiceSonido(sonidoId) < 0) {
             sonidoId = "metal";
         }
+        if (textoFps == null) {
+            textoFps = !soloNumeros;
+        }
+        if (textoCps == null) {
+            textoCps = !soloNumeros;
+        }
+        if (textoPing == null) {
+            textoPing = !soloNumeros;
+        }
+        if (sonidoCuando == null) {
+            sonidoCuando = sonidoCadaGolpe ? 2 : 0;
+        }
+        sonidoCuando = Math.max(0, Math.min(MODOS_SONIDO.length - 1, sonidoCuando));
+        saturacion = Math.max(0, Math.min(200, saturacion));
+        if (autoTextoMensaje == null) {
+            autoTextoMensaje = "gg";
+        }
+        if (autoTextoMensaje.length() > 100) {
+            autoTextoMensaje = autoTextoMensaje.substring(0, 100);
+        }
+        if (autoTextoFrases == null || autoTextoFrases.isEmpty()) {
+            autoTextoFrases = new ArrayList<String>(java.util.Arrays.asList(FRASES_FIN));
+        }
+    }
+
+    /** ¿Se escribe la palabra después del número? (FPS, CPS, ms) */
+    public boolean conTextoFps() {
+        return textoFps == null || textoFps;
+    }
+
+    public boolean conTextoCps() {
+        return textoCps == null || textoCps;
+    }
+
+    public boolean conTextoPing() {
+        return textoPing == null || textoPing;
+    }
+
+    public int cuandoSuena() {
+        return sonidoCuando == null ? 0 : sonidoCuando;
     }
 
     public void limitarMira() {

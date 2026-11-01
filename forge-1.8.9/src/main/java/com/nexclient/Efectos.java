@@ -28,6 +28,7 @@ public final class Efectos {
     private static long ultimoGolpe;
     private static double alcance = -1;
     private static boolean herido;
+    private static int hurtAntes;
 
     private Efectos() {
     }
@@ -54,6 +55,16 @@ public final class Efectos {
             combo = 0;
         }
         herido = ahoraHerido;
+        // te acaban de pegar (el juego reinicia hurtTime en 10): suena el blockhit si bloqueabas con la espada
+        if (p.hurtTime > hurtAntes && Config.get().cuandoSuena() == 0 && Config.get().sonido && bloqueoReciente(250)) {
+            sonar();
+        }
+        hurtAntes = p.hurtTime;
+    }
+
+    /** Bloqueando ahora o hace muy poco (el aviso del daño llega del servidor un instante después). */
+    private static boolean bloqueoReciente(long ms) {
+        return bloqueando() || System.currentTimeMillis() - ultimoBloqueo < ms;
     }
 
 
@@ -109,7 +120,7 @@ public final class Efectos {
             p.swingProgressInt = -1;  // solo la animación: no se manda nada al servidor
             p.isSwingInProgress = true;
         }
-        if (espada && c.sonido) {  // el sonido de blockhit es solo con la espada
+        if (espada && c.sonido && c.cuandoSuena() == 1) {  // el sonido de blockhit es solo con la espada
             sonar();
         }
     }
@@ -130,8 +141,7 @@ public final class Efectos {
         } else {
             alcance = ojos.distanceTo(new Vec3(objetivo.posX, objetivo.posY + objetivo.height / 2, objetivo.posZ));
         }
-        boolean blockhit = bloqueando() || System.currentTimeMillis() - ultimoBloqueo < 350;
-        if (c.sonido && (c.sonidoCadaGolpe || blockhit)) {
+        if (c.sonido && (c.cuandoSuena() == 2 || (c.cuandoSuena() == 1 && bloqueoReciente(350)))) {
             sonar();
         }
         if (!c.particulas || mc.effectRenderer == null) {

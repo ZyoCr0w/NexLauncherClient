@@ -74,6 +74,8 @@ public class NexClient implements ClientModInitializer {
                 mc.setScreen(new MenuScreen(mc.screen));
             }
             Efectos.tick(mc);
+            AutoTexto.tick(mc);
+            Saturacion.tick(mc);
             if (mc.player != null && mc.level != null) {  // etiquetas y cosméticos de los jugadores cercanos
                 java.util.List<String> cerca = new java.util.ArrayList<String>();
                 for (net.minecraft.world.entity.player.Player otro : mc.level.players()) {
@@ -101,6 +103,12 @@ public class NexClient implements ClientModInitializer {
         ScreenEvents.AFTER_INIT.register((mc, pantalla, ancho, alto) -> {
             if (pantalla instanceof PauseScreen) {
                 botonPausa(mc, pantalla);
+            }
+        });
+        // Autotexto: los mensajes del servidor (no los de jugadores ni la barra de acción)
+        net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents.GAME.register((mensaje, barra) -> {
+            if (!barra) {
+                AutoTexto.mensaje(mensaje.getString());
             }
         });
         AttackEntityCallback.EVENT.register((jugador, mundo, mano, objetivo, golpe) -> {

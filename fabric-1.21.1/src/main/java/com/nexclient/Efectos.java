@@ -30,6 +30,7 @@ public final class Efectos {
     private static long ultimoGolpe;
     private static double alcance = -1;
     private static boolean herido;
+    private static int hurtAntes;
     private static int colorAplicado = Integer.MIN_VALUE;
 
     private Efectos() {
@@ -104,6 +105,16 @@ public final class Efectos {
             combo = 0;  // te pegaron: se corta el combo
         }
         herido = ahoraHerido;
+        // te acaban de pegar (el juego reinicia hurtTime en 10): suena el blockhit si bloqueabas con la espada
+        if (p.hurtTime > hurtAntes && Config.get().cuandoSuena() == 0 && Config.get().sonido && bloqueoReciente(mc, 250)) {
+            sonar();
+        }
+        hurtAntes = p.hurtTime;
+    }
+
+    /** Bloqueando ahora o hace muy poco (el aviso del daño llega del servidor un instante después). */
+    private static boolean bloqueoReciente(Minecraft mc, long ms) {
+        return bloqueando(mc) || System.currentTimeMillis() - ultimoBloqueo < ms;
     }
 
 
@@ -158,8 +169,7 @@ public final class Efectos {
         } else {
             alcance = Math.sqrt(objetivo.getBoundingBox().distanceToSqr(jugador.getEyePosition()));
         }
-        boolean blockhit = bloqueando(mc) || System.currentTimeMillis() - ultimoBloqueo < 350;
-        if (c.sonido && (c.sonidoCadaGolpe || blockhit)) {
+        if (c.sonido && (c.cuandoSuena() == 2 || (c.cuandoSuena() == 1 && bloqueoReciente(mc, 350)))) {
             sonar();
         }
         if (!c.particulas || mc.particleEngine == null) {

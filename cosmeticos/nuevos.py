@@ -267,8 +267,12 @@ def capas_nuevas():
 # ---------------------------------------------------------------- bandanas animadas
 def bandana(banda, llama=None, punta=None, raya=None, puntos=None, arcoiris=False, colas_largas=False, oscura=None):
     """Una tira alrededor de la frente, con llamas que suben y se mueven (parpadeo que corre de lado a lado), y un
-    nudo atrás con dos puntas que se mecen al caminar."""
-    cols, tam = 15, 0.58
+    nudo atrás con dos puntas que se mecen al caminar.
+
+    Va por fuera de la segunda capa de la skin (el «sombrero», que sobresale 0.5 de la cabeza): si no, los píxeles
+    de esa capa se encimaban con la tira."""
+    cols, tam = 16, 0.6
+    dentro, prof = 4.52, 0.28  # cara interior justo fuera del sombrero (4.5); la exterior queda en 4.8
     y0 = -8.2
     filas = []
     for j in range(6):
@@ -298,10 +302,11 @@ def bandana(banda, llama=None, punta=None, raya=None, puntos=None, arcoiris=Fals
         out = []
         ancho = cols * tam
         lado = ancho / 2
-        for origen, plano in (([-lado, y0, -4.35 - dz], "xy"), ([-lado, y0, 4.05 + dz], "xy"),
-                              ([-4.35 - dz, y0, -lado], "zy"), ([4.05 + dz, y0, -lado], "zy")):
+        fuera = dentro + prof
+        for origen, plano in (([-lado, y0, -fuera - dz], "xy"), ([-lado, y0, dentro + dz], "xy"),
+                              ([-fuera - dz, y0, -lado], "zy"), ([dentro + dz, y0, -lado], "zy")):
             p = {"pixeles": {"origen": origen, "plano": plano, "filas": filas, "paleta": paleta, "tam": tam,
-                             "prof": 0.3}}
+                             "prof": prof}}
             p.update(extra)
             out.append(p)
         return out
@@ -316,7 +321,7 @@ def bandana(banda, llama=None, punta=None, raya=None, puntos=None, arcoiris=Fals
         cola.update(arcoiris=True, arcoiris_vel=0.4)
     grupos = [
         {"id": "banda", "piezas": piezas},
-        {"id": "nudo", "pivote": [2.2, -5.8, 4.4], "piezas": [{"caja": [-0.9, -0.8, -0.2, 1.8, 1.6, 0.8],
+        {"id": "nudo", "pivote": [2.2, -5.8, 5.0], "piezas": [{"caja": [-0.9, -0.8, -0.2, 1.8, 1.6, 0.8],
                                                                 "color": color_cola}]},
         {"id": "cola1", "padre": "nudo", "pivote": [0.3, 0.4, 0.4], "rot": [28, 0, 18],
          "anim": {"rx": anim(amp=5, frec=0.9, mov=35, aire=-15), "rz": anim(amp=7, frec=0.7)}, "piezas": [cola]},

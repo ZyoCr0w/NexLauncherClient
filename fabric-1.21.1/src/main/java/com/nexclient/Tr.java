@@ -94,6 +94,22 @@ public final class Tr {
             "Editar mira…", "Edit crosshair…", "Cámara libre en tercera persona", "Third-person free camera",
             "CustomSkinLoader: ves las skins offline de NexLauncher en cualquier servidor", "CustomSkinLoader: see NexLauncher offline skins on any server",
             "Interfaz", "Interface", "Gris", "Gray", "Morado", "Purple", "Cian", "Cyan", "Lima", "Lime", "Dorado", "Gold",
+            // NexClient 4.7
+            "Texto «CPS»", "“CPS” text", "Texto «FPS»", "“FPS” text", "Texto «ms» del ping", "Ping “ms” text",
+            "Apagado: solo los números de los clics.", "Off: only the click numbers.",
+            "Apagado: solo el número de FPS.", "Off: only the FPS number.", "Apagado: solo el número del ping.", "Off: only the ping number.",
+            "Suena", "Plays", "Al recibir daño", "When hit", "Al golpear", "When hitting", "En cada golpe", "Every hit",
+            "Solo cuando te pegan mientras bloqueas con la espada.", "Only when you get hit while blocking with the sword.",
+            "Al golpear mientras bloqueas con la espada.", "When you hit while blocking with the sword.",
+            "Con cada golpe que das.", "With every hit you land.",
+            "«Suena: Al recibir daño»: el sonido sale solo cuando te pegan mientras bloqueas con la espada.",
+            "“Plays: When hit”: the sound only plays when you get hit while blocking with the sword.",
+            "Autotexto al terminar", "Auto text at game end", "Mensaje (gg)", "Message (gg)",
+            "Al terminar una partida manda tu mensaje solo (por ejemplo gg; si empieza con / es un comando).",
+            "When a game ends your message is sent automatically (e.g. gg; starting with / it's a command).",
+            "Autotexto: al terminar una partida manda tu mensaje (por ejemplo gg; con / es un comando).",
+            "Auto text: when a game ends it sends your message (e.g. gg; with / it's a command).",
+            "Saturación", "Saturation",
         };
         for (int i = 0; i + 1 < d.length; i += 2) {
             p(d[i], d[i + 1]);

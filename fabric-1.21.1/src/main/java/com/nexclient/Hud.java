@@ -111,10 +111,10 @@ public final class Hud {
         LocalPlayer p = mc.player;
         switch (id) {
             case "cps":
-                l.add(Cps.izquierdo() + " | " + Cps.derecho() + (Config.get().soloNumeros ? "" : " CPS"));
+                l.add(Cps.izquierdo() + " | " + Cps.derecho() + (Config.get().conTextoCps() ? " CPS" : ""));
                 break;
             case "fps":
-                l.add(mc.getFps() + (Config.get().soloNumeros ? "" : " FPS"));
+                l.add(mc.getFps() + (Config.get().conTextoFps() ? " FPS" : ""));
                 break;
             case "coords":
                 if (p != null) {
@@ -134,7 +134,7 @@ public final class Hud {
                     PlayerInfo info = mc.getConnection().getPlayerInfo(p.getUUID());
                     ms = info == null ? 0 : info.getLatency();
                 }
-                l.add(ms + (Config.get().soloNumeros ? "" : " ms"));
+                l.add(ms + (Config.get().conTextoPing() ? " ms" : ""));
                 break;
             }
             case "reloj": {
@@ -356,9 +356,9 @@ public final class Hud {
         tecla(g, f, 48, 24, 22, 22, nombre(k[3]), null, BRILLO[3], fondo, texto, borde, e.sombra);
         int y = 48;
         if (c.teclasRaton) {
-            tecla(g, f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + (c.soloNumeros ? "" : " CPS") : null, BRILLO[4], fondo, texto,
+            tecla(g, f, 0, y, 34, 22, "LMB", c.teclasCps ? Cps.izquierdo() + (c.conTextoCps() ? " CPS" : "") : null, BRILLO[4], fondo, texto,
                     borde, e.sombra);
-            tecla(g, f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + (c.soloNumeros ? "" : " CPS") : null, BRILLO[5], fondo, texto,
+            tecla(g, f, 36, y, 34, 22, "RMB", c.teclasCps ? Cps.derecho() + (c.conTextoCps() ? " CPS" : "") : null, BRILLO[5], fondo, texto,
                     borde, e.sombra);
             y += 24;
         }
