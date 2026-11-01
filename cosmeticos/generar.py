@@ -262,6 +262,12 @@ def aura(colores, brillo=True, n=56, vida=0.8, tam=(3.0, 0.6), alfa=(0.42, 0.0),
     return {"hueso": "jugador", "emisores": em + (extra or [])}
 
 
+def rastro(colores, tam, sube):
+    return {"hueso": "jugador", "solo_vista": True, "emisores": [
+        {"tipo": "subida", "n": 10, "radio": [1.0, 4.5], "y": [22, 24], "vida": 0.9, "subida": sube,
+         "tam": [tam, tam * 0.4], "colores": colores, "alfa": [1.0, 0.2], "brillo": True}]}
+
+
 # ---------------------------------------------------------------- escudos (pixel art de 12 × 22 en la placa)
 def escudo(filas, paleta, brillo_chars=(), parpadeo=None, borde="#000000"):
     piezas = [{"caja": [-6, -11, -2, 12, 22, 1], "color": paleta.get("fondo", "#333333")},
@@ -350,6 +356,11 @@ def catalogo():
                            alfa=(0.6, 0.0), extra=[
             {"tipo": "orbita", "n": 6, "radio": 7.5, "y": 12, "vel": 35, "tam": 1.2, "bob": 2.0,
              "colores": ["#E0F7FA", "#80DEEA"], "brillo": True}]),
+        # rastros: en el juego son partículas de Minecraft; esto es solo para la vista previa de NexLauncher
+        "chispas": rastro(["#FFF59D", "#FFEB3B", "#FFFFFF"], 0.5, 6),
+        "corazones": rastro(["#E53935", "#FF5252"], 1.2, 9),
+        "notas": rastro(["#69F0AE", "#40C4FF", "#FF4081", "#FFD740"], 1.2, 9),
+        "pisadas_fuego": rastro(["#FF9800", "#FF5722", "#FFD54F"], 0.6, 4),
         # escudos
         "escudo_nex": escudo(ESCUDO_N, {"fondo": "#141416", "b": "#2BD96B", "n": "#2BD96B", "g": "#1E8E4A"},
                              brillo_chars=("n",), parpadeo={"frec": 0.6, "min": 0.75}),
@@ -366,7 +377,22 @@ def catalogo():
 
 
 if __name__ == "__main__":
-    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cosmeticos.json")
-    with open(ruta, "w", encoding="utf-8") as f:
-        json.dump(catalogo(), f, ensure_ascii=False, separators=(",", ":"))
-    print(ruta, os.path.getsize(ruta), "bytes")
+    aqui = os.path.dirname(os.path.abspath(__file__))
+    texto = json.dumps(catalogo(), ensure_ascii=False, separators=(",", ":"))
+    destinos = [os.path.join(aqui, "cosmeticos.json"),
+                os.path.join(aqui, "..", "fabric-1.21.1", "src", "main", "resources", "assets", "nexclient", "cosmeticos.json"),
+                os.path.join(aqui, "..", "forge-1.8.9", "src", "main", "resources", "assets", "nexclient", "cosmeticos.json")]
+    for ruta in destinos:
+        if os.path.isdir(os.path.dirname(ruta)):
+            with open(ruta, "w", encoding="utf-8") as f:
+                f.write(texto)
+            print(ruta, len(texto.encode()), "bytes")
+    # NexLauncher (si está al lado): el mismo catálogo como módulo, así va dentro del .exe sin tocar los .bat
+    launcher = os.path.join(aqui, "..", "..", "NexLauncher", "nexlauncher")
+    if len(os.sys.argv) > 1:
+        launcher = os.sys.argv[1]
+    if os.path.isdir(launcher):
+        with open(os.path.join(launcher, "cosmeticos_datos.py"), "w", encoding="utf-8") as f:
+            f.write('"""Catálogo de cosméticos 3D (generado por NexLauncherClient/cosmeticos/generar.py)."""\n')
+            f.write("DATOS = " + repr(texto) + "\n")
+        print(launcher, "cosmeticos_datos.py")
