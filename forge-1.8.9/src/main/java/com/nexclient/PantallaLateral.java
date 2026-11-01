@@ -46,6 +46,7 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
     @Override
     public void drawScreen(int mx, int my, float parcial) {
         menu.dibujar(this, width, height, mx, my);
+        super.drawScreen(mx, my, parcial);  // botones propios de la pantalla (el menú de NexClient)
     }
 
     @Override
@@ -54,6 +55,8 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
         if (e != null) {
             mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
             e.accion.run();
+        } else {
+            super.mouseClicked(mx, my, boton);
         }
     }
 

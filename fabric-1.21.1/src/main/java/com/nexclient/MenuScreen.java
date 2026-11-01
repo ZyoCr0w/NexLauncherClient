@@ -15,38 +15,53 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleFunction;
 
-/** Menú de NexClient (Shift derecho). */
-public class MenuScreen extends Screen {
+/** Menú de NexClient (Shift derecho): las páginas en el panel de la izquierda y sus opciones a la derecha. */
+public class MenuScreen extends PantallaLateral {
     private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mira", "Mods"};
     private static int pagina = 0;
     private final Screen padre;
     private int fila;
 
     public MenuScreen(Screen padre) {
-        super(Component.literal("NexClient"));
+        super(false);
         this.padre = padre;
     }
 
     @Override
-    protected void init() {
-        Config c = Config.get();
-        int cx = width / 2;
-        int ancho = 46;
-        int x0 = cx - (PAGINAS.length * (ancho + 2)) / 2;
+    protected void entradas() {
         for (int i = 0; i < PAGINAS.length; i++) {
             final int k = i;
-            Button b = Button.builder(Component.literal(i == pagina ? "§l" + PAGINAS[i] : PAGINAS[i]), x -> {
-                pagina = k;
-                rebuildWidgets();
-            }).bounds(x0 + i * (ancho + 2), 28, ancho, 20).build();
-            b.active = i != pagina;
-            addRenderableWidget(b);
+            MenuLateral.Entrada e = new MenuLateral.Entrada(PAGINAS[i], () -> {
+                if (pagina != k) {
+                    pagina = k;
+                    rebuildWidgets();
+                }
+            }, false, false, true);
+            menu.entradas.add(e);
+            if (i == pagina) {
+                menu.marcada = e;
+            }
         }
+        menu.entradas.add(new MenuLateral.Entrada("Listo", this::onClose, true, false, true));
+    }
+
+    /** Centro de la zona de opciones (a la derecha del panel). */
+    private int cx() {
+        return MenuLateral.ANCHO + (width - MenuLateral.ANCHO) / 2;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        menu.fondoPropio = minecraft.level == null;
+        menu.subtitulo = "Ajustes";
+        Config c = Config.get();
+        int cx = cx();
         fila = 0;
         switch (pagina) {
             case 0:
                 addRenderableWidget(Button.builder(Component.literal("§lEditar HUD§r · posición, tamaño, fondo, borde y colores"),
-                        b -> minecraft.setScreen(new EditorHudScreen(this))).bounds(width / 2 - 155, y(), 310, 20).build());
+                        b -> minecraft.setScreen(new EditorHudScreen(this))).bounds(cx - 155, y(), 310, 20).build());
                 fila++;
                 interruptor("Teclas en pantalla", c.teclas, v -> c.teclas = v, "WASD, clics y espacio en pantalla.");
                 interruptor("CPS en las teclas", c.teclasCps, v -> c.teclasCps = v, null);
@@ -129,7 +144,7 @@ public class MenuScreen extends Screen {
                 int k = 0;
                 for (String[] m : Catalogo.MODS) {
                     final String id = m[0], nombre = m[1];
-                    int bx = width / 2 - 156 + (k % 3) * 105, by = 56 + (k / 3) * 22;
+                    int bx = cx - 156 + (k % 3) * 105, by = 56 + (k / 3) * 22;
                     Button b = Button.builder(textoMod(nombre, Catalogo.elegido(c, id)), x -> {
                         boolean v = !Catalogo.elegido(c, id);
                         c.ponerExtra(Catalogo.VERSION, id, v, Catalogo.porDefecto());
@@ -161,8 +176,6 @@ public class MenuScreen extends Screen {
                         .create(x(), y(), 150, 20, Component.literal("Cosméticos"), (b, v) -> c.cosmeticosVer = v));
                 break;
         }
-        addRenderableWidget(Button.builder(Component.literal("Listo"), b -> onClose())
-                .bounds(cx - 100, height - 26, 200, 20).build());
     }
 
     private static Component textoMod(String nombre, boolean activo) {
@@ -170,7 +183,7 @@ public class MenuScreen extends Screen {
     }
 
     private int x() {
-        return width / 2 + (fila % 2 == 0 ? -155 : 5);
+        return cx() + (fila % 2 == 0 ? -155 : 5);
     }
 
     private int y() {
@@ -209,14 +222,16 @@ public class MenuScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float delta) {
-        super.render(g, mx, my, delta);
-        g.drawCenteredString(font, "§lNexClient", width / 2, 10, 0xFFFFFF);
+        super.render(g, mx, my, delta);  // panel, fondo y opciones
+        int cx = cx();
+        g.drawString(font, "§l" + PAGINAS[pagina], cx - 155, 30, 0xFFFFFF, true);
+        g.fill(cx - 155, 42, cx + 155, 43, 0x22FFFFFF);
         if (pagina == 5 && Config.get().mira) {
-            Hud.mira(g, width / 2, height - 52);
+            Hud.mira(g, cx, height - 40);
         }
         if (pagina == 6) {
             g.drawCenteredString(font, "Se instalan o quitan la próxima vez que abras el perfil PvP desde NexLauncher.",
-                    width / 2, height - 38, 0xAAAAAA);
+                    cx, height - 16, 0x8C8C96);
         }
     }
 

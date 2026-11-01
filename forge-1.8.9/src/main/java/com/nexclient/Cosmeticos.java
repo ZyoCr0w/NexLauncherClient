@@ -165,6 +165,7 @@ public final class Cosmeticos {
                 continue;  // igual que antes: se conserva lo ya convertido (texto, texturas)
             }
             DATOS.put(clave, new Jugador(nombre, etiqueta, eq, gif));
+            System.out.println("[NexClient] Cosméticos de " + nombre + ": etiqueta " + etiqueta + ", " + eq);
         }
     }
 

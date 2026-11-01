@@ -9,8 +9,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Menú de NexClient (Shift derecho). */
-public class MenuNex extends GuiScreen {
+/** Menú de NexClient (Shift derecho): las páginas en el panel de la izquierda y sus opciones a la derecha. */
+public class MenuNex extends PantallaLateral {
     private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mira", "Mods"};
     private static int pagina = 0;
     private final GuiScreen padre;
@@ -19,7 +19,34 @@ public class MenuNex extends GuiScreen {
     private String ayuda = "";
 
     public MenuNex(GuiScreen padre) {
+        super(false);
         this.padre = padre;
+    }
+
+    @Override
+    protected void entradas() {
+        for (int i = 0; i < PAGINAS.length; i++) {
+            final int k = i;
+            MenuLateral.Entrada e = new MenuLateral.Entrada(PAGINAS[i], new Runnable() {
+                public void run() {
+                    if (pagina != k) {
+                        pagina = k;
+                        initGui();
+                    }
+                }
+            }, false, false, true);
+            menu.entradas.add(e);
+            if (i == pagina) {
+                menu.marcada = e;
+            }
+        }
+        menu.entradas.add(new MenuLateral.Entrada("Listo", new Runnable() {
+            public void run() { cerrar(); } }, true, false, true));
+    }
+
+    /** Centro de la zona de opciones (a la derecha del panel). */
+    private int cx() {
+        return MenuLateral.ANCHO + (width - MenuLateral.ANCHO) / 2;
     }
 
     interface Escritor {
@@ -36,28 +63,17 @@ public class MenuNex extends GuiScreen {
 
     @Override
     public void initGui() {
-        buttonList.clear();
+        super.initGui();
         acciones.clear();
+        menu.fondoPropio = mc.theWorld == null;
+        menu.subtitulo = "Ajustes";
         final Config c = Config.get();
-        int cx = width / 2;
-        int ancho = 46;
-        int x0 = cx - (PAGINAS.length * (ancho + 2)) / 2;
-        for (int i = 0; i < PAGINAS.length; i++) {
-            final int k = i;
-            GuiButton b = boton(x0 + i * (ancho + 2), 28, ancho, i == pagina ? "§l" + PAGINAS[i] : PAGINAS[i],
-                    new Runnable() {
-                        public void run() {
-                            pagina = k;
-                            initGui();
-                        }
-                    });
-            b.enabled = i != pagina;
-        }
+        int cx = cx();
         fila = 0;
         if (pagina == 0) {
             ayuda = "Shift derecho o Esc → NexClient abren este menú. Zoom: tecla Z (cámbiala en Controles).";
             final GuiScreen yo = this;
-            boton(width / 2 - 155, y(), 310, "§lEditar HUD§r · posición, tamaño, fondo, borde y colores", new Runnable() {
+            boton(cx - 155, y(), 310, "§lEditar HUD§r · posición, tamaño, fondo, borde y colores", new Runnable() {
                 public void run() { mc.displayGuiScreen(new EditorHud(yo)); } });
             fila++;
             interruptor("Teclas en pantalla", c.teclas, new Escritor() { public void poner(boolean v) { c.teclas = v; } });
@@ -136,7 +152,7 @@ public class MenuNex extends GuiScreen {
             int k = 0;
             for (final String[] m : Catalogo.MODS) {
                 final GuiButton[] ref = new GuiButton[1];
-                ref[0] = boton(width / 2 - 156 + (k % 3) * 105, 56 + (k / 3) * 22, 102,
+                ref[0] = boton(cx - 156 + (k % 3) * 105, 56 + (k / 3) * 22, 102,
                         textoMod(m[1], Catalogo.elegido(c, m[0])), new Runnable() {
                             public void run() {
                                 boolean v = !Catalogo.elegido(c, m[0]);
@@ -168,7 +184,6 @@ public class MenuNex extends GuiScreen {
                 }
             });
         }
-        boton(cx - 100, height - 26, 200, "Listo", new Runnable() { public void run() { cerrar(); } });
     }
 
     private static String textoMod(String nombre, boolean activo) {
@@ -176,7 +191,7 @@ public class MenuNex extends GuiScreen {
     }
 
     private int x() {
-        return width / 2 + (fila % 2 == 0 ? -155 : 5);
+        return cx() + (fila % 2 == 0 ? -155 : 5);
     }
 
     private int y() {
@@ -303,12 +318,16 @@ public class MenuNex extends GuiScreen {
 
     @Override
     public void drawScreen(int mx, int my, float parcial) {
-        drawDefaultBackground();
-        drawCenteredString(fontRendererObj, "§lNexClient", width / 2, 10, 0xFFFFFF);
-        drawCenteredString(fontRendererObj, ayuda, width / 2, height - 38, 0xAAAAAA);
-        super.drawScreen(mx, my, parcial);
+        super.drawScreen(mx, my, parcial);  // panel, fondo y opciones
+        int cx = cx();
+        fontRendererObj.drawStringWithShadow("§l" + PAGINAS[pagina], cx - 155, 30, 0xFFFFFF);
+        drawRect(cx - 155, 42, cx + 155, 43, 0x22FFFFFF);
+        java.util.List<String> lineas = fontRendererObj.listFormattedStringToWidth(ayuda, 310);
+        for (int i = 0; i < lineas.size(); i++) {
+            drawCenteredString(fontRendererObj, lineas.get(i), cx, height - 16 - (lineas.size() - 1 - i) * 10, 0x8C8C96);
+        }
         if (pagina == 5 && Config.get().mira) {
-            Hud.mira(width / 2, height - 52);
+            Hud.mira(cx, height - 40);
         }
     }
 }

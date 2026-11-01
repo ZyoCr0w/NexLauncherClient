@@ -50,6 +50,7 @@ public abstract class PantallaLateral extends Screen {
         RenderSystem.enableBlend();
         menu.dibujar(pincel, width, height, mx, my);
         this.g = null;
+        super.render(g, mx, my, parcial);  // botones propios de la pantalla (el menú de NexClient)
     }
 
     @Override

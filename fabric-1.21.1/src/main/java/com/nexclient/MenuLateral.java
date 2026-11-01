@@ -49,6 +49,10 @@ public final class MenuLateral {
     public final List<Entrada> entradas = new ArrayList<Entrada>();
     /** true: menú principal (fondo propio y logo grande); false: pausa (se ve el juego detrás). */
     public final boolean principal;
+    /** Fondo propio con partículas (sin mundo detrás) y logo grande a la derecha. */
+    public boolean fondoPropio, logoGrande;
+    /** La entrada elegida (p. ej. la página abierta en el menú de NexClient): se ve siempre resaltada. */
+    public Entrada marcada;
     public String subtitulo = "", pie1 = "", pie2 = "";
     private final long t0 = System.nanoTime();
     private long antes = t0;
@@ -56,6 +60,8 @@ public final class MenuLateral {
 
     public MenuLateral(boolean principal) {
         this.principal = principal;
+        this.fondoPropio = principal;
+        this.logoGrande = principal;
         Random r = new Random(7);
         for (int i = 0; i < particulas.length; i++) {
             // x 0..1, y 0..1, velocidad (alto de pantalla por segundo), tamaño, fase del brillo
@@ -129,14 +135,14 @@ public final class MenuLateral {
         antes = ahora;
         float t = t();
         float aparecer = suave(t / 0.4f);
-        if (principal) {
+        if (fondoPropio) {
             fondo(p, w, h, t);
         } else {
             p.rect(0, 0, w, h, alfa(0x8A000000, aparecer));  // el juego se ve detrás, más oscuro
         }
         int dx = dx();
         // panel
-        p.degradado(dx, 0, ANCHO + dx, h, principal ? 0xD80B0B10 : 0xC8050507, principal ? 0xE6050507 : 0xD8000000);
+        p.degradado(dx, 0, ANCHO + dx, h, fondoPropio ? 0xD80B0B10 : 0xC8050507, fondoPropio ? 0xE6050507 : 0xD8000000);
         p.rect(ANCHO + dx, 0, ANCHO + dx + 1, h, 0x22FFFFFF);
         // cabecera: logo y nombre
         p.logo(12 + dx, 16, 30, aparecer);
@@ -151,7 +157,7 @@ public final class MenuLateral {
             if (e.separador && i > 0) {
                 p.rect(14 + dx, y - HUECO / 2 - 1, ANCHO - 14 + dx, y - HUECO / 2, 0x14FFFFFF);
             }
-            float objetivo = e == bajo ? 1 : 0;
+            float objetivo = e == bajo || e == marcada ? 1 : 0;
             e.hover += (objetivo - e.hover) * Math.min(1, dt * 14);
             float a = suave((t - 0.10f - i * 0.035f) / 0.28f);  // aparecen una tras otra
             if (a <= 0.02f) {
@@ -172,7 +178,7 @@ public final class MenuLateral {
         // pie
         p.texto(pie1, 14 + dx, h - 28, alfa(0xFFB4B4BE, aparecer), 0.85f, false);
         p.texto(pie2, 14 + dx, h - 16, alfa(0xFF6E6E78, aparecer), 0.75f, false);
-        if (principal) {
+        if (logoGrande) {
             logoGrande(p, w, h, t);
         }
     }
