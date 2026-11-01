@@ -73,6 +73,44 @@ public class Eventos {
             e.gui = new MenuPrincipalNex();
         } else if (e.gui instanceof GuiIngameMenu) {
             e.gui = new MenuPausaNex();
+        } else {
+            Lateral.alAbrir(mc.currentScreen, e.gui);  // opciones, multijugador…: dentro del panel
+        }
+    }
+
+    /** Pantallas dentro del panel: primero el panel, luego la pantalla corrida a su derecha. */
+    @SubscribeEvent
+    public void dibujarLateral(GuiScreenEvent.DrawScreenEvent.Pre e) {
+        PantallaLateral r = Lateral.raiz(e.gui);
+        if (r == null || Lateral.dibujando) {
+            return;
+        }
+        e.setCanceled(true);
+        net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(mc);
+        r.dibujarMenu(sr.getScaledWidth(), sr.getScaledHeight(), e.mouseX, e.mouseY);
+        net.minecraft.client.renderer.GlStateManager.pushMatrix();
+        net.minecraft.client.renderer.GlStateManager.translate(Lateral.desplazamiento(e.gui), 0, 0);
+        Lateral.dibujando = true;
+        try {
+            e.gui.drawScreen(e.mouseX - MenuLateral.ANCHO, e.mouseY, e.renderPartialTicks);
+        } finally {
+            Lateral.dibujando = false;
+            net.minecraft.client.renderer.GlStateManager.popMatrix();
+        }
+    }
+
+    /** Clic en el panel mientras hay otra pantalla a su derecha. */
+    @SubscribeEvent
+    public void ratonLateral(GuiScreenEvent.MouseInputEvent.Pre e) {
+        PantallaLateral r = Lateral.raiz(e.gui);
+        if (r == null || !org.lwjgl.input.Mouse.getEventButtonState() || org.lwjgl.input.Mouse.getEventButton() != 0) {
+            return;
+        }
+        net.minecraft.client.gui.ScaledResolution sr = new net.minecraft.client.gui.ScaledResolution(mc);
+        int mx = org.lwjgl.input.Mouse.getEventX() * sr.getScaledWidth() / mc.displayWidth;
+        int my = sr.getScaledHeight() - org.lwjgl.input.Mouse.getEventY() * sr.getScaledHeight() / mc.displayHeight - 1;
+        if (mx < MenuLateral.ANCHO && r.clicLateral(mx, my)) {
+            e.setCanceled(true);
         }
     }
 

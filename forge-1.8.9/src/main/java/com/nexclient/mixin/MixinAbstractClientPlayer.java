@@ -13,6 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class MixinAbstractClientPlayer {
     @Inject(method = "getLocationCape", at = @At("HEAD"), cancellable = true, require = 0)
     private void nexclient$capa(CallbackInfoReturnable<ResourceLocation> cir) {
+        if (Capas.capaModelo((AbstractClientPlayer) (Object) this)) {
+            cir.setReturnValue(null);  // lleva una capa 3D: sin la capa normal
+            return;
+        }
         ResourceLocation capa = Capas.capa((AbstractClientPlayer) (Object) this);
         if (capa != null) {
             cir.setReturnValue(capa);

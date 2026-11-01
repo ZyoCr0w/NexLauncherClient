@@ -17,6 +17,10 @@ import java.util.concurrent.Executors;
  * de video de a pocos cuadros (sin tirones); cada cuadro se dibuja según la hora, así todas van sincronizadas.
  */
 public final class Capas {
+    private static Object mcJugador() {
+        return net.minecraft.client.Minecraft.getMinecraft().thePlayer;
+    }
+
     private static final class Cargada {
         volatile CapasAnimadas.Animacion anim;     // null mientras se prepara
         volatile boolean fallo;
@@ -41,7 +45,7 @@ public final class Capas {
             return null;
         }
         String id = j.de("capa");
-        if (id == null) {
+        if (id == null || Cosmeticos3D.hueso(id) != null) {  // las capas 3D las dibuja CapaCosmeticos
             return null;
         }
         String clave = "gif".equals(id) ? (j.gif == null ? null : "gif_" + j.gif) : id;
@@ -64,6 +68,16 @@ public final class Capas {
             return c.texturas.isEmpty() ? null : c.texturas.get(0);
         }
         return c.texturas.get(a.indice(System.currentTimeMillis()));
+    }
+
+    /** ¿Lleva una capa 3D de NexLauncher? Entonces no se dibuja su capa normal (quedaría encima de la otra). */
+    public static boolean capaModelo(AbstractClientPlayer p) {
+        Cosmeticos.Jugador j = Cosmeticos.de(p.getGameProfile().getName());
+        if (j == null || !Cosmeticos.mostrar(p == mcJugador())) {
+            return false;
+        }
+        String id = j.de("capa");
+        return id != null && Cosmeticos3D.hueso(id) != null;
     }
 
     private static Cargada preparar(final String clave, final String id, final String hash) {

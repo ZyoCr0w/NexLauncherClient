@@ -51,13 +51,26 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
 
     @Override
     protected void mouseClicked(int mx, int my, int boton) throws IOException {
-        MenuLateral.Entrada e = boton == 0 ? menu.en(mx, my) : null;
-        if (e != null) {
-            mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
-            e.accion.run();
-        } else {
+        if (boton != 0 || !clicLateral(mx, my)) {
             super.mouseClicked(mx, my, boton);
         }
+    }
+
+    /** Clic en el panel (también cuando hay otra pantalla de Minecraft a su derecha). */
+    public boolean clicLateral(int mx, int my) {
+        MenuLateral.Entrada e = menu.en(mx, my);
+        if (e == null) {
+            return false;
+        }
+        mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
+        menu.marcada = e;
+        e.accion.run();
+        return true;
+    }
+
+    /** Dibuja solo el panel (y su fondo), para las pantallas que van a su derecha. */
+    public void dibujarMenu(int w, int h, int mx, int my) {
+        menu.dibujar(this, w, h, mx, my);
     }
 
     // ---- pincel

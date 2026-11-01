@@ -22,6 +22,10 @@ public abstract class ScreenFondoMixin {
 
     @Inject(method = "renderBackground", at = @At("HEAD"), cancellable = true, require = 0)
     private void nexclient$fondo(GuiGraphics g, int mx, int my, float parcial, CallbackInfo ci) {
+        if (com.nexclient.PantallaEnvuelta.HIJAS.contains((Object) this)) {  // dentro del panel: se ve su fondo
+            ci.cancel();
+            return;
+        }
         if (EstiloNex.activo() && minecraft != null) {
             EstiloNex.fondo(g, width, height, minecraft.level != null);
             ci.cancel();

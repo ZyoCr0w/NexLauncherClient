@@ -14,8 +14,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class AbstractClientPlayerMixin {
     @Inject(method = "getSkin", at = @At("RETURN"), cancellable = true, require = 0)
     private void nexclient$capa(CallbackInfoReturnable<PlayerSkin> cir) {
-        ResourceLocation capa = Capas.capa((AbstractClientPlayer) (Object) this);
         PlayerSkin s = cir.getReturnValue();
+        if (s != null && Capas.capaModelo((AbstractClientPlayer) (Object) this)) {  // capa 3D: sin la normal
+            cir.setReturnValue(new PlayerSkin(s.texture(), s.textureUrl(), null, null, s.model(), s.secure()));
+            return;
+        }
+        ResourceLocation capa = Capas.capa((AbstractClientPlayer) (Object) this);
         if (capa != null && s != null) {
             cir.setReturnValue(new PlayerSkin(s.texture(), s.textureUrl(), capa, capa, s.model(), s.secure()));
         }

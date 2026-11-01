@@ -55,13 +55,30 @@ public abstract class PantallaLateral extends Screen {
 
     @Override
     public boolean mouseClicked(double mx, double my, int boton) {
-        MenuLateral.Entrada e = boton == 0 ? menu.en((int) mx, (int) my) : null;
-        if (e != null) {
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
-            e.accion.run();
+        if (boton == 0 && clicLateral(mx, my)) {
             return true;
         }
         return super.mouseClicked(mx, my, boton);
+    }
+
+    /** Clic en el panel (también cuando hay otra pantalla de Minecraft a su derecha). */
+    public boolean clicLateral(double mx, double my) {
+        MenuLateral.Entrada e = menu.en((int) mx, (int) my);
+        if (e == null) {
+            return false;
+        }
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+        menu.marcada = e;
+        e.accion.run();
+        return true;
+    }
+
+    /** Dibuja solo el panel (y su fondo), para las pantallas que van a su derecha. */
+    public void dibujarMenu(GuiGraphics g, int w, int h, int mx, int my) {
+        this.g = g;
+        RenderSystem.enableBlend();
+        menu.dibujar(pincel, w, h, mx, my);
+        this.g = null;
     }
 
     private final MenuLateral.Pincel pincel = new MenuLateral.Pincel() {

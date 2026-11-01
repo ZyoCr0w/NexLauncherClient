@@ -9,6 +9,8 @@ python3 generar.py  ->  cosmeticos.json
 import json
 import os
 
+import nuevos
+
 
 def anim(**k):
     return k
@@ -373,6 +375,11 @@ def catalogo():
         "escudo_obsidiana": escudo(ESCUDO_OBSIDIANA, {"fondo": "#140A1F", "b": "#2E1A47", "p": "#B34DFF"},
                                    brillo_chars=("p",), parpadeo={"frec": 0.9, "min": 0.45, "desfase": 0.25}),
     }
+    # NexClient 4.5: alas articuladas y de plumas, capas 3D, bandanas y escudos con forma propia
+    c.update(nuevos.alas_nuevas())
+    c.update(nuevos.capas_nuevas())
+    c.update(nuevos.bandanas_nuevas())
+    c.update(nuevos.escudos_nuevos())
     return c
 
 

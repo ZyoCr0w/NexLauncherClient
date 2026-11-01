@@ -15,10 +15,10 @@ import java.util.List;
 
 /**
  * Cosméticos 3D sobre el jugador (cabeza, espalda, cuerpo y auras), dibujados con cajas de color. En 1.8.9 no hay
- * escudos: el escudo elegido se ve colgado en la espalda, solo como adorno.
+ * escudos: el escudo elegido se ve en el costado del brazo izquierdo (en 1.8.9 no hay escudos), solo como adorno.
  */
 public class CapaCosmeticos implements LayerRenderer<AbstractClientPlayer> {
-    private static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "aura", "escudo"};
+    private static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "capa", "aura", "escudo"};
     private static final int[][] CARAS = {{0, 2, 6, 4}, {1, 5, 7, 3}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 1, 3, 2}, {4, 6, 7, 5}};
     private final RenderPlayer render;
 
@@ -55,13 +55,15 @@ public class CapaCosmeticos implements LayerRenderer<AbstractClientPlayer> {
             }
             if (hueso.equals("cabeza")) {
                 render.getMainModel().bipedHead.postRender(0.0625F);
-            } else if (hueso.equals("cuerpo") || hueso.equals("escudo")) {
+            } else if (hueso.equals("escudo")) {
+                render.getMainModel().bipedLeftArm.postRender(0.0625F);
+            } else if (hueso.equals("cuerpo")) {
                 render.getMainModel().bipedBody.postRender(0.0625F);
             }
             GlStateManager.scale(0.0625F, 0.0625F, 0.0625F);
-            if (hueso.equals("escudo")) {  // colgado en la espalda, con el dibujo hacia atrás
-                GlStateManager.translate(0F, 6.5F, 3.6F);
-                GlStateManager.rotate(180F, 0F, 1F, 0F);
+            if (hueso.equals("escudo")) {  // en el costado de afuera del brazo izquierdo, a la altura de la mano
+                GlStateManager.translate(2.6F, 5.8F, 0F);
+                GlStateManager.rotate(-90F, 0F, 1F, 0F);  // el frente del escudo (-Z) mira hacia afuera (+X)
                 GlStateManager.scale(0.55F, 0.55F, 0.55F);
             }
             dibujar(Cosmeticos3D.cubos(id, e));

@@ -262,13 +262,18 @@ public final class Cosmeticos3D {
     }
 
     private static float[] rgba(JsonObject p, Estado e, int idx) {
+        return rgba(p, e, idx, null);
+    }
+
+    /** Color de una pieza; «hex» reemplaza su color (los píxeles de una paleta). */
+    private static float[] rgba(JsonObject p, Estado e, int idx, String hex) {
         float alfa = num(p, "alfa", 1);
         float[] c;
         if (bool(p, "arcoiris")) {
             float h = (e.t * num(p, "arcoiris_vel", 0.25f) + idx * num(p, "desfase", 0.06f)) % 1f;
             c = hsv(h < 0 ? h + 1 : h, 0.75f, 1f);
         } else {
-            c = color(str(p, "color", "#FFFFFF"));
+            c = color(hex != null ? hex : str(p, "color", "#FFFFFF"));
         }
         JsonObject par = obj(p, "parpadeo");
         if (par != null) {
@@ -323,27 +328,31 @@ public final class Cosmeticos3D {
             String plano = str(a, "plano", "xy");
             JsonObject paleta = obj(a, "paleta");
             JsonArray filas = arr(a, "filas");
+            // Si el color no cambia de un píxel a otro, los seguidos del mismo color van en una sola caja
+            JsonObject par = obj(p, "parpadeo");
+            boolean unir = !bool(p, "arcoiris") && (par == null || num(par, "desfase", 0) == 0);
             for (int fy = 0; fy < filas.size(); fy++) {
                 String fila = filas.get(fy).getAsString();
                 for (int fx = 0; fx < fila.length(); fx++) {
-                    String ch = String.valueOf(fila.charAt(fx));
-                    if (ch.equals(" ") || ch.equals(".") || paleta == null || !paleta.has(ch)) {
+                    char ch = fila.charAt(fx);
+                    String cs = String.valueOf(ch);
+                    if (ch == ' ' || ch == '.' || paleta == null || !paleta.has(cs)) {
                         continue;
                     }
-                    JsonObject q = new JsonObject();
-                    for (Map.Entry<String, JsonElement> x : p.entrySet()) {
-                        q.add(x.getKey(), x.getValue());
+                    int n = 1;
+                    while (unir && fx + n < fila.length() && fila.charAt(fx + n) == ch) {
+                        n++;
                     }
-                    q.addProperty("color", paleta.get(ch).getAsString());
                     float x, y, z, w, h, dd;
                     if (plano.equals("xy")) {
-                        x = o[0] + fx * tam; y = o[1] + fy * tam; z = o[2]; w = tam; h = tam; dd = prof;
+                        x = o[0] + fx * tam; y = o[1] + fy * tam; z = o[2]; w = tam * n; h = tam; dd = prof;
                     } else if (plano.equals("xz")) {
-                        x = o[0] + fx * tam; y = o[1]; z = o[2] + fy * tam; w = tam; h = prof; dd = tam;
+                        x = o[0] + fx * tam; y = o[1]; z = o[2] + fy * tam; w = tam * n; h = prof; dd = tam;
                     } else {
-                        x = o[0]; y = o[1] + fy * tam; z = o[2] + fx * tam; w = prof; h = tam; dd = tam;
+                        x = o[0]; y = o[1] + fy * tam; z = o[2] + fx * tam; w = prof; h = tam; dd = tam * n;
                     }
-                    agregar(s, caja(m, x, y, z, w, h, dd), rgba(q, e, fx + fy), brillo);
+                    agregar(s, caja(m, x, y, z, w, h, dd), rgba(p, e, fx + fy, paleta.get(cs).getAsString()), brillo);
+                    fx += n - 1;
                 }
             }
         }

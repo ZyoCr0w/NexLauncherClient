@@ -20,7 +20,7 @@ import java.util.List;
 
 /** Cosméticos 3D sobre el jugador (cabeza, espalda, cuerpo y auras), dibujados con cajas de color. */
 public class CapaCosmeticos extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-    public static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "aura"};
+    public static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "capa", "aura"};
     private static final int[][] CARAS = {{0, 2, 6, 4}, {1, 5, 7, 3}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 1, 3, 2}, {4, 6, 7, 5}};
     private static ResourceLocation blanca;
 

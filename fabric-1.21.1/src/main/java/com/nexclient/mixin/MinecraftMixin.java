@@ -3,6 +3,8 @@ package com.nexclient.mixin;
 import com.nexclient.Config;
 import com.nexclient.MenuPausaNex;
 import com.nexclient.MenuPrincipalNex;
+import com.nexclient.PantallaEnvuelta;
+import com.nexclient.PantallaLateral;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -24,6 +26,11 @@ public class MinecraftMixin {
         }
         if (pantalla instanceof PauseScreen && ((PauseScreen) pantalla).showsPauseMenu()) {  // no con F3 + Esc
             return new MenuPausaNex();
+        }
+        // opciones, multijugador, un jugador…: dentro del panel del menú desde el que se abren
+        PantallaLateral raiz = PantallaEnvuelta.raizDe(((Minecraft) (Object) this).screen);
+        if (raiz != null && pantalla != raiz && PantallaEnvuelta.envolvible(pantalla)) {
+            return new PantallaEnvuelta(raiz, pantalla);
         }
         return pantalla;
     }

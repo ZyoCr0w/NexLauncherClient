@@ -17,7 +17,16 @@ public abstract class MixinGuiScreenFondo {
     @Inject(method = "drawBackground", at = @At("HEAD"), cancellable = true, require = 0)
     private void nexclient$fondo(int tinte, CallbackInfo ci) {
         if (EstiloNex.activo()) {
-            EstiloNex.fondo(width, height);
+            if (!com.nexclient.Lateral.es(this)) {  // en el panel se ve el fondo animado de NexClient
+                EstiloNex.fondo(width, height);
+            }
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "drawWorldBackground", at = @At("HEAD"), cancellable = true, require = 0)
+    private void nexclient$fondoMundo(int tinte, CallbackInfo ci) {
+        if (com.nexclient.Lateral.es(this)) {  // el panel ya oscurece el juego
             ci.cancel();
         }
     }
