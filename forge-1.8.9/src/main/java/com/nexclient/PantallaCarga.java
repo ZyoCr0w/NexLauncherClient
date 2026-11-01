@@ -90,7 +90,12 @@ public final class PantallaCarga {
         GlStateManager.disableFog();
         GlStateManager.disableDepth();
         GlStateManager.disableAlpha();
-        GlStateManager.clearColor(0.043F, 0.043F, 0.063F, 1F);
+        boolean dm = Temporada.muertos();
+        if (dm) {
+            GlStateManager.clearColor(0.09F, 0.035F, 0.13F, 1F);
+        } else {
+            GlStateManager.clearColor(0.043F, 0.043F, 0.063F, 1F);
+        }
         GlStateManager.clear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
         GlStateManager.enableBlend();
         GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
@@ -113,7 +118,15 @@ public final class PantallaCarga {
         GlStateManager.disableTexture2D();
         int by = y + ih + 16, bw = iw - 60, bx = (w - bw) / 2;
         rect(wr, te, bx, by, bw, 3, 1F, 1F, 1F, 0.16F);
-        rect(wr, te, bx, by, Math.round(bw * progreso()), 3, 1F, 1F, 1F, 1F);
+        if (dm) {  // barra de cempasúchil y papel picado debajo
+            rect(wr, te, bx, by, Math.round(bw * progreso()), 3, 1F, 0.56F, 0.12F, 1F);
+            for (int i = 0, n = Math.max(1, bw / 14); i < n; i++) {
+                int c = Temporada.PAPEL[i % Temporada.PAPEL.length];
+                rect(wr, te, bx + i * 14 + 2, by + 12, 11, 8, ((c >> 16) & 255) / 255F, ((c >> 8) & 255) / 255F, (c & 255) / 255F, 0.85F);
+            }
+        } else {
+            rect(wr, te, bx, by, Math.round(bw * progreso()), 3, 1F, 1F, 1F, 1F);
+        }
         GlStateManager.enableTexture2D();
         GlStateManager.enableAlpha();
         mc.updateDisplay();

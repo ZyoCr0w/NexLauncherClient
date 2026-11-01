@@ -189,6 +189,7 @@ public class MenuNex extends PantallaLateral {
                 public void poner(double v) { c.contornoGrosor = (float) (Math.round(v * 2) / 2.0); } }, true);
             interruptor("Etiquetas NexLauncher", c.etiquetas, new Escritor() { public void poner(boolean v) { c.etiquetas = v; } });
             interruptor("Mi nombre en 3ª persona", c.nombrePropio, new Escritor() { public void poner(boolean v) { c.nombrePropio = v; } });
+            interruptor("Temas de temporada", c.temaTemporada, new Escritor() { public void poner(boolean v) { c.temaTemporada = v; } });
             interruptor("Menú NexClient", c.menuNex, new Escritor() { public void poner(boolean v) { c.menuNex = v; } });
             final String[] ver = {"De todos", "Solo los míos", "Ninguno"};
             final GuiButton[] cos = new GuiButton[1];

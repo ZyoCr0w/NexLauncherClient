@@ -175,20 +175,29 @@ public final class MenuLateral {
         antes = ahora;
         float t = t();
         float aparecer = suave(t / 0.4f);
+        boolean dm = Temporada.muertos();
         if (fondoPropio) {
-            fondo(p, w, h, t);
+            fondo(p, w, h, t, dm);
         } else {
-            p.rect(0, 0, w, h, alfa(0x8A000000, aparecer));  // el juego se ve detrás, más oscuro
+            p.rect(0, 0, w, h, alfa(dm ? 0x8A12051A : 0x8A000000, aparecer));  // el juego se ve detrás, más oscuro
         }
         int dx = dx();
         // panel
-        p.degradado(dx, 0, ANCHO + dx, h, fondoPropio ? 0xD80B0B10 : 0xC8050507, fondoPropio ? 0xE6050507 : 0xD8000000);
-        p.rect(ANCHO + dx, 0, ANCHO + dx + 1, h, 0x22FFFFFF);
+        if (dm) {
+            p.degradado(dx, 0, ANCHO + dx, h, fondoPropio ? 0xE0180A22 : 0xD0140818, fondoPropio ? 0xEC07030B : 0xE0050208);
+            p.rect(ANCHO + dx, 0, ANCHO + dx + 1, h, alfa(Temporada.CEMPASUCHIL, 0.45f));
+            Temporada.papelPicado(p, dx, ANCHO + dx, 1, t, aparecer);
+        } else {
+            p.degradado(dx, 0, ANCHO + dx, h, fondoPropio ? 0xD80B0B10 : 0xC8050507, fondoPropio ? 0xE6050507 : 0xD8000000);
+            p.rect(ANCHO + dx, 0, ANCHO + dx + 1, h, 0x22FFFFFF);
+        }
         // cabecera: logo y nombre
-        p.logo(12 + dx, 16, 30, aparecer);
-        p.texto("§lNexClient", 48 + dx, 19, alfa(0xFFFFFFFF, aparecer), 1.35f, true);
-        p.texto(Tr.t(subtitulo), 48 + dx, 35, alfa(0xFF8C8C96, aparecer), 0.75f, false);
-        p.rect(12 + dx, 56, ANCHO - 12 + dx, 57, alfa(0x1EFFFFFF, aparecer));
+        int yc = dm ? 4 : 0;  // con papel picado arriba, la cabecera baja un poco
+        p.logo(12 + dx, 16 + yc, 30, aparecer);
+        p.texto("§lNexClient", 48 + dx, 19 + yc, alfa(0xFFFFFFFF, aparecer), 1.35f, true);
+        p.texto(dm ? Tr.t("Día de Muertos") : Tr.t(subtitulo), 48 + dx, 35 + yc,
+                alfa(dm ? 0xFFFFB45A : 0xFF8C8C96, aparecer), 0.75f, false);
+        p.rect(12 + dx, 56 + yc, ANCHO - 12 + dx, 57 + yc, alfa(dm ? 0x66FF8F1F : 0x1EFFFFFF, aparecer));
         // entradas (y submenús abiertos)
         calcular(dt);
         Entrada bajo = en(mx, my);
@@ -197,7 +206,7 @@ public final class MenuLateral {
             Entrada e = f.e;
             int y = f.y;
             if (!f.hijo && e.separador && entradas.indexOf(e) > 0) {
-                p.rect(14 + dx, y - HUECO / 2 - 1, ANCHO - 14 + dx, y - HUECO / 2, 0x14FFFFFF);
+                p.rect(14 + dx, y - HUECO / 2 - 1, ANCHO - 14 + dx, y - HUECO / 2, dm ? 0x30FF8F1F : 0x14FFFFFF);
             }
             float objetivo = e == bajo || e == marcada ? 1 : 0;
             e.hover += (objetivo - e.hover) * Math.min(1, dt * 14);
@@ -206,10 +215,11 @@ public final class MenuLateral {
                 continue;
             }
             int ex = dx + Math.round(-10 * (1 - a));
-            int acento = e.peligro ? 0xFFFF5A5A : 0xFFFFFFFF;
+            int acento = e.peligro ? 0xFFFF5A5A : dm ? Temporada.acento(i) : 0xFFFFFFFF;
             if (e.hover > 0.01f) {
-                p.degradado(ex, y, ANCHO + dx, y + f.alto, alfa(e.peligro ? 0x30FF4040 : 0x22FFFFFF, e.hover * a),
-                        alfa(e.peligro ? 0x18FF4040 : 0x10FFFFFF, e.hover * a));
+                int c1 = e.peligro ? 0x30FF4040 : dm ? (0x38000000 | (acento & 0xFFFFFF)) : 0x22FFFFFF;
+                int c2 = e.peligro ? 0x18FF4040 : dm ? (0x0C000000 | (acento & 0xFFFFFF)) : 0x10FFFFFF;
+                p.degradado(ex, y, ANCHO + dx, y + f.alto, alfa(c1, e.hover * a), alfa(c2, e.hover * a));
                 int medio = Math.round((f.alto / 2f - 2) * e.hover);
                 p.rect(ex + (f.hijo ? 14 : 0), y + f.alto / 2 - medio, ex + (f.hijo ? 16 : 2), y + f.alto / 2 + medio,
                         alfa(acento, e.hover * a));
@@ -246,7 +256,11 @@ public final class MenuLateral {
         }
     }
 
-    private void fondo(Pincel p, int w, int h, float t) {
+    private void fondo(Pincel p, int w, int h, float t, boolean dm) {
+        if (dm) {
+            muertos(p, w, h, t);
+            return;
+        }
         p.degradado(0, 0, w, h, 0xFF101016, 0xFF040406);
         // luz suave detrás del logo grande, que «respira» despacio
         int cx = ANCHO + (w - ANCHO) / 2, cy = h / 2 - 16;
@@ -265,6 +279,24 @@ public final class MenuLateral {
         }
     }
 
+    /** Fondo de Día de Muertos: morado oscuro, papel picado arriba, pétalos cayendo y cempasúchiles abajo. */
+    private void muertos(Pincel p, int w, int h, float t) {
+        p.degradado(0, 0, w, h, 0xFF1C0A28, 0xFF06030A);
+        float a = suave(t / 1.0f);
+        int cx = ANCHO + (w - ANCHO) / 2, cy = h / 2 - 16;
+        int r = Math.min(w - ANCHO, h) * 3 / 4;
+        p.brillo(cx - r, cy - r * 3 / 4, 2 * r, r * 3 / 2, (0.09f + 0.03f * (float) Math.sin(t * 0.8f)) * a);
+        Temporada.petalos(p, ANCHO, 0, w - ANCHO, h, t, a);
+        Temporada.papelPicado(p, ANCHO + 4, w - 4, 3, t, a);
+        Temporada.papelPicado(p, ANCHO + 11, w - 11, 19, t + 1.7f, a * 0.55f);
+        // fila de cempasúchiles al pie, como en una ofrenda
+        p.degradado(ANCHO, h - 22, w, h, 0x00000000, alfa(0x55FF8F1F, a));
+        for (int x = ANCHO + 6, k = 0; x < w - 12; x += 17, k++) {
+            int sube = Math.round((float) Math.sin(t * 1.2f + k) * 1.0f);
+            Temporada.flor(p, x, h - 13 - (k % 2) * 4 + sube, 2, a);
+        }
+    }
+
     private void logoGrande(Pincel p, int w, int h, float t) {
         float a = suave((t - 0.25f) / 0.6f);
         if (a <= 0.02f) {
@@ -278,7 +310,16 @@ public final class MenuLateral {
         float escala = tam >= 70 ? 3 : 2.4f;
         String nombre = "§lNexClient";
         p.texto(nombre, cx - p.ancho(nombre) * escala / 2f, y + tam + 8, alfa(0xFFFFFFFF, a), escala, true);
-        String lema = "PvP · NexLauncher";
-        p.texto(lema, cx - p.ancho(lema) / 2f, y + tam + 12 + 9 * escala, alfa(0xFF8C8C96, a), 1, false);
+        boolean dm = Temporada.muertos();
+        String lema = dm ? Tr.t("Día de Muertos") + " · NexLauncher" : "PvP · NexLauncher";
+        p.texto(lema, cx - p.ancho(lema) / 2f, y + tam + 12 + 9 * escala, alfa(dm ? 0xFFFFB45A : 0xFF8C8C96, a), 1, false);
+        if (dm) {  // calaveritas a los lados del logo, flotando a destiempo
+            int celda = tam >= 70 ? 3 : 2, lado = 12 * celda;
+            int sep = tam / 2 + 22 + lado;
+            for (int k = -1; k <= 1; k += 2) {
+                float f = (float) Math.sin(t * 1.4f + (k > 0 ? 1.6f : 0)) * 3;
+                Temporada.calavera(p, cx + k * sep - lado / 2, Math.round(y + tam / 2f - lado / 2f + f), celda, a);
+            }
+        }
     }
 }

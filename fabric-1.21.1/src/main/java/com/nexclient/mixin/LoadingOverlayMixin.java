@@ -38,7 +38,7 @@ public abstract class LoadingOverlayMixin {
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Ljava/util/function/IntSupplier;getAsInt()I"), require = 0)
     private int nexclient$fondo(IntSupplier original) {
-        return 0x0B0B10;
+        return com.nexclient.Temporada.muertos() ? 0x170921 : 0x0B0B10;
     }
 
     @Redirect(method = "render", at = @At(value = "INVOKE", ordinal = 0, target =
