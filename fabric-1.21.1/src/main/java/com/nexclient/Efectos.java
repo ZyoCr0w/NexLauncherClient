@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
@@ -18,8 +17,12 @@ import net.minecraft.world.phys.HitResult;
 
 /** Blockhit (cuándo se bloquea, su sonido) y multiplicador de partículas de golpe. */
 public final class Efectos {
-    private static final String[] IDS = {"block.anvil.land", "item.shield.block", "entity.player.attack.strong",
-            "entity.experience_orb.pickup", "block.note_block.pling", "ui.button.click"};
+    /**
+     * Sonidos propios de NexClient (en su espacio «nexclient»): un paquete de texturas con sonidos cambia los de
+     * Minecraft, pero no estos, así que el blockhit siempre suena como el del cliente.
+     */
+    private static final String[] IDS = {"blockhit.yunque", "blockhit.golpe", "blockhit.ding", "blockhit.orbe",
+            "blockhit.pling", "blockhit.clic"};
     private static long ultimoBloqueo;
     /** Bloques por segundo (horizontal), golpes seguidos sin recibir daño y distancia del último golpe. */
     public static double velocidad;
@@ -182,8 +185,8 @@ public final class Efectos {
     public static void sonar() {
         Config c = Config.get();
         int i = Math.max(0, Config.indiceSonido(c.sonidoId));
-        SoundEvent ev = BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.withDefaultNamespace(IDS[i]));
-        if (ev != null && c.volumen > 0) {
+        SoundEvent ev = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("nexclient", IDS[i]));
+        if (c.volumen > 0) {
             Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(ev, c.tono, c.volumen));
         }
     }

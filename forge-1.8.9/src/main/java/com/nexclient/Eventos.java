@@ -52,6 +52,7 @@ public class Eventos {
 
     @SubscribeEvent
     public void abrirMenu(net.minecraftforge.client.event.GuiOpenEvent e) {
+        PantallaCarga.terminada = true;  // ya hay pantallas: la carga terminó
         if (entrarA != null) {
             if (e.gui instanceof net.minecraft.client.multiplayer.GuiConnecting) {
                 entrarA = null;  // Minecraft ya está entrando con --server

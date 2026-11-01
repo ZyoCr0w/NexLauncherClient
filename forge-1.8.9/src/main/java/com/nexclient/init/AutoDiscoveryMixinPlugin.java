@@ -40,6 +40,40 @@ public class AutoDiscoveryMixinPlugin implements IMixinConfigPlugin {
     public void onLoad(String mixinPackage) {
         this.mixinPackage = mixinPackage;
         mixinPlugins.add(this);
+        sinSplashDeForge();
+    }
+
+    /**
+     * NexClient dibuja su propia pantalla de carga (el logo y una sola barra): se apaga la de Forge, que muestra
+     * varias barras con detalles. Se hace aquí porque Forge lee config/splash.properties antes de cargar los mods.
+     */
+    private static void sinSplashDeForge() {
+        try {
+            java.io.File carpeta = new java.io.File(net.minecraft.launchwrapper.Launch.minecraftHome, "config");
+            java.io.File f = new java.io.File(carpeta, "splash.properties");
+            java.util.Properties p = new java.util.Properties();
+            if (f.exists()) {
+                java.io.FileInputStream in = new java.io.FileInputStream(f);
+                try {
+                    p.load(in);
+                } finally {
+                    in.close();
+                }
+            }
+            if ("false".equals(p.getProperty("enabled"))) {
+                return;
+            }
+            p.setProperty("enabled", "false");
+            carpeta.mkdirs();
+            java.io.FileOutputStream out = new java.io.FileOutputStream(f);
+            try {
+                p.store(out, "NexClient: pantalla de carga propia");
+            } finally {
+                out.close();
+            }
+        } catch (Throwable e) {
+            // sin carpeta o sin permisos: se ve la de Forge
+        }
     }
 
     /**

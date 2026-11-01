@@ -134,7 +134,7 @@ public final class EstiloNex {
             color = 0xFF000000 | b.packedFGColour;
         }
         FontRenderer f = mc.fontRendererObj;
-        String s = b.displayString;
+        String s = Tr.t(b.displayString);
         int max = w - 6;
         if (f.getStringWidth(s) > max) {  // que no se salga del botón
             s = f.trimStringToWidth(s, max - f.getStringWidth("…")) + "…";

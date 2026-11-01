@@ -31,6 +31,8 @@ public class Config {
     public boolean cps = false;
     public int cpsX = 6, cpsY = 100;
     public boolean fps = false;
+    /** FPS, CPS y ping sin texto: solo los números. */
+    public boolean soloNumeros = false;
     public int fpsX = 6, fpsY = 114;
 
     // ---- HUD: información

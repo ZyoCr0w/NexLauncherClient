@@ -1,0 +1,38 @@
+{
+  "blockhit.yunque": {
+    "sounds": [
+      "nexclient:blockhit/yunque"
+    ],
+    "subtitle": "Blockhit"
+  },
+  "blockhit.golpe": {
+    "sounds": [
+      "nexclient:blockhit/golpe"
+    ],
+    "subtitle": "Blockhit"
+  },
+  "blockhit.ding": {
+    "sounds": [
+      "nexclient:blockhit/ding"
+    ],
+    "subtitle": "Blockhit"
+  },
+  "blockhit.orbe": {
+    "sounds": [
+      "nexclient:blockhit/orbe"
+    ],
+    "subtitle": "Blockhit"
+  },
+  "blockhit.pling": {
+    "sounds": [
+      "nexclient:blockhit/pling"
+    ],
+    "subtitle": "Blockhit"
+  },
+  "blockhit.clic": {
+    "sounds": [
+      "nexclient:blockhit/clic"
+    ],
+    "subtitle": "Blockhit"
+  }
+}

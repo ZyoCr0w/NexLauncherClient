@@ -16,8 +16,12 @@ import net.minecraft.util.Vec3;
 
 /** Blockhit (animación y sonido) y multiplicador de partículas de golpe. */
 public final class Efectos {
-    private static final String[] IDS = {"random.anvil_land", "mob.irongolem.hit", "random.successful_hit",
-            "random.orb", "note.pling", "random.click"};
+    /**
+     * Sonidos propios de NexClient (en su espacio «nexclient»): un paquete de texturas con sonidos cambia los de
+     * Minecraft, pero no estos, así que el blockhit siempre suena como el del cliente.
+     */
+    private static final String[] IDS = {"blockhit.yunque", "blockhit.golpe", "blockhit.ding", "blockhit.orbe",
+            "blockhit.pling", "blockhit.clic"};
     private static long ultimoBloqueo;
     public static double velocidad;
     private static int combo;
@@ -157,7 +161,7 @@ public final class Efectos {
             return;
         }
         int i = Math.max(0, Config.indiceSonido(c.sonidoId));
-        mc.getSoundHandler().playSound(new PositionedSoundRecord(new ResourceLocation(IDS[i]), c.volumen, c.tono,
+        mc.getSoundHandler().playSound(new PositionedSoundRecord(new ResourceLocation("nexclient", IDS[i]), c.volumen, c.tono,
                 (float) mc.thePlayer.posX, (float) mc.thePlayer.posY, (float) mc.thePlayer.posZ));
     }
 }

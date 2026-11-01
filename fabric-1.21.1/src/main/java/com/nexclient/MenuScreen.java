@@ -69,6 +69,8 @@ public class MenuScreen extends PantallaLateral {
                 interruptor("Barra espaciadora", c.teclasEspacio, v -> c.teclasEspacio = v, null);
                 interruptor("Contador de CPS", c.cps, v -> c.cps = v, null);
                 interruptor("Contador de FPS", c.fps, v -> c.fps = v, null);
+                interruptor("Solo números (FPS, CPS, ms)", c.soloNumeros, v -> c.soloNumeros = v,
+                        "Quita «FPS», «CPS» y «ms»: se ven solo los números.");
                 break;
             case 1:
                 interruptor("Coordenadas", c.coords, v -> c.coords = v, null);
@@ -197,7 +199,7 @@ public class MenuScreen extends PantallaLateral {
         CycleButton<Boolean> b = CycleButton.onOffBuilder(valor).create(x, y(), 150, 20, Component.literal(texto),
                 (boton, v) -> poner.accept(v));
         if (ayuda != null) {
-            b.setTooltip(Tooltip.create(Component.literal(ayuda)));
+            b.setTooltip(Tooltip.create(Component.literal(Tr.t(ayuda))));
         }
         addRenderableWidget(b);
     }
@@ -224,13 +226,13 @@ public class MenuScreen extends PantallaLateral {
     public void render(GuiGraphics g, int mx, int my, float delta) {
         super.render(g, mx, my, delta);  // panel, fondo y opciones
         int cx = cx();
-        g.drawString(font, "§l" + PAGINAS[pagina], cx - 155, 30, 0xFFFFFF, true);
+        g.drawString(font, "§l" + Tr.t(PAGINAS[pagina]), cx - 155, 30, 0xFFFFFF, true);
         g.fill(cx - 155, 42, cx + 155, 43, 0x22FFFFFF);
         if (pagina == 5 && Config.get().mira) {
             Hud.mira(g, cx, height - 40);
         }
         if (pagina == 6) {
-            g.drawCenteredString(font, "Se instalan o quitan la próxima vez que abras el perfil PvP desde NexLauncher.",
+            g.drawCenteredString(font, Tr.t("Se instalan o quitan la próxima vez que abras el perfil PvP desde NexLauncher."),
                     cx, height - 16, 0x8C8C96);
         }
     }

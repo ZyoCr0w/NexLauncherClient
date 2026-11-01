@@ -147,7 +147,7 @@ public final class MenuLateral {
         // cabecera: logo y nombre
         p.logo(12 + dx, 16, 30, aparecer);
         p.texto("§lNexClient", 48 + dx, 19, alfa(0xFFFFFFFF, aparecer), 1.35f, true);
-        p.texto(subtitulo, 48 + dx, 35, alfa(0xFF8C8C96, aparecer), 0.75f, false);
+        p.texto(Tr.t(subtitulo), 48 + dx, 35, alfa(0xFF8C8C96, aparecer), 0.75f, false);
         p.rect(12 + dx, 56, ANCHO - 12 + dx, 57, alfa(0x1EFFFFFF, aparecer));
         // entradas
         Entrada bajo = en(mx, my);
@@ -173,7 +173,7 @@ public final class MenuLateral {
             }
             int base = e.activa ? 0xFFB4B4BE : 0xFF55555C;
             int color = mezclar(base, e.peligro ? 0xFFFF7070 : 0xFFFFFFFF, e.hover);
-            p.texto(e.texto, ex + 16 + 4 * e.hover, y + 6, alfa(color, a), 1, false);
+            p.texto(Tr.t(e.texto), ex + 16 + 4 * e.hover, y + 6, alfa(color, a), 1, false);
         }
         // pie
         p.texto(pie1, 14 + dx, h - 28, alfa(0xFFB4B4BE, aparecer), 0.85f, false);

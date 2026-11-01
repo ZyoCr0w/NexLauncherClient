@@ -16,6 +16,7 @@ public class NexClient {
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent e) {
+        Tr.idioma = () -> net.minecraft.client.Minecraft.getMinecraft().gameSettings.language;
         Config.cargar(new File(e.getModConfigurationDirectory(), "nexclient.json"));
     }
 

@@ -58,6 +58,7 @@ public class NexClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        Tr.idioma = () -> net.minecraft.client.Minecraft.getInstance().options.languageCode;
         Config.cargar(FabricLoader.getInstance().getConfigDir().resolve("nexclient.json").toFile());
         teclaMenu = KeyBindingHelper.registerKeyBinding(new KeyMapping("key.nexclient.menu",
                 InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, "category.nexclient"));

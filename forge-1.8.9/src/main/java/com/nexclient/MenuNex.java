@@ -82,6 +82,7 @@ public class MenuNex extends PantallaLateral {
             interruptor("Barra espaciadora", c.teclasEspacio, new Escritor() { public void poner(boolean v) { c.teclasEspacio = v; } });
             interruptor("Contador de CPS", c.cps, new Escritor() { public void poner(boolean v) { c.cps = v; } });
             interruptor("Contador de FPS", c.fps, new Escritor() { public void poner(boolean v) { c.fps = v; } });
+            interruptor("Solo números (FPS, CPS, ms)", c.soloNumeros, new Escritor() { public void poner(boolean v) { c.soloNumeros = v; } });
         } else if (pagina == 1) {
             ayuda = "Activa lo que quieras ver y acomódalo con «Mover elementos del HUD».";
             interruptor("Coordenadas", c.coords, new Escritor() { public void poner(boolean v) { c.coords = v; } });
@@ -320,9 +321,9 @@ public class MenuNex extends PantallaLateral {
     public void drawScreen(int mx, int my, float parcial) {
         super.drawScreen(mx, my, parcial);  // panel, fondo y opciones
         int cx = cx();
-        fontRendererObj.drawStringWithShadow("§l" + PAGINAS[pagina], cx - 155, 30, 0xFFFFFF);
+        fontRendererObj.drawStringWithShadow("§l" + Tr.t(PAGINAS[pagina]), cx - 155, 30, 0xFFFFFF);
         drawRect(cx - 155, 42, cx + 155, 43, 0x22FFFFFF);
-        java.util.List<String> lineas = fontRendererObj.listFormattedStringToWidth(ayuda, 310);
+        java.util.List<String> lineas = fontRendererObj.listFormattedStringToWidth(Tr.t(ayuda), 310);
         for (int i = 0; i < lineas.size(); i++) {
             drawCenteredString(fontRendererObj, lineas.get(i), cx, height - 16 - (lineas.size() - 1 - i) * 10, 0x8C8C96);
         }

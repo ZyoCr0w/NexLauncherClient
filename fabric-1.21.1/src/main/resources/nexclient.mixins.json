@@ -17,6 +17,7 @@
 		"LevelMixin",
 		"LevelRendererMixin",
 		"ListaFondoMixin",
+		"LoadingOverlayMixin",
 		"ManoPrimeraMixin",
 		"ManoTerceraMixin",
 		"MinecraftMixin",

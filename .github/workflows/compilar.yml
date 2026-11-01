@@ -97,6 +97,11 @@ jobs:
         with:
           path: salida
           merge-multiple: true
+      - name: Paquete de texturas de NexClient (el launcher lo pone la primera vez en el perfil PvP 1.8.9)
+        if: steps.v.outputs.nuevo == 'si'
+        run: |
+          cp recursos/NexClient_TexturePack.zip salida/
+          (cd salida && sha256sum NexClient_TexturePack.zip | cut -d' ' -f1 > NexClient_TexturePack.zip.sha256)
       - uses: softprops/action-gh-release@v2
         if: steps.v.outputs.nuevo == 'si'
         with:

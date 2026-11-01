@@ -26,6 +26,11 @@ public abstract class AbstractButtonMixin extends AbstractWidget {
         ci.cancel();
         int x = getX(), y = getY();
         int color = EstiloNex.boton(g, this, x, y, width, height, isHoveredOrFocused(), active, alpha, -1);
-        renderScrollingString(g, Minecraft.getInstance().font, getMessage(), x + 4, y, x + width - 4, y + height, color);
+        Component texto = getMessage();
+        String es = texto.getString(), traducido = com.nexclient.Tr.t(es);  // NexClient en inglés si el juego lo está
+        if (!traducido.equals(es)) {
+            texto = Component.literal(traducido);
+        }
+        renderScrollingString(g, Minecraft.getInstance().font, texto, x + 4, y, x + width - 4, y + height, color);
     }
 }
