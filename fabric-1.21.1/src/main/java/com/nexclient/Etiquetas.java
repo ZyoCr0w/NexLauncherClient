@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.DisplaySlot;
 import org.joml.Matrix4f;
 
-/** La línea de NexLauncher debajo del nombre (solo en el mundo, no en el Tab). */
+/** La línea de NexLauncher encima del nombre (solo en el mundo, no en el Tab). */
 public final class Etiquetas {
     /** Alto de una línea de nombre en el mundo, igual que la del marcador «debajo del nombre». */
     private static final float LINEA = 9.0F * 1.15F * 0.025F;
@@ -57,9 +57,9 @@ public final class Etiquetas {
         if (v == null) {
             return;
         }
-        // Debajo del nombre; si el servidor ya pone una línea ahí (vida, nivel…), la nuestra va encima del nombre
+        // Encima del nombre; si el servidor pone una línea debajo (vida, nivel…), el nombre sube y la nuestra también
         boolean marcador = d < 100.0 && p.getScoreboard().getDisplayObjective(DisplaySlot.BELOW_NAME) != null;
-        float dy = marcador ? LINEA * 2 : -LINEA;
+        float dy = marcador ? LINEA * 2 : LINEA;  // encima del nombre (y encima del marcador, si hay)
         boolean discreto = p.isDiscrete();
         pose.pushPose();
         pose.translate(v.x, v.y + 0.5 + dy, v.z);

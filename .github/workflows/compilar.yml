@@ -65,6 +65,11 @@ jobs:
           jar=$(ls ${{ matrix.carpeta }}/build/libs/*.jar | grep -v -e '-sources' -e '-dev' | head -n 1)
           echo "Jar: $jar"
           cp "$jar" "salida/${{ matrix.nombre }}"
+          # En 1.8.9 los mixins se descubren solos: una clase interna ahí (MixinX$1) rompe la carga de los mixins
+          if unzip -Z1 "$jar" | grep -E '^com/nexclient/mixin/[^/]*\$[^/]*\.class$'; then
+            echo "::error title=mixins::Hay clases internas en com/nexclient/mixin (sácalas del paquete de mixins)"
+            exit 1
+          fi
           (cd salida && sha256sum "${{ matrix.nombre }}" | cut -d' ' -f1 > "${{ matrix.nombre }}.sha256")
           ls -l salida
       - uses: actions/upload-artifact@v4

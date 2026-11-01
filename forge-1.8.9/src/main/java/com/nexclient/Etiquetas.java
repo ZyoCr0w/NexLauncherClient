@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.IChatComponent;
 import org.lwjgl.opengl.GL11;
 
-/** La línea de NexLauncher debajo del nombre (solo en el mundo, no en el Tab). */
+/** La línea de NexLauncher encima del nombre (solo en el mundo, no en el Tab). */
 public final class Etiquetas {
     private Etiquetas() {
     }
@@ -56,9 +56,9 @@ public final class Etiquetas {
         FontRenderer f = mc.fontRendererObj;
         float escala = 0.016666668F * 1.6F;
         float linea = f.FONT_HEIGHT * 1.15F * escala;
-        // Debajo del nombre; si el servidor ya pone una línea ahí (vida, nivel…), la nuestra va encima del nombre
+        // Encima del nombre; si el servidor pone una línea debajo (vida, nivel…), el nombre sube y la nuestra también
         boolean marcador = d < 100.0 && p.getWorldScoreboard().getObjectiveInDisplaySlot(2) != null;
-        float dy = marcador ? linea * 2 : -linea;
+        float dy = marcador ? linea * 2 : linea;  // encima del nombre (y encima del marcador, si hay)
         GlStateManager.pushMatrix();
         GlStateManager.translate((float) x, (float) y + p.height + 0.5F + dy, (float) z);
         GL11.glNormal3f(0.0F, 1.0F, 0.0F);

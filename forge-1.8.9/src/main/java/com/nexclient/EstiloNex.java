@@ -112,14 +112,14 @@ public final class EstiloNex {
      * Dibuja un botón entero. mouseDragged del juego (que mueve los deslizadores al arrastrar) se llama igual, pero
      * con el color apagado: así su perilla con la textura del paquete no se ve y se dibuja la nuestra.
      */
-    public static void boton(GuiButton b, Minecraft mc, int mx, int my, Runnable arrastre) {
+    public static void boton(GuiButton b, Minecraft mc, int mx, int my) {
         int x = b.xPosition, y = b.yPosition, w = b.width, h = b.height;
         boolean encima = mx >= x && my >= y && mx < x + w && my < y + h;
         GlStateManager.enableBlend();
         int color = fondoBoton(b, x, y, w, h, encima, b.enabled);
         GlStateManager.colorMask(false, false, false, false);
         try {
-            arrastre.run();
+            ((ArrastreBoton) b).nexclient$arrastrar(mc, mx, my);
         } finally {
             GlStateManager.colorMask(true, true, true, true);
             GlStateManager.color(1, 1, 1, 1);

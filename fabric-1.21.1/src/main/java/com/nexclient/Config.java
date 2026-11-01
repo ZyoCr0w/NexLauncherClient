@@ -145,7 +145,7 @@ public class Config {
     public int colorGolpeIdx = 1;
 
     // ---- Cosméticos y etiquetas de NexLauncher (perfiles PvP)
-    /** Línea debajo del nombre de los jugadores de NexLauncher (NEXLAUNCHER, o la de su rango). */
+    /** Línea encima del nombre de los jugadores de NexLauncher (NEXLAUNCHER, o la de su rango). */
     public boolean etiquetas = true;
     /** Cosméticos que se ven: 0 los de todos, 1 solo los míos, 2 ninguno. */
     public int cosmeticosVer = 0;

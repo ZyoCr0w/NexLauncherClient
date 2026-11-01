@@ -1,5 +1,6 @@
 package com.nexclient.mixin;
 
+import com.nexclient.ArrastreBoton;
 import com.nexclient.EstiloNex;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
@@ -9,9 +10,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Estilo NexClient en todos los botones y deslizadores (opciones, mundos, servidores…). */
+/**
+ * Estilo NexClient en todos los botones y deslizadores (opciones, mundos, servidores…).
+ * Sin clases internas: el descubrimiento automático tomaría «MixinGuiButton$1» por otro mixin.
+ */
 @Mixin(GuiButton.class)
-public abstract class MixinGuiButton {
+public abstract class MixinGuiButton implements ArrastreBoton {
     @Shadow public boolean visible;
     @Shadow protected boolean hovered;
     @Shadow public int xPosition;
@@ -22,8 +26,13 @@ public abstract class MixinGuiButton {
     @Shadow
     protected abstract void mouseDragged(Minecraft mc, int mouseX, int mouseY);
 
+    @Override
+    public void nexclient$arrastrar(Minecraft mc, int mx, int my) {
+        mouseDragged(mc, mx, my);
+    }
+
     @Inject(method = "drawButton", at = @At("HEAD"), cancellable = true, require = 0)
-    private void nexclient$dibujar(final Minecraft mc, final int mx, final int my, CallbackInfo ci) {
+    private void nexclient$dibujar(Minecraft mc, int mx, int my, CallbackInfo ci) {
         if (!EstiloNex.activo()) {
             return;
         }
@@ -32,10 +41,6 @@ public abstract class MixinGuiButton {
             return;
         }
         hovered = mx >= xPosition && my >= yPosition && mx < xPosition + width && my < yPosition + height;
-        EstiloNex.boton((GuiButton) (Object) this, mc, mx, my, new Runnable() {
-            public void run() {
-                mouseDragged(mc, mx, my);
-            }
-        });
+        EstiloNex.boton((GuiButton) (Object) this, mc, mx, my);
     }
 }

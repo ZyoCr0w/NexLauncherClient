@@ -138,7 +138,7 @@ public class Eventos {
         }
     }
 
-    /** Etiqueta de NexLauncher debajo del nombre (después de que el juego dibuja el nombre). */
+    /** Etiqueta de NexLauncher encima del nombre (después de que el juego dibuja el nombre). */
     @SubscribeEvent
     public void etiqueta(net.minecraftforge.client.event.RenderLivingEvent.Specials.Post<net.minecraft.entity.EntityLivingBase> e) {
         if (e.entity instanceof net.minecraft.client.entity.AbstractClientPlayer) {
