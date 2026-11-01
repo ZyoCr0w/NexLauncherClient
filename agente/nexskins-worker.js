@@ -448,13 +448,15 @@ const ETIQUETAS = {
 };
 // Lo que existe: uno de cada categoría a la vez. "gif" = la capa GIF que subió esa cuenta.
 const CATALOGO = {
-  cabeza: ["aureola_dorada", "aureola_arcoiris", "aureola_oscura", "corona", "cuernos", "orejas_gato", "orejas_zorro", "nube"],
-  espalda: ["alas_angel", "alas_dragon", "alas_mariposa", "alas_fuego", "jetpack"],
+  cabeza: ["aureola_dorada", "aureola_arcoiris", "aureola_oscura", "corona", "cuernos", "orejas_gato", "orejas_zorro", "nube",
+           "bandana_fuego", "bandana_fuego_azul", "bandana_ninja", "bandana_arcoiris", "bandana_nex", "bandana_pirata"],
+  espalda: ["alas_angel", "alas_angel_oscuro", "alas_angel_arcoiris", "alas_dragon", "alas_dragon_negro", "alas_dragon_hielo",
+            "alas_dragon_ender", "alas_mariposa", "alas_fuego", "jetpack"],
   cuerpo: ["cola_zorro", "cola_gato", "cola_dragon", "bufanda", "orbitas"],
-  capa: ["gif", "capa_brillo", "capa_color"],
+  capa: ["gif", "capa_brillo", "capa_color", "capa_real", "capa_estelar", "capa_nex", "capa_llamas", "capa_arcoiris"],
   aura: ["ki_blanco", "ki_dorado", "ki_azul", "ki_rayos", "aura_oscura", "aura_fuego", "aura_arcoiris", "aura_hielo"],
   rastro: ["chispas", "corazones", "notas", "pisadas_fuego"],
-  escudo: ["escudo_nex", "escudo_dragon", "escudo_dorado", "escudo_hielo", "escudo_fuego", "escudo_obsidiana"],
+  escudo: ["escudo_nex", "escudo_noche", "escudo_dragon", "escudo_dorado", "escudo_hielo", "escudo_fuego", "escudo_obsidiana"],
 };
 
 async function esquemaCosmeticos(env) {
