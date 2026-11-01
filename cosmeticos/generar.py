@@ -128,7 +128,7 @@ def alas_plumas(filas, paleta, brillo=False, parpadeo=None, arcoiris=False, rot=
     piezas = [p] + (extra or [])
     return {"hueso": "cuerpo", "grupos": [
         {"id": "ala", "espejo": True, "pivote": [1.0, 2.0, 2.4], "rot": list(rot),
-         "anim": {"ry": ry or anim(amp=9, frec=0.45, amp_mov=1.2, frec_mov=1.4, aire=28),
+         "anim": {"ry": ry or anim(amp=9, frec=0.45, amp_mov=0.7, frec_mov=0.55, aire=28),
                   "rz": anim(amp=3, frec=0.45, fase=1.3)},
          "piezas": piezas}]}
 
@@ -147,7 +147,7 @@ def alas_dragon():
         "b.b.b........",
     ]
     return alas_plumas(filas, {"b": "#3E0B0B", "m": "#B3261E"}, rot=(6, -22, -18),
-                       ry=anim(amp=13, frec=0.32, amp_mov=1.0, frec_mov=0.9, aire=32))
+                       ry=anim(amp=13, frec=0.32, amp_mov=0.6, frec_mov=0.4, aire=32))
 
 
 def alas_mariposa():
@@ -166,7 +166,7 @@ def alas_mariposa():
     ]
     borde = []
     return alas_plumas(filas, {"#": "#FFFFFF"}, arcoiris=True, brillo=False, rot=(0, -20, -6), tam=1.05,
-                       ry=anim(amp=26, frec=1.1, amp_mov=0.4, frec_mov=1.0, aire=10), extra=borde)
+                       ry=anim(amp=26, frec=1.1, amp_mov=0.3, frec_mov=0.5, aire=10), extra=borde)
 
 
 def alas_fuego():

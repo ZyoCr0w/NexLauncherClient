@@ -152,6 +152,8 @@ public class MenuScreen extends Screen {
                 color("Color del contorno", c.contornoColor, v -> c.contornoColor = v);
                 interruptor("Etiquetas NexLauncher", c.etiquetas, v -> c.etiquetas = v,
                         "La línea debajo del nombre de quienes juegan con NexLauncher.");
+                interruptor("Menú NexClient", c.menuNex, v -> c.menuNex = v,
+                        "Menú principal y de pausa de NexClient (por encima del de cualquier paquete de texturas).");
                 addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(new String[]{"De todos", "Solo los míos", "Ninguno"}[i]))
                         .withValues(java.util.Arrays.asList(0, 1, 2)).withInitialValue(c.cosmeticosVer)
                         .withTooltip(i -> Tooltip.create(Component.literal("Alas, aureolas, auras, capas animadas y escudos de "

@@ -16,6 +16,7 @@
 		"LevelRendererMixin",
 		"ManoPrimeraMixin",
 		"ManoTerceraMixin",
+		"MinecraftMixin",
 		"MouseHandlerMixin",
 		"OptionInstanceAccessor",
 		"OverlayTextureAccessor",

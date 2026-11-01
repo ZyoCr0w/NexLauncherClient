@@ -183,12 +183,15 @@ public final class Cosmeticos3D {
         if (a == null) {
             return base;
         }
-        float amp = num(a, "amp", 0) * (1 + num(a, "amp_mov", 0) * e.mov);
-        float frec = num(a, "frec", 0) + num(a, "frec_mov", 0) * e.mov;
+        // quieto y en movimiento son dos ondas de frecuencia fija que se mezclan según mov: cambiar la frecuencia
+        // con mov haría saltar la fase (t es la hora en segundos) y el ala «aletearía» de golpe
+        float amp = num(a, "amp", 0), f = num(a, "frec", 0), fase = num(a, "fase", 0);
+        float ampMov = amp * (1 + num(a, "amp_mov", 0)), fMov = f + num(a, "frec_mov", 0);
         float v = base + num(a, "vel", 0) * e.t + num(a, "mov", 0) * e.mov + num(a, "aire", 0) * e.aire
                 + num(a, "agachado", 0) * e.agachado + num(a, "golpe", 0) * e.golpe;
         if (amp != 0) {
-            v += amp * (float) Math.sin(2 * Math.PI * frec * e.t + num(a, "fase", 0));
+            v += amp * (1 - e.mov) * (float) Math.sin(2 * Math.PI * f * e.t + fase)
+                    + ampMov * e.mov * (float) Math.sin(2 * Math.PI * fMov * e.t + fase);
         }
         return v;
     }

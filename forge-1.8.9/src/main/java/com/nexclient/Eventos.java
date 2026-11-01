@@ -46,6 +46,19 @@ public class Eventos {
 
     private static final int ID_BOTON = 98170;
 
+    /** Menú principal y de pausa de NexClient en lugar de los de Minecraft (o del paquete de texturas). */
+    @SubscribeEvent
+    public void abrirMenu(net.minecraftforge.client.event.GuiOpenEvent e) {
+        if (!Config.get().menuNex) {
+            return;
+        }
+        if (e.gui instanceof net.minecraft.client.gui.GuiMainMenu) {
+            e.gui = new MenuPrincipalNex();
+        } else if (e.gui instanceof GuiIngameMenu) {
+            e.gui = new MenuPausaNex();
+        }
+    }
+
     /** Botón «NexClient» en el menú de pausa (Esc): centrado, justo encima de «Volver al juego». */
     @SubscribeEvent
     public void menuPausa(GuiScreenEvent.InitGuiEvent.Post e) {

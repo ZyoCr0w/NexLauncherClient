@@ -151,6 +151,8 @@ public class Config {
     public int cosmeticosVer = 0;
 
     // ---- Visual
+    /** Menú principal y de pausa propios de NexClient (si no, los de Minecraft o del paquete de texturas). */
+    public boolean menuNex = true;
     public boolean contorno = false;
     public int contornoColor = 0;
     public float contornoGrosor = 2.0f;
