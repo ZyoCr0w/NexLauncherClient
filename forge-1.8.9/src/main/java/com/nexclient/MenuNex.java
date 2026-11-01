@@ -165,6 +165,7 @@ public class MenuNex extends GuiScreen {
             color("Color del contorno", false);
             deslizador("Grosor: ", "", 1, 8, c.contornoGrosor, new Numero() {
                 public void poner(double v) { c.contornoGrosor = (float) (Math.round(v * 2) / 2.0); } }, true);
+            interruptor("Etiquetas NexLauncher", c.etiquetas, new Escritor() { public void poner(boolean v) { c.etiquetas = v; } });
         }
         boton(cx - 100, height - 26, 200, "Listo", new Runnable() { public void run() { cerrar(); } });
     }

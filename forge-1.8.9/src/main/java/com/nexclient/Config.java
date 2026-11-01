@@ -119,6 +119,12 @@ public class Config {
     public boolean colorGolpe = false;
     public int colorGolpeIdx = 1;
 
+    // ---- Cosméticos y etiquetas de NexLauncher (perfiles PvP)
+    /** Línea debajo del nombre de los jugadores de NexLauncher (NEXLAUNCHER, o la de su rango). */
+    public boolean etiquetas = true;
+    /** Cosméticos que se ven: 0 los de todos, 1 solo los míos, 2 ninguno. */
+    public int cosmeticosVer = 0;
+
     // ---- Visual
     public boolean contorno = false;
     public int contornoColor = 0;
@@ -197,6 +203,7 @@ public class Config {
         hora = Math.max(0, Math.min(23999, hora));
         vistaLibre = Math.max(0, Math.min(2, vistaLibre));
         contornoGrosor = Math.max(1f, Math.min(8f, contornoGrosor));
+        cosmeticosVer = Math.max(0, Math.min(2, cosmeticosVer));
         miraEstilo = Math.max(0, Math.min(ESTILOS_MIRA.length - 1, miraEstilo));
         miraTamano = Math.max(1, Math.min(20, miraTamano));
         miraGrosor = Math.max(1, Math.min(6, miraGrosor));

@@ -67,6 +67,16 @@ public class NexClient implements ClientModInitializer {
                 mc.setScreen(new MenuScreen(mc.screen));
             }
             Efectos.tick(mc);
+            if (mc.player != null && mc.level != null) {  // etiquetas y cosméticos de los jugadores cercanos
+                java.util.List<String> cerca = new java.util.ArrayList<String>();
+                for (net.minecraft.world.entity.player.Player otro : mc.level.players()) {
+                    if (otro != mc.player && otro.distanceToSqr(mc.player) < 96 * 96) {
+                        cerca.add(otro.getGameProfile().getName());
+                    }
+                }
+                Cosmeticos.tick(mc.player.getGameProfile().getName(),
+                        mc.getCurrentServer() != null ? mc.getCurrentServer().ip : "", cerca);
+            }
             if (++ticks % 40 == 0 && mc.screen == null) {
                 Config.recargarSiCambio();
             }

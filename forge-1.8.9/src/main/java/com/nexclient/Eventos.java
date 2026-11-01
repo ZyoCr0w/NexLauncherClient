@@ -101,6 +101,14 @@ public class Eventos {
         }
     }
 
+    /** Etiqueta de NexLauncher debajo del nombre (después de que el juego dibuja el nombre). */
+    @SubscribeEvent
+    public void etiqueta(net.minecraftforge.client.event.RenderLivingEvent.Specials.Post<net.minecraft.entity.EntityLivingBase> e) {
+        if (e.entity instanceof net.minecraft.client.entity.AbstractClientPlayer) {
+            Etiquetas.dibujar((net.minecraft.client.entity.AbstractClientPlayer) e.entity, e.x, e.y, e.z);
+        }
+    }
+
     @SubscribeEvent
     public void ataque(AttackEntityEvent e) {
         if (e.entityPlayer != null && e.entityPlayer.worldObj.isRemote && e.entityPlayer == mc.thePlayer) {
@@ -144,6 +152,16 @@ public class Eventos {
         } else {
             Efectos.tick();
             Lan.tick(mc);
+            if (mc.thePlayer != null && mc.theWorld != null) {  // etiquetas y cosméticos de los jugadores cercanos
+                java.util.List<String> cerca = new java.util.ArrayList<String>();
+                for (net.minecraft.entity.player.EntityPlayer otro : mc.theWorld.playerEntities) {
+                    if (otro != mc.thePlayer && otro.getDistanceSqToEntity(mc.thePlayer) < 96 * 96) {
+                        cerca.add(otro.getName());
+                    }
+                }
+                Cosmeticos.tick(mc.thePlayer.getName(),
+                        mc.getCurrentServerData() != null ? mc.getCurrentServerData().serverIP : "", cerca);
+            }
             if (++ticks % 40 == 0 && mc.currentScreen == null) {
                 Config.recargarSiCambio();
             }

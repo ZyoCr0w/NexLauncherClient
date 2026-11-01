@@ -15,8 +15,9 @@
 		"MouseHandlerMixin",
 		"OptionInstanceAccessor",
 		"OverlayTextureAccessor",
-		"PlayerTabOverlayMixin",
 		"PlayerListMixin",
+		"PlayerRendererMixin",
+		"PlayerTabOverlayMixin",
 		"ScreenEffectRendererMixin"
 	],
 	"injectors": {

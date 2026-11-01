@@ -156,6 +156,8 @@ public class MenuScreen extends Screen {
                 interruptor("Siempre filo", c.siempreFilo, v -> c.siempreFilo = v, "Solo visual.");
                 interruptor("Contorno de bloque", c.contorno, v -> c.contorno = v, "Color propio al mirar un bloque.");
                 color("Color del contorno", c.contornoColor, v -> c.contornoColor = v);
+                interruptor("Etiquetas NexLauncher", c.etiquetas, v -> c.etiquetas = v,
+                        "La línea debajo del nombre de quienes juegan con NexLauncher.");
                 break;
         }
         addRenderableWidget(Button.builder(Component.literal("Listo"), b -> onClose())
