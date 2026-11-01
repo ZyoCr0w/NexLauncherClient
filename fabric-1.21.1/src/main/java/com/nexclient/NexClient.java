@@ -47,6 +47,12 @@ public class NexClient implements ClientModInitializer {
                 .bounds(volver.getX(), y, volver.getWidth(), 20).build());
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void registrarCapa(net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.RegistrationHelper ayuda,
+                                      net.minecraft.client.renderer.entity.player.PlayerRenderer renderer) {
+        ayuda.register((net.minecraft.client.renderer.entity.layers.RenderLayer) new CapaCosmeticos(renderer));
+    }
+
     public static KeyMapping teclaMenu;
     private static int ticks;
 
@@ -82,6 +88,14 @@ public class NexClient implements ClientModInitializer {
             }
         });
         HudRenderCallback.EVENT.register((g, tiempo) -> Hud.dibujar(g, false));
+        // cosméticos 3D de NexLauncher sobre los jugadores
+        net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
+                (tipo, renderer, ayuda, ctx) -> {
+                    if (renderer instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer) {
+                        registrarCapa(ayuda, (net.minecraft.client.renderer.entity.player.PlayerRenderer) renderer);
+                    }
+                });
+        ClientTickEvents.END_CLIENT_TICK.register(Rastros::tick);
         // Botón «NexClient» en el menú de pausa (Esc): centrado, justo encima de «Volver al juego»
         ScreenEvents.AFTER_INIT.register((mc, pantalla, ancho, alto) -> {
             if (pantalla instanceof PauseScreen) {

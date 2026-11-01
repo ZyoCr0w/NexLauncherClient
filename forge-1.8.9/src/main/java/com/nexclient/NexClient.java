@@ -28,4 +28,13 @@ public class NexClient {
         ClientRegistry.registerKeyBinding(VistaLibre.tecla);
         MinecraftForge.EVENT_BUS.register(new Eventos());
     }
+
+    /** Cosméticos 3D de NexLauncher en los dos modelos de jugador (brazos normales y finos). */
+    @Mod.EventHandler
+    public void postInit(net.minecraftforge.fml.common.event.FMLPostInitializationEvent e) {
+        for (net.minecraft.client.renderer.entity.RenderPlayer r
+                : net.minecraft.client.Minecraft.getMinecraft().getRenderManager().getSkinMap().values()) {
+            r.addLayer(new CapaCosmeticos(r));
+        }
+    }
 }

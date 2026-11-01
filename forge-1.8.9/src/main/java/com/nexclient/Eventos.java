@@ -159,6 +159,7 @@ public class Eventos {
         } else {
             Efectos.tick();
             Lan.tick(mc);
+            Rastros.tick(mc);
             if (mc.thePlayer != null && mc.theWorld != null) {  // etiquetas y cosméticos de los jugadores cercanos
                 java.util.List<String> cerca = new java.util.ArrayList<String>();
                 for (net.minecraft.entity.player.EntityPlayer otro : mc.theWorld.playerEntities) {
