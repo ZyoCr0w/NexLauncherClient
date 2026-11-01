@@ -16,7 +16,18 @@ public final class Etiquetas {
     /** Alto de una línea de nombre en el mundo, igual que la del marcador «debajo del nombre». */
     private static final float LINEA = 9.0F * 1.15F * 0.025F;
 
+    /** Falso mientras el inventario dibuja a tu personaje (apaga las sombras). */
+    public static volatile boolean enMundo = true;
+
     private Etiquetas() {
+    }
+
+    /** ¿Se dibuja tu propio nombre? En tercera persona (F5), no en el inventario ni con la interfaz oculta (F1). */
+    public static boolean nombrePropio(net.minecraft.world.entity.Entity e) {
+        Minecraft mc = Minecraft.getInstance();
+        return e != null && e == mc.player && e == mc.getCameraEntity() && Config.get().nombrePropio && enMundo
+                && !mc.options.getCameraType().isFirstPerson() && Minecraft.renderNames()
+                && !e.isInvisible() && !e.isVehicle();
     }
 
     public static Component texto(Cosmeticos.Jugador j) {

@@ -176,6 +176,8 @@ public class MenuScreen extends PantallaLateral {
                 color("Color del contorno", c.contornoColor, v -> c.contornoColor = v);
                 interruptor("Etiquetas NexLauncher", c.etiquetas, v -> c.etiquetas = v,
                         "La línea encima del nombre de quienes juegan con NexLauncher.");
+                interruptor("Mi nombre en 3ª persona", c.nombrePropio, v -> c.nombrePropio = v,
+                        "Tu nombre y tu etiqueta encima de tu cabeza al usar F5.");
                 interruptor("Menú NexClient", c.menuNex, v -> c.menuNex = v,
                         "Menú principal y de pausa de NexClient (por encima del de cualquier paquete de texturas).");
                 addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(new String[]{"De todos", "Solo los míos", "Ninguno"}[i]))

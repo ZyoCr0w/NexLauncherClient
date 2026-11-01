@@ -149,6 +149,8 @@ public class Config {
     // ---- Cosméticos y etiquetas de NexLauncher (perfiles PvP)
     /** Línea encima del nombre de los jugadores de NexLauncher (NEXLAUNCHER, o la de su rango). */
     public boolean etiquetas = true;
+    /** Tu propio nombre (y tu etiqueta) encima de tu cabeza en tercera persona (F5). */
+    public boolean nombrePropio = true;
     /** Cosméticos que se ven: 0 los de todos, 1 solo los míos, 2 ninguno. */
     public int cosmeticosVer = 0;
 

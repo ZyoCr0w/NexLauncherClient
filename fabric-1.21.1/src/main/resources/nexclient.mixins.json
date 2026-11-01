@@ -26,6 +26,8 @@
 		"OverlayTextureAccessor",
 		"PlayerListMixin",
 		"PlayerRendererMixin",
+		"LivingEntityRendererMixin",
+		"EntityRenderDispatcherMixin",
 		"PlayerTabOverlayMixin",
 		"ScreenEffectRendererMixin",
 		"ScreenFondoMixin"

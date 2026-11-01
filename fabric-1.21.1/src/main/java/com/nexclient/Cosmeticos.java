@@ -197,4 +197,13 @@ public final class Cosmeticos {
         int m = Config.get().cosmeticosVer;
         return m == 0 || (m == 1 && esYo);
     }
+
+    /** Bloques que sube el nombre de este jugador para no encimarse con su cosmético de cabeza (0 si no lleva). */
+    public static float subidaNombre(String nombre, boolean esYo) {
+        Jugador j = de(nombre);
+        if (j == null || !mostrar(esYo)) {
+            return 0;
+        }
+        return Cosmeticos3D.subidaNombre(j.de("cabeza"));
+    }
 }

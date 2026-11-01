@@ -34,13 +34,22 @@ public final class Etiquetas {
         return (String) c;
     }
 
+    /** ¿Se dibuja tu propio nombre? En tercera persona (F5), no en el inventario ni con la interfaz oculta (F1). */
+    public static boolean nombrePropio(net.minecraft.entity.Entity e) {
+        Minecraft mc = Minecraft.getMinecraft();
+        RenderManager rm = mc.getRenderManager();
+        return e != null && e == mc.thePlayer && e == rm.livingPlayer && Config.get().nombrePropio
+                && mc.gameSettings.thirdPersonView != 0 && rm.isRenderShadow() && Minecraft.isGuiEnabled()
+                && !e.isInvisible() && e.riddenByEntity == null;
+    }
+
     /**
      * Se llama después de que el juego dibuja lo de encima de la cabeza (RenderLivingEvent.Specials.Post). Solo se
      * dibuja si el nombre también se ve: sin agacharse, no invisible, sin montar nada y a menos de 32 bloques.
      */
     public static void dibujar(AbstractClientPlayer p, double x, double y, double z) {
         Minecraft mc = Minecraft.getMinecraft();
-        if (!Config.get().etiquetas || p == mc.getRenderViewEntity() || p.isSneaking() || p.riddenByEntity != null
+        if (!Config.get().etiquetas || (p == mc.getRenderViewEntity() && !nombrePropio(p)) || p.isSneaking() || p.riddenByEntity != null
                 || p.isInvisibleToPlayer(mc.thePlayer) || !Minecraft.isGuiEnabled()) {
             return;
         }

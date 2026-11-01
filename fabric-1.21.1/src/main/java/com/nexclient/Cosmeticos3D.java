@@ -66,6 +66,38 @@ public final class Cosmeticos3D {
         return d == null ? null : str(d, "hueso", "cuerpo");
     }
 
+    private static final Map<String, Float> ALTOS = new java.util.concurrent.ConcurrentHashMap<String, Float>();
+
+    /** Píxeles que el cosmético sobresale por encima de la cabeza (la cabeza llega a y = -8); 0 si no sobresale. */
+    public static float alto(String id) {
+        if (id == null || !"cabeza".equals(hueso(id))) {
+            return 0;
+        }
+        Float a = ALTOS.get(id);
+        if (a == null) {
+            float min = 0;
+            try {
+                for (Cubo c : cubos(id, new Estado())) {
+                    for (float[] v : c.esquinas) {
+                        min = Math.min(min, v[1]);
+                    }
+                }
+            } catch (Exception e) {
+                min = 0;
+            }
+            a = Math.max(0f, -8f - min);
+            ALTOS.put(id, a);
+        }
+        return a;
+    }
+
+    /** Cuánto subir el nombre (en bloques) para que no se encime con lo que lleva en la cabeza (orejas, corona…). */
+    public static float subidaNombre(String idCabeza) {
+        float px = alto(idCabeza);
+        // 1 píxel del modelo = 0.9375/16 de bloque; el nombre ya deja ~0.15 bloques libres sobre la cabeza
+        return px <= 0 ? 0 : Math.max(0f, px * 0.0586f - 0.08f);
+    }
+
     // ---- matrices 4×4 por filas
     private static float[] identidad() {
         return new float[]{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
