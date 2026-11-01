@@ -15,6 +15,8 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
     private static final ResourceLocation LOGO = new ResourceLocation("nexclient", "textures/gui/logo.png");
     private static final ResourceLocation BRILLO = new ResourceLocation("nexclient", "textures/gui/brillo.png");
     protected final MenuLateral menu;
+    /** Dentro del panel de otro menú (las páginas de NexClient): sin panel propio, solo el contenido. */
+    public boolean embebido;
 
     protected PantallaLateral(boolean principal) {
         menu = new MenuLateral(principal);
@@ -23,15 +25,76 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
     /** Llena menu.entradas (se llama en cada initGui, p. ej. al cambiar el tamaño de la ventana). */
     protected abstract void entradas();
 
-    protected void entrada(String texto, Runnable accion, boolean separador) {
-        menu.entradas.add(new MenuLateral.Entrada(texto, accion, separador, false, true));
+    protected MenuLateral.Entrada entrada(String texto, Runnable accion, boolean separador) {
+        MenuLateral.Entrada e = new MenuLateral.Entrada(texto, accion, separador, false, true);
+        menu.entradas.add(e);
+        return e;
+    }
+
+    /** Entrada con submenú (se despliega en el mismo panel). */
+    protected MenuLateral.Entrada grupo(String texto, boolean separador) {
+        return entrada(texto, null, separador);
+    }
+
+    protected static void hijo(MenuLateral.Entrada grupo, String texto, Runnable accion) {
+        grupo.hijos.add(new MenuLateral.Entrada(texto, accion, false, false, true));
+    }
+
+    /** NexClient ▸ sus páginas, que se ven a la derecha del panel. */
+    protected void grupoNexClient(boolean separador) {
+        final GuiScreen yo = this;
+        MenuLateral.Entrada g = grupo("NexClient", separador);
+        for (int i = 0; i < MenuNex.PAGINAS.length; i++) {
+            final int k = i;
+            hijo(g, MenuNex.PAGINAS[i], new Runnable() {
+                public void run() { mc.displayGuiScreen(new MenuNex(yo, k)); } });
+        }
+    }
+
+    private static String sinPuntos(String s) {
+        return s.replace("...", "").replace("…", "").trim();
+    }
+
+    /** Opciones ▸ General, Video, Sonido, Controles, Idioma, Chat, Paquetes y Skin. */
+    protected void grupoOpciones(boolean separador) {
+        final GuiScreen yo = this;
+        MenuLateral.Entrada g = grupo(sinPuntos(net.minecraft.client.resources.I18n.format("menu.options")), separador);
+        hijo(g, "General", new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.GuiOptions(yo, mc.gameSettings)); } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.video")), new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.GuiVideoSettings(yo, mc.gameSettings)); } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.sounds")), new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenOptionsSounds(yo, mc.gameSettings)); } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.controls")), new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.GuiControls(yo, mc.gameSettings)); } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.language")), new Runnable() {
+            public void run() {
+                mc.displayGuiScreen(new net.minecraft.client.gui.GuiLanguage(yo, mc.gameSettings, mc.getLanguageManager()));
+            } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.chat.title")), new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.ScreenChatOptions(yo, mc.gameSettings)); } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.resourcepack")), new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.GuiScreenResourcePacks(yo)); } });
+        hijo(g, sinPuntos(net.minecraft.client.resources.I18n.format("options.skinCustomisation")), new Runnable() {
+            public void run() { mc.displayGuiScreen(new net.minecraft.client.gui.GuiCustomizeSkin(yo)); } });
     }
 
     @Override
     public void initGui() {
         buttonList.clear();
+        java.util.Set<String> abiertos = new java.util.HashSet<String>();  // los submenús abiertos siguen abiertos
+        for (MenuLateral.Entrada e : menu.entradas) {
+            if (e.abierto) {
+                abiertos.add(e.texto);
+            }
+        }
         menu.entradas.clear();
-        entradas();
+        if (!embebido) {
+            entradas();
+        }
+        for (MenuLateral.Entrada e : menu.entradas) {
+            e.abierto = abiertos.contains(e.texto);
+        }
         String v = version();
         menu.subtitulo = "Minecraft 1.8.9";
         menu.pie1 = mc.getSession().getUsername();
@@ -45,7 +108,9 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
 
     @Override
     public void drawScreen(int mx, int my, float parcial) {
-        menu.dibujar(this, width, height, mx, my);
+        if (!embebido) {
+            menu.dibujar(this, width, height, mx, my);
+        }
         super.drawScreen(mx, my, parcial);  // botones propios de la pantalla (el menú de NexClient)
     }
 
@@ -58,13 +123,19 @@ public abstract class PantallaLateral extends GuiScreen implements MenuLateral.P
 
     /** Clic en el panel (también cuando hay otra pantalla de Minecraft a su derecha). */
     public boolean clicLateral(int mx, int my) {
-        MenuLateral.Entrada e = menu.en(mx, my);
+        MenuLateral.Entrada e = embebido ? null : menu.en(mx, my);
         if (e == null) {
             return false;
         }
         mc.getSoundHandler().playSound(PositionedSoundRecord.create(new ResourceLocation("gui.button.press"), 1.0F));
+        if (!e.hijos.isEmpty()) {
+            menu.alternar(e);
+            return true;
+        }
         menu.marcada = e;
-        e.accion.run();
+        if (e.accion != null) {
+            e.accion.run();
+        }
         return true;
     }
 

@@ -32,7 +32,10 @@ public final class MenuLateral {
         public final String texto;
         public final Runnable accion;
         public final boolean separador, peligro, activa;
-        float hover;
+        /** Submenú (Opciones → Video, Sonido…): se despliega en el mismo panel al tocar la entrada. */
+        public final List<Entrada> hijos = new ArrayList<Entrada>();
+        public boolean abierto;
+        float hover, apertura;
 
         public Entrada(String texto, Runnable accion, boolean separador, boolean peligro, boolean activa) {
             this.texto = texto;
@@ -44,7 +47,25 @@ public final class MenuLateral {
     }
 
     public static final int ANCHO = 150;
-    private static final int ALTO_FILA = 20, INICIO = 72, HUECO = 9;
+    private static final int ALTO_FILA = 18, ALTO_HIJO = 15, INICIO = 66, HUECO = 7;
+
+    /** Una fila visible del panel en este cuadro: la entrada, dónde va, su alto y qué tanto se ve (submenús). */
+    private static final class Fila {
+        final Entrada e;
+        final int y, alto;
+        final float vis;
+        final boolean hijo;
+
+        Fila(Entrada e, int y, int alto, float vis, boolean hijo) {
+            this.e = e;
+            this.y = y;
+            this.alto = alto;
+            this.vis = vis;
+            this.hijo = hijo;
+        }
+    }
+
+    private final List<Fila> filas = new ArrayList<Fila>();
 
     public final List<Entrada> entradas = new ArrayList<Entrada>();
     /** true: menú principal (fondo propio y logo grande); false: pausa (se ve el juego detrás). */
@@ -101,17 +122,35 @@ public final class MenuLateral {
         return Math.round(-ANCHO * (1 - suave(t() / 0.35f)));
     }
 
-    private int yDe(int i) {
+    /** Las filas de este cuadro: las entradas y, debajo de las abiertas, sus submenús (que se abren de a poco). */
+    private void calcular(float dt) {
+        filas.clear();
         int y = INICIO;
-        for (int k = 0; k <= i; k++) {
-            if (entradas.get(k).separador) {
+        for (int i = 0; i < entradas.size(); i++) {
+            Entrada e = entradas.get(i);
+            if (e.separador && i > 0) {
                 y += HUECO;
             }
-            if (k < i) {
-                y += ALTO_FILA;
+            filas.add(new Fila(e, y, ALTO_FILA, 1, false));
+            y += ALTO_FILA;
+            e.apertura += ((e.abierto ? 1 : 0) - e.apertura) * Math.min(1, dt * 12);
+            if (!e.hijos.isEmpty() && e.apertura > 0.01f) {
+                for (Entrada c : e.hijos) {
+                    int alto = Math.round(ALTO_HIJO * e.apertura);
+                    filas.add(new Fila(c, y, alto, e.apertura, true));
+                    y += alto;
+                }
             }
         }
-        return y;
+    }
+
+    /** Toca una entrada con submenú: se abre (y se cierran las demás) o se cierra. */
+    public void alternar(Entrada e) {
+        boolean abrir = !e.abierto;
+        for (Entrada x : entradas) {
+            x.abierto = false;
+        }
+        e.abierto = abrir;
     }
 
     /** La entrada bajo el ratón (activa), o null. */
@@ -119,11 +158,12 @@ public final class MenuLateral {
         if (mx < 0 || mx >= ANCHO + dx()) {
             return null;
         }
-        for (int i = 0; i < entradas.size(); i++) {
-            int y = yDe(i);
-            Entrada e = entradas.get(i);
-            if (e.activa && my >= y && my < y + ALTO_FILA) {
-                return e;
+        if (filas.isEmpty()) {
+            calcular(0);
+        }
+        for (Fila f : filas) {
+            if (f.e.activa && f.vis > 0.9f && my >= f.y && my < f.y + f.alto) {
+                return f.e;
             }
         }
         return null;
@@ -149,35 +189,58 @@ public final class MenuLateral {
         p.texto("§lNexClient", 48 + dx, 19, alfa(0xFFFFFFFF, aparecer), 1.35f, true);
         p.texto(Tr.t(subtitulo), 48 + dx, 35, alfa(0xFF8C8C96, aparecer), 0.75f, false);
         p.rect(12 + dx, 56, ANCHO - 12 + dx, 57, alfa(0x1EFFFFFF, aparecer));
-        // entradas
+        // entradas (y submenús abiertos)
+        calcular(dt);
         Entrada bajo = en(mx, my);
-        for (int i = 0; i < entradas.size(); i++) {
-            Entrada e = entradas.get(i);
-            int y = yDe(i);
-            if (e.separador && i > 0) {
+        int i = 0;
+        for (Fila f : filas) {
+            Entrada e = f.e;
+            int y = f.y;
+            if (!f.hijo && e.separador && entradas.indexOf(e) > 0) {
                 p.rect(14 + dx, y - HUECO / 2 - 1, ANCHO - 14 + dx, y - HUECO / 2, 0x14FFFFFF);
             }
             float objetivo = e == bajo || e == marcada ? 1 : 0;
             e.hover += (objetivo - e.hover) * Math.min(1, dt * 14);
-            float a = suave((t - 0.10f - i * 0.035f) / 0.28f);  // aparecen una tras otra
+            float a = suave((t - 0.10f - i++ * 0.03f) / 0.28f) * (f.hijo ? suave((f.vis - 0.35f) / 0.65f) : 1);
             if (a <= 0.02f) {
                 continue;
             }
             int ex = dx + Math.round(-10 * (1 - a));
             int acento = e.peligro ? 0xFFFF5A5A : 0xFFFFFFFF;
             if (e.hover > 0.01f) {
-                p.degradado(ex, y, ANCHO + dx, y + ALTO_FILA, alfa(e.peligro ? 0x30FF4040 : 0x22FFFFFF, e.hover),
-                        alfa(e.peligro ? 0x18FF4040 : 0x10FFFFFF, e.hover));
-                int medio = Math.round(8 * e.hover);
-                p.rect(ex, y + 10 - medio, ex + 2, y + 10 + medio, alfa(acento, e.hover));
+                p.degradado(ex, y, ANCHO + dx, y + f.alto, alfa(e.peligro ? 0x30FF4040 : 0x22FFFFFF, e.hover * a),
+                        alfa(e.peligro ? 0x18FF4040 : 0x10FFFFFF, e.hover * a));
+                int medio = Math.round((f.alto / 2f - 2) * e.hover);
+                p.rect(ex + (f.hijo ? 14 : 0), y + f.alto / 2 - medio, ex + (f.hijo ? 16 : 2), y + f.alto / 2 + medio,
+                        alfa(acento, e.hover * a));
             }
-            int base = e.activa ? 0xFFB4B4BE : 0xFF55555C;
+            int base = !e.activa ? 0xFF55555C : f.hijo ? 0xFF9A9AA6 : 0xFFB4B4BE;
             int color = mezclar(base, e.peligro ? 0xFFFF7070 : 0xFFFFFFFF, e.hover);
-            p.texto(Tr.t(e.texto), ex + 16 + 4 * e.hover, y + 6, alfa(color, a), 1, false);
+            float tx = ex + (f.hijo ? 26 : 16) + 4 * e.hover;
+            float escala = f.hijo ? 0.9f : 1f;
+            p.texto(Tr.t(e.texto), tx, y + (f.alto - 8 * escala) / 2f, alfa(color, a), escala, false);
+            if (!e.hijos.isEmpty()) {  // flecha: › cerrado, ⌄ abierto (gira con la animación)
+                int fx = ANCHO + dx - 16, fy = y + f.alto / 2;
+                int c = alfa(0xFF8C8C96, a);
+                if (e.apertura < 0.5f) {
+                    p.rect(fx, fy - 3, fx + 1, fy + 4, c);
+                    p.rect(fx + 1, fy - 2, fx + 2, fy + 3, c);
+                    p.rect(fx + 2, fy - 1, fx + 3, fy + 2, c);
+                    p.rect(fx + 3, fy, fx + 4, fy + 1, c);
+                } else {
+                    p.rect(fx - 2, fy - 1, fx + 5, fy, c);
+                    p.rect(fx - 1, fy, fx + 4, fy + 1, c);
+                    p.rect(fx, fy + 1, fx + 3, fy + 2, c);
+                    p.rect(fx + 1, fy + 2, fx + 2, fy + 3, c);
+                }
+            }
         }
-        // pie
-        p.texto(pie1, 14 + dx, h - 28, alfa(0xFFB4B4BE, aparecer), 0.85f, false);
-        p.texto(pie2, 14 + dx, h - 16, alfa(0xFF6E6E78, aparecer), 0.75f, false);
+        // pie (si no lo tapan las entradas, en pantallas bajas)
+        Fila ultima = filas.isEmpty() ? null : filas.get(filas.size() - 1);
+        if (ultima == null || ultima.y + ultima.alto < h - 32) {
+            p.texto(pie1, 14 + dx, h - 28, alfa(0xFFB4B4BE, aparecer), 0.85f, false);
+            p.texto(pie2, 14 + dx, h - 16, alfa(0xFF6E6E78, aparecer), 0.75f, false);
+        }
         if (logoGrande) {
             logoGrande(p, w, h, t);
         }

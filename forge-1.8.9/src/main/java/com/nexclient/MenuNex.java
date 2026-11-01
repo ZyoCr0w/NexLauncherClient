@@ -11,7 +11,7 @@ import java.util.List;
 
 /** Menú de NexClient (Shift derecho): las páginas en el panel de la izquierda y sus opciones a la derecha. */
 public class MenuNex extends PantallaLateral {
-    private static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mira", "Mods"};
+    static final String[] PAGINAS = {"HUD", "Info", "Blockhit", "Juego", "Visual", "Mira", "Mods"};
     private static int pagina = 0;
     private final GuiScreen padre;
     private final List<Runnable> acciones = new ArrayList<Runnable>();
@@ -21,6 +21,13 @@ public class MenuNex extends PantallaLateral {
     public MenuNex(GuiScreen padre) {
         super(false);
         this.padre = padre;
+    }
+
+    /** Una página dentro del panel del menú principal o de pausa (NexClient ▸ HUD, Info…). */
+    public MenuNex(GuiScreen padre, int pagina) {
+        this(padre);
+        MenuNex.pagina = pagina;
+        this.embebido = true;
     }
 
     @Override
@@ -46,7 +53,7 @@ public class MenuNex extends PantallaLateral {
 
     /** Centro de la zona de opciones (a la derecha del panel). */
     private int cx() {
-        return MenuLateral.ANCHO + (width - MenuLateral.ANCHO) / 2;
+        return embebido ? width / 2 : MenuLateral.ANCHO + (width - MenuLateral.ANCHO) / 2;
     }
 
     interface Escritor {

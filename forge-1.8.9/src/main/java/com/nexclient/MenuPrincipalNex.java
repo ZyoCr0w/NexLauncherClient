@@ -1,8 +1,6 @@
 package com.nexclient;
 
-import net.minecraft.client.gui.GuiLanguage;
 import net.minecraft.client.gui.GuiMultiplayer;
-import net.minecraft.client.gui.GuiOptions;
 import net.minecraft.client.gui.GuiSelectWorld;
 import net.minecraft.client.resources.I18n;
 import net.minecraftforge.fml.client.GuiModList;
@@ -20,15 +18,10 @@ public class MenuPrincipalNex extends PantallaLateral {
             public void run() { mc.displayGuiScreen(new GuiSelectWorld(yo)); } }, false);
         entrada(I18n.format("menu.multiplayer"), new Runnable() {
             public void run() { mc.displayGuiScreen(new GuiMultiplayer(yo)); } }, false);
-        entrada("NexClient", new Runnable() {
-            public void run() { mc.displayGuiScreen(new MenuNex(yo)); } }, false);
-        entrada(I18n.format("menu.options").replace("...", ""), new Runnable() {
-            public void run() { mc.displayGuiScreen(new GuiOptions(yo, mc.gameSettings)); } }, true);
+        grupoNexClient(true);
+        grupoOpciones(false);
         entrada(I18n.format("fml.menu.mods"), new Runnable() {
             public void run() { mc.displayGuiScreen(new GuiModList(yo)); } }, false);
-        entrada(I18n.format("options.language").replace("...", ""), new Runnable() {
-            public void run() { mc.displayGuiScreen(new GuiLanguage(yo, mc.gameSettings, mc.getLanguageManager())); } },
-                false);
         menu.entradas.add(new MenuLateral.Entrada(I18n.format("menu.quit"), new Runnable() {
             public void run() { mc.shutdown(); } }, true, true, true));
     }

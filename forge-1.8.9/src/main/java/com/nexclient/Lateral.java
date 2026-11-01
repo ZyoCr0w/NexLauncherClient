@@ -38,6 +38,9 @@ public final class Lateral {
     }
 
     private static boolean envolvible(GuiScreen s) {
+        if (s instanceof PantallaLateral && ((PantallaLateral) s).embebido) {
+            return true;  // las páginas de NexClient dentro del panel
+        }
         if (s == null || s.getClass().getName().startsWith("com.nexclient.")) {
             return false;  // las de NexClient tienen su propio panel o necesitan toda la pantalla
         }

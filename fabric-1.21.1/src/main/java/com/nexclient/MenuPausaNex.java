@@ -6,7 +6,6 @@ import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.achievement.StatsScreen;
 import net.minecraft.client.gui.screens.advancements.AdvancementsScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
-import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
@@ -22,9 +21,8 @@ public class MenuPausaNex extends PantallaLateral {
     @Override
     protected void entradas() {
         entrada(I18n.get("menu.returnToGame"), () -> minecraft.setScreen(null), false);
-        entrada("NexClient", () -> minecraft.setScreen(new MenuScreen(this)), false);
-        entrada(I18n.get("menu.options").replace("...", ""),
-                () -> minecraft.setScreen(new OptionsScreen(this, minecraft.options)), true);
+        grupoNexClient(true);
+        grupoOpciones(false);
         entrada(I18n.get("gui.advancements"), () -> {
             if (minecraft.player != null) {
                 minecraft.setScreen(new AdvancementsScreen(minecraft.player.connection.getAdvancements(), this));

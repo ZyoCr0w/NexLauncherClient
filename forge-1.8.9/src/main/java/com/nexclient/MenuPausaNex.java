@@ -2,7 +2,6 @@ package com.nexclient;
 
 import net.minecraft.client.gui.GuiMainMenu;
 import net.minecraft.client.gui.GuiMultiplayer;
-import net.minecraft.client.gui.GuiOptions;
 import net.minecraft.client.gui.GuiShareToLan;
 import net.minecraft.client.gui.achievement.GuiAchievements;
 import net.minecraft.client.gui.achievement.GuiStats;
@@ -25,10 +24,8 @@ public class MenuPausaNex extends PantallaLateral {
                 mc.displayGuiScreen(null);
                 mc.setIngameFocus();
             } }, false);
-        entrada("NexClient", new Runnable() {
-            public void run() { mc.displayGuiScreen(new MenuNex(yo)); } }, false);
-        entrada(I18n.format("menu.options").replace("...", ""), new Runnable() {
-            public void run() { mc.displayGuiScreen(new GuiOptions(yo, mc.gameSettings)); } }, true);
+        grupoNexClient(true);
+        grupoOpciones(false);
         entrada(I18n.format("gui.achievements"), new Runnable() {
             public void run() {
                 if (mc.thePlayer != null) {

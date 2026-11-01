@@ -41,6 +41,9 @@ public class PantallaEnvuelta extends Screen {
 
     /** ¿Va dentro del panel? Las de NexClient tienen su propio panel o necesitan toda la pantalla. */
     public static boolean envolvible(Screen s) {
+        if (s instanceof PantallaLateral && ((PantallaLateral) s).embebido) {
+            return true;  // las páginas de NexClient dentro del panel
+        }
         if (s == null || s.getClass().getName().startsWith("com.nexclient.")) {
             return false;
         }
