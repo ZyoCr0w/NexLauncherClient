@@ -47,7 +47,7 @@ export default {
         await esquemaCosmeticos(env);
         return await cosmeticos(req, env, ruta);
       } catch (e) {
-        return json({ error: "interno" }, 500);
+        return json({ error: "interno", detalle: String((e && e.message) || e).slice(0, 300) }, 500);
       }
     }
     if (ruta === "/tendencias") {
@@ -56,7 +56,7 @@ export default {
         await esquemaTendencias(env);
         return await tendencias(req, env);
       } catch (e) {
-        return json({ error: "interno" }, 500);
+        return json({ error: "interno", detalle: String((e && e.message) || e).slice(0, 300) }, 500);
       }
     }
     const deCuentas = ruta.startsWith("/cuenta/") || ruta === "/amigos" || ruta.startsWith("/amigos/") || ruta === "/presencia";
@@ -89,7 +89,7 @@ export default {
       }
       return json({ error: "método no permitido" }, 405);
     } catch (e) {
-      return json({ error: "interno" }, 500);
+      return json({ error: "interno", detalle: String((e && e.message) || e).slice(0, 300) }, 500);
     }
   },
 };

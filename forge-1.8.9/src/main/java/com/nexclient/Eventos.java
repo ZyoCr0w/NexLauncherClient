@@ -47,8 +47,25 @@ public class Eventos {
     private static final int ID_BOTON = 98170;
 
     /** Menú principal y de pausa de NexClient en lugar de los de Minecraft (o del paquete de texturas). */
+    /** Servidor al que NexLauncher pidió entrar (Amigos, «Entrar directo»); se usa una sola vez. */
+    private static String entrarA = System.getProperty("nexclient.servidor");
+
     @SubscribeEvent
     public void abrirMenu(net.minecraftforge.client.event.GuiOpenEvent e) {
+        if (entrarA != null) {
+            if (e.gui instanceof net.minecraft.client.multiplayer.GuiConnecting) {
+                entrarA = null;  // Minecraft ya está entrando con --server
+            } else if (e.gui instanceof net.minecraft.client.gui.GuiMainMenu) {
+                String direccion = entrarA.trim();
+                entrarA = null;
+                if (!direccion.isEmpty()) {
+                    net.minecraft.client.gui.GuiScreen menu = Config.get().menuNex ? new MenuPrincipalNex() : e.gui;
+                    e.gui = new net.minecraft.client.multiplayer.GuiConnecting(menu, mc,
+                            new net.minecraft.client.multiplayer.ServerData("NexLauncher", direccion, false));
+                    return;
+                }
+            }
+        }
         if (!Config.get().menuNex) {
             return;
         }
