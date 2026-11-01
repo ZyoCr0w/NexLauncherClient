@@ -6,11 +6,6 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
-    inputs:
-      beta:
-        description: "Publicar como pre-release de pruebas (NexLauncher → Ajustes → «NexClient de pruebas»)"
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -108,31 +103,3 @@ jobs:
             NexClient para **Forge 1.8.9** y **Fabric 1.21.1** (esta necesita Fabric API).
             NexLauncher lo instala solo al jugar esas versiones. Dentro del juego: **Shift derecho** abre el menú.
 
-  beta:
-    # Pre-release de pruebas: solo a mano (Run workflow → beta). La etiqueta no empieza con «v», así que no
-    # dispara la publicación normal, y no queda como «latest»: el launcher solo la usa con «NexClient de pruebas».
-    needs: compilar
-    if: github.event_name == 'workflow_dispatch' && inputs.beta
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Versión
-        id: v
-        run: |
-          v=$(grep '^mod_version=' fabric-1.21.1/gradle.properties | cut -d= -f2 | tr -d '[:space:]')
-          echo "tag=beta-$v-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
-      - uses: actions/download-artifact@v5
-        with:
-          path: salida
-          merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.v.outputs.tag }}
-          target_commitish: ${{ github.sha }}
-          name: NexClient ${{ steps.v.outputs.tag }} (pruebas)
-          files: salida/*
-          prerelease: true
-          make_latest: false
-          body: |
-            Versión de pruebas de NexClient (rama ${{ github.ref_name }}). Para usarla: NexLauncher → Ajustes →
-            PvP → «NexClient de pruebas». Puede tener errores.
