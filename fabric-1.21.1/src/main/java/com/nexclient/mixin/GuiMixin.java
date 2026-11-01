@@ -17,11 +17,18 @@ public class GuiMixin {
     @Inject(method = "renderCrosshair", at = @At("HEAD"), cancellable = true, require = 0)
     private void nexclient$mira(GuiGraphics g, DeltaTracker tiempo, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (!Config.get().mira || !mc.options.getCameraType().isFirstPerson() || mc.getDebugOverlay().showDebugScreen()
-                || mc.options.hideGui) {
+        Config c = Config.get();
+        if (!c.mira || mc.getDebugOverlay().showDebugScreen() || mc.options.hideGui || mc.player == null) {
+            return;
+        }
+        if (!mc.options.getCameraType().isFirstPerson() && !c.miraTercera) {
+            return;  // el juego tampoco la dibuja en tercera persona
+        }
+        ci.cancel();
+        if (c.miraOcultarArco && mc.player.isUsingItem()
+                && mc.player.getUseItem().getItem() instanceof net.minecraft.world.item.ProjectileWeaponItem) {
             return;
         }
         Hud.mira(g, g.guiWidth() / 2, g.guiHeight() / 2);
-        ci.cancel();
     }
 }

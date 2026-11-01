@@ -18,14 +18,21 @@ public class Eventos {
     /** Mira personalizada en lugar de la del juego; en tercera persona y con la vista libre no hay mira. */
     @SubscribeEvent
     public void mira(RenderGameOverlayEvent.Pre e) {
-        if (e.type == RenderGameOverlayEvent.ElementType.CROSSHAIRS
-                && (mc.gameSettings.thirdPersonView != 0 || VistaLibre.activa)) {
+        if (e.type != RenderGameOverlayEvent.ElementType.CROSSHAIRS) {
+            return;
+        }
+        Config c = Config.get();
+        boolean tercera = mc.gameSettings.thirdPersonView != 0 || VistaLibre.activa;
+        if (tercera && !(c.mira && c.miraTercera)) {
             e.setCanceled(true);
             return;
         }
-        if (e.type == RenderGameOverlayEvent.ElementType.CROSSHAIRS && Config.get().mira
-                && mc.gameSettings.thirdPersonView == 0 && !mc.gameSettings.showDebugInfo) {
+        if (c.mira && !mc.gameSettings.showDebugInfo && mc.thePlayer != null) {
             e.setCanceled(true);
+            if (c.miraOcultarArco && mc.thePlayer.isUsingItem() && mc.thePlayer.getItemInUse() != null
+                    && mc.thePlayer.getItemInUse().getItem() instanceof net.minecraft.item.ItemBow) {
+                return;
+            }
             Hud.mira(e.resolution.getScaledWidth() / 2, e.resolution.getScaledHeight() / 2);
         }
     }

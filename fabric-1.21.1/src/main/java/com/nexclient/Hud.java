@@ -414,40 +414,24 @@ public final class Hud {
         }
     }
 
+    private static long ultimaMira = System.nanoTime();
+
     /** Mira personalizada, centrada en (cx, cy). */
     public static void mira(GuiGraphics g, int cx, int cy) {
+        Minecraft mc = Minecraft.getInstance();
         Config c = Config.get();
-        int s = c.miraTamano, t = c.miraGrosor, h = c.miraHueco, color = Config.COLORES[c.miraColor];
-        int a = t / 2;
-        java.util.List<int[]> r = new java.util.ArrayList<int[]>();
-        int estilo = c.miraEstilo;
-        if (estilo == 0 || estilo == 1 || estilo == 4) {
-            r.add(new int[]{cx - h - s, cy - a, cx - h, cy - a + t});          // izquierda
-            r.add(new int[]{cx + h + 1, cy - a, cx + h + 1 + s, cy - a + t});  // derecha
-            r.add(new int[]{cx - a, cy + h + 1, cx - a + t, cy + h + 1 + s});  // abajo
-            if (estilo != 4) {
-                r.add(new int[]{cx - a, cy - h - s, cx - a + t, cy - h});      // arriba
-            }
+        long ahora = System.nanoTime();
+        float dt = Math.min(0.1f, (ahora - ultimaMira) / 1.0e9f);
+        ultimaMira = ahora;
+        boolean apuntando = mc.crosshairPickEntity instanceof net.minecraft.world.entity.player.Player;
+        int extra = Miras.apertura(c, Efectos.velocidad, mc.player != null && !mc.player.onGround(), dt);
+        int[] col = Miras.colores(c, apuntando);
+        List<List<int[]>> capas = Miras.capas(c, extra);
+        for (int[] t : capas.get(1)) {
+            g.fill(cx + t[0], cy + t[1], cx + t[2], cy + t[1] + 1, col[1]);
         }
-        if (estilo == 1 || estilo == 2) {
-            int d = Math.max(1, t);
-            r.add(new int[]{cx - d / 2, cy - d / 2, cx - d / 2 + d, cy - d / 2 + d});
-        }
-        if (estilo == 3) {
-            int radio = s + h;
-            for (int i = 0; i < 32; i++) {
-                double ang = Math.PI * 2 * i / 32;
-                int x = cx + (int) Math.round(Math.cos(ang) * radio), y = cy + (int) Math.round(Math.sin(ang) * radio);
-                r.add(new int[]{x - a, y - a, x - a + t, y - a + t});
-            }
-        }
-        if (c.miraBorde) {
-            for (int[] q : r) {
-                g.fill(q[0] - 1, q[1] - 1, q[2] + 1, q[3] + 1, 0xC0000000);
-            }
-        }
-        for (int[] q : r) {
-            g.fill(q[0], q[1], q[2], q[3], color);
+        for (int[] t : capas.get(0)) {
+            g.fill(cx + t[0], cy + t[1], cx + t[2], cy + t[1] + 1, col[0]);
         }
     }
 

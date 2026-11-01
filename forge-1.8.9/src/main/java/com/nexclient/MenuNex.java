@@ -124,18 +124,10 @@ public class MenuNex extends GuiScreen {
         } else if (pagina == 5) {
             ayuda = "«Color de golpe» cambia el rojo con el que parpadean al recibir daño.";
             interruptor("Mira personalizada", c.mira, new Escritor() { public void poner(boolean v) { c.mira = v; } });
-            final GuiButton[] est = new GuiButton[1];
-            est[0] = boton(x(), y(), 150, "Estilo: " + Config.ESTILOS_MIRA[c.miraEstilo], new Runnable() {
-                public void run() {
-                    c.miraEstilo = (c.miraEstilo + 1) % Config.ESTILOS_MIRA.length;
-                    est[0].displayString = "Estilo: " + Config.ESTILOS_MIRA[c.miraEstilo];
-                }
+            boton(x(), y(), 150, "§lEditar mira…", new Runnable() {
+                public void run() { mc.displayGuiScreen(new EditorMira(MenuNex.this)); }
             });
-            deslizador("Tamaño: ", "", 1, 20, c.miraTamano, new Numero() { public void poner(double v) { c.miraTamano = (int) Math.round(v); } });
-            deslizador("Grosor: ", "", 1, 6, c.miraGrosor, new Numero() { public void poner(double v) { c.miraGrosor = (int) Math.round(v); } });
-            deslizador("Separación: ", "", 0, 12, c.miraHueco, new Numero() { public void poner(double v) { c.miraHueco = (int) Math.round(v); } });
-            colorIdx("Color de la mira", 0);
-            interruptor("Borde negro", c.miraBorde, new Escritor() { public void poner(boolean v) { c.miraBorde = v; } });
+            fila++;
             fila++;
             interruptor("Color de golpe", c.colorGolpe, new Escritor() { public void poner(boolean v) { c.colorGolpe = v; } });
             colorIdx("Color", 1);

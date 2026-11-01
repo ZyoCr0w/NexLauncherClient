@@ -118,15 +118,9 @@ public class MenuScreen extends Screen {
                 break;
             case 5:
                 interruptor("Mira personalizada", c.mira, v -> c.mira = v, "Reemplaza la mira del juego.");
-                addRenderableWidget(CycleButton.<Integer>builder(i -> Component.literal(Config.ESTILOS_MIRA[i]))
-                        .withValues(java.util.Arrays.asList(0, 1, 2, 3, 4)).withInitialValue(c.miraEstilo)
-                        .create(x(), y(), 150, 20, Component.literal("Estilo"), (b, v) -> c.miraEstilo = v));
-                deslizador("Tamaño", 1, 20, 1, c.miraTamano, v -> c.miraTamano = (int) Math.round(v), v -> String.valueOf(Math.round(v)));
-                deslizador("Grosor", 1, 6, 1, c.miraGrosor, v -> c.miraGrosor = (int) Math.round(v), v -> String.valueOf(Math.round(v)));
-                deslizador("Separación", 0, 12, 1, c.miraHueco, v -> c.miraHueco = (int) Math.round(v), v -> String.valueOf(Math.round(v)));
-                color("Color de la mira", c.miraColor, v -> c.miraColor = v);
-                interruptor("Borde negro", c.miraBorde, v -> c.miraBorde = v, null);
-                fila++;
+                addRenderableWidget(Button.builder(Component.literal("§lEditar mira…"),
+                        b -> minecraft.setScreen(new EditorMiraScreen(this))).bounds(x(), y(), 150, 20).build());
+                fila += 2;
                 interruptor("Color de golpe", c.colorGolpe, v -> c.colorGolpe = v,
                         "Cambia el rojo con el que parpadean los jugadores al recibir daño.");
                 color("Color", c.colorGolpeIdx, v -> c.colorGolpeIdx = v);

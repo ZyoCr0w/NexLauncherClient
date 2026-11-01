@@ -120,6 +120,27 @@ public class Config {
     public int miraHueco = 2;
     public int miraColor = 0;
     public boolean miraBorde = true;
+    /** Color de la mira (RGB). -1 = todavía no se eligió: se toma el de la lista de colores de antes. */
+    public int miraRGB = -1;
+    public int miraOpacidad = 100;
+    public int miraBordeRGB = 0x000000;
+    public int miraBordeGrosor = 1;
+    public boolean miraArcoiris = false;
+    /** Se abre al moverte rápido o saltar. */
+    public boolean miraDinamica = false;
+    /** Cambia de color al apuntar a un jugador. */
+    public boolean miraObjetivo = false;
+    public int miraObjetivoRGB = 0xFF5555;
+    /** Destello blanco al golpear. */
+    public boolean miraDestello = false;
+    /** También en tercera persona. */
+    public boolean miraTercera = false;
+    /** Se oculta mientras tensas el arco. */
+    public boolean miraOcultarArco = false;
+    /** Mira propia: 15 × 15 píxeles, '1' = pintado. */
+    public String miraPixeles = "";
+    /** Miras guardadas (códigos NXM1:…), hasta 5. */
+    public List<String> miraRanuras = new ArrayList<String>();
     public boolean colorGolpe = false;
     public int colorGolpeIdx = 1;
 
@@ -137,7 +158,7 @@ public class Config {
     public static final String[] SONIDOS = {"metal", "escudo", "golpe", "orbe", "pling", "click"};
     public static final String[] NOMBRES = {"Metal", "Escudo", "Golpe", "Experiencia", "Pling", "Click"};
     public static final String[] MODOS_VISTA = {"Apagada", "Mantener R", "Alternar R"};
-    public static final String[] ESTILOS_MIRA = {"Cruz", "Cruz y punto", "Punto", "Círculo", "T"};
+    public static final String[] ESTILOS_MIRA = Miras.ESTILOS;
     public static final int[] COLORES = {0xFFFFFFFF, 0xFF55FFFF, 0xFF55FF55, 0xFFFFFF55, 0xFFFF5555, 0xFFFF55FF,
             0xFFFFAA00, 0xFF5555FF, 0xFF000000};
     public static final String[] NOMBRES_COLOR = {"Blanco", "Aqua", "Verde", "Amarillo", "Rojo", "Rosa", "Naranja",
@@ -208,11 +229,8 @@ public class Config {
         vistaLibre = Math.max(0, Math.min(2, vistaLibre));
         contornoGrosor = Math.max(1f, Math.min(8f, contornoGrosor));
         cosmeticosVer = Math.max(0, Math.min(2, cosmeticosVer));
-        miraEstilo = Math.max(0, Math.min(ESTILOS_MIRA.length - 1, miraEstilo));
-        miraTamano = Math.max(1, Math.min(20, miraTamano));
-        miraGrosor = Math.max(1, Math.min(6, miraGrosor));
-        miraHueco = Math.max(0, Math.min(12, miraHueco));
         miraColor = Math.max(0, Math.min(COLORES.length - 1, miraColor));
+        limitarMira();
         colorGolpeIdx = Math.max(0, Math.min(COLORES.length - 1, colorGolpeIdx));
         hudColor = Math.max(0, Math.min(COLORES.length - 1, hudColor));
         contornoColor = Math.max(0, Math.min(COLORES.length - 1, contornoColor));
@@ -239,6 +257,36 @@ public class Config {
         }
         if (indiceSonido(sonidoId) < 0) {
             sonidoId = "metal";
+        }
+    }
+
+    public void limitarMira() {
+        miraEstilo = Math.max(0, Math.min(ESTILOS_MIRA.length - 1, miraEstilo));
+        miraTamano = Math.max(1, Math.min(20, miraTamano));
+        miraGrosor = Math.max(1, Math.min(6, miraGrosor));
+        miraHueco = Math.max(0, Math.min(12, miraHueco));
+        if (miraRGB < 0) {
+            miraRGB = COLORES[Math.max(0, Math.min(COLORES.length - 1, miraColor))] & 0xFFFFFF;
+        }
+        miraRGB &= 0xFFFFFF;
+        miraBordeRGB &= 0xFFFFFF;
+        miraObjetivoRGB &= 0xFFFFFF;
+        miraOpacidad = Math.max(10, Math.min(100, miraOpacidad));
+        miraBordeGrosor = Math.max(1, Math.min(3, miraBordeGrosor));
+        if (miraPixeles == null || miraPixeles.length() != Miras.LADO * Miras.LADO) {
+            StringBuilder b = new StringBuilder();
+            for (int i = 0; i < Miras.LADO * Miras.LADO; i++) {
+                int x = i % Miras.LADO - 7, y = i / Miras.LADO - 7;
+                // de inicio, una cruz pequeña con hueco (para que no empiece en blanco)
+                b.append((x == 0 && Math.abs(y) >= 2 && Math.abs(y) <= 5) || (y == 0 && Math.abs(x) >= 2 && Math.abs(x) <= 5) ? '1' : '0');
+            }
+            miraPixeles = b.toString();
+        }
+        if (miraRanuras == null) {
+            miraRanuras = new ArrayList<String>();
+        }
+        while (miraRanuras.size() > 5) {
+            miraRanuras.remove(miraRanuras.size() - 1);
         }
     }
 

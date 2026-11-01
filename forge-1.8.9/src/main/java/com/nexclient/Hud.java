@@ -415,39 +415,24 @@ public final class Hud {
     }
 
     /** Mira personalizada, centrada en (cx, cy). */
+    private static long ultimaMira = System.nanoTime();
+
     public static void mira(int cx, int cy) {
+        Minecraft mc = Minecraft.getMinecraft();
         Config c = Config.get();
-        int s = c.miraTamano, t = c.miraGrosor, h = c.miraHueco, color = Config.COLORES[c.miraColor];
-        int a = t / 2;
-        List<int[]> r = new ArrayList<int[]>();
-        int estilo = c.miraEstilo;
-        if (estilo == 0 || estilo == 1 || estilo == 4) {
-            r.add(new int[]{cx - h - s, cy - a, cx - h, cy - a + t});
-            r.add(new int[]{cx + h + 1, cy - a, cx + h + 1 + s, cy - a + t});
-            r.add(new int[]{cx - a, cy + h + 1, cx - a + t, cy + h + 1 + s});
-            if (estilo != 4) {
-                r.add(new int[]{cx - a, cy - h - s, cx - a + t, cy - h});
-            }
+        long ahora = System.nanoTime();
+        float dt = Math.min(0.1f, (ahora - ultimaMira) / 1.0e9f);
+        ultimaMira = ahora;
+        boolean apuntando = mc.objectMouseOver != null
+                && mc.objectMouseOver.entityHit instanceof net.minecraft.entity.player.EntityPlayer;
+        int extra = Miras.apertura(c, Efectos.velocidad, mc.thePlayer != null && !mc.thePlayer.onGround, dt);
+        int[] col = Miras.colores(c, apuntando);
+        List<List<int[]>> capas = Miras.capas(c, extra);
+        for (int[] t : capas.get(1)) {
+            Gui.drawRect(cx + t[0], cy + t[1], cx + t[2], cy + t[1] + 1, col[1]);
         }
-        if (estilo == 1 || estilo == 2) {
-            int d = Math.max(1, t);
-            r.add(new int[]{cx - d / 2, cy - d / 2, cx - d / 2 + d, cy - d / 2 + d});
-        }
-        if (estilo == 3) {
-            int radio = s + h;
-            for (int i = 0; i < 32; i++) {
-                double ang = Math.PI * 2 * i / 32;
-                int x = cx + (int) Math.round(Math.cos(ang) * radio), y = cy + (int) Math.round(Math.sin(ang) * radio);
-                r.add(new int[]{x - a, y - a, x - a + t, y - a + t});
-            }
-        }
-        if (c.miraBorde) {
-            for (int[] q : r) {
-                Gui.drawRect(q[0] - 1, q[1] - 1, q[2] + 1, q[3] + 1, 0xC0000000);
-            }
-        }
-        for (int[] q : r) {
-            Gui.drawRect(q[0], q[1], q[2], q[3], color);
+        for (int[] t : capas.get(0)) {
+            Gui.drawRect(cx + t[0], cy + t[1], cx + t[2], cy + t[1] + 1, col[0]);
         }
         GlStateManager.color(1f, 1f, 1f, 1f);
     }

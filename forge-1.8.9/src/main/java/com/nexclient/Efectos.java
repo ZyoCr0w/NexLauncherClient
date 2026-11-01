@@ -111,6 +111,7 @@ public final class Efectos {
     }
 
     public static void golpe(EntityPlayer jugador, Entity objetivo) {
+        Miras.ultimoGolpe = System.currentTimeMillis();
         Minecraft mc = Minecraft.getMinecraft();
         Config c = Config.get();
         if (System.currentTimeMillis() - ultimoGolpe > 2500) {
