@@ -19,6 +19,15 @@
 //   GET  /tendencias              -> {semana, jugadores: [{nombre, n}], capas: [{hash, nombre, n}]}
 //   POST /tendencias {tipo: "jugador"|"capa", nombre, hash?}: cada PC cuenta una vez por semana y por skin/capa
 //
+// Cosméticos de los perfiles PvP (D1). Los pide NexLauncher, no el juego: el token de la cuenta no sale del launcher.
+//   POST /cosmeticos/presencia {nombre, servidor}   (con Bearer: ligado a tu cuenta de NexLauncher)
+//   POST /cosmeticos/lote {servidor, nombres: [...]} -> {jugadores: {nombre: {etiqueta, equipado}}}
+//   GET  /cosmeticos/yo                              -> {usuario, equipado, etiqueta}       (Bearer)
+//   POST /cosmeticos/equipar {categoria, id}         (id null = quitar)                     (Bearer)
+//   POST /cosmeticos/capa   (cuerpo: el .gif)        -> {hash}: tu capa GIF                  (Bearer)
+//   GET  /cosmeticos/gif/<hash>                      -> el .gif
+//   POST /cosmeticos/admin/etiqueta {cuenta, etiqueta} con la cabecera X-Admin = secreto ADMIN_COSMETICOS
+//
 // CurseForge: /cf/v1/... reenvía a api.curseforge.com con la clave de la API guardada como secreto
 // CF_API_KEY (Settings → Variables and Secrets), así la clave no va dentro del launcher. Solo deja pasar
 // lo que usa la sección de mods (buscar, ver proyectos y bajar archivos).
@@ -31,6 +40,16 @@ export default {
     const url = new URL(req.url);
     const ruta = decodeURIComponent(url.pathname);
     if (ruta.startsWith("/cf/")) return await curseforge(req, env, url, ruta.slice(3));
+    if (ruta.startsWith("/cosmeticos/")) {
+      if (!env.DB) return json({ error: "Falta la base de datos D1 (binding DB) en el Worker." }, 503);
+      try {
+        await esquema(env);
+        await esquemaCosmeticos(env);
+        return await cosmeticos(req, env, ruta);
+      } catch (e) {
+        return json({ error: "interno" }, 500);
+      }
+    }
     if (ruta === "/tendencias") {
       if (!env.DB) return json({ error: "Falta la base de datos D1 (binding DB) en el Worker." }, 503);
       try {
@@ -397,4 +416,185 @@ async function tendencias(req, env) {
     await env.DB.batch(pasos);
   }
   return json({ ok: true });
+}
+
+
+// ---- Cosméticos de los perfiles PvP
+let cosmeticosListos = false;
+const PRESENCIA_VIVA = 180;  // segundos sin aviso para dejar de mostrar la etiqueta
+const MAX_GIF = 1500000;     // D1 guarda hasta 2 MB por fila
+const ETIQUETA_BASE = { text: "NEXLAUNCHER", color: "gray" };
+// Etiquetas fijas por cuenta de NexLauncher (además de las que se pongan con /cosmeticos/admin/etiqueta)
+const ETIQUETAS = {
+  zyocr0w: ["", { text: "aa", italic: true, obfuscated: true, color: "green" },
+            { text: "CREADOR NEXLAUNCHER", bold: true, color: "white" },
+            { text: "aa", italic: true, obfuscated: true, color: "green" }],
+};
+// Lo que existe: uno de cada categoría a la vez. "gif" = la capa GIF que subió esa cuenta.
+const CATALOGO = {
+  cabeza: ["aureola_dorada", "aureola_arcoiris", "aureola_oscura", "corona", "cuernos", "orejas_gato", "orejas_zorro", "nube"],
+  espalda: ["alas_angel", "alas_dragon", "alas_mariposa", "alas_fuego", "jetpack"],
+  cuerpo: ["cola_zorro", "cola_gato", "cola_dragon", "bufanda", "orbitas"],
+  capa: ["gif", "capa_brillo", "capa_color"],
+  aura: ["ki_blanco", "ki_dorado", "ki_azul", "ki_rayos", "aura_oscura", "aura_fuego", "aura_arcoiris", "aura_hielo"],
+  rastro: ["chispas", "corazones", "notas", "pisadas_fuego"],
+  escudo: ["escudo_nex", "escudo_dragon", "escudo_dorado", "escudo_hielo", "escudo_fuego", "escudo_obsidiana"],
+};
+
+async function esquemaCosmeticos(env) {
+  if (cosmeticosListos) return;
+  await env.DB.batch([
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_presencia (nombre TEXT NOT NULL COLLATE NOCASE, servidor TEXT NOT NULL, cuenta INTEGER, visto INTEGER NOT NULL, PRIMARY KEY (nombre, servidor))"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_equipado (usuario INTEGER PRIMARY KEY, datos TEXT NOT NULL)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_etiqueta (usuario INTEGER PRIMARY KEY, etiqueta TEXT NOT NULL)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_gif (hash TEXT PRIMARY KEY, datos BLOB NOT NULL, usuario INTEGER NOT NULL, creado INTEGER NOT NULL)"),
+  ]);
+  cosmeticosListos = true;
+}
+
+/** "Play.Server.net:25565" -> "play.server.net" (el puerto por defecto no cuenta). */
+function servidorNormal(s) {
+  s = String(s || "").trim().toLowerCase().replace(/\.$/, "");
+  if (s.endsWith(":25565")) s = s.slice(0, -6);
+  return /^[a-z0-9.\-:\[\]_]{0,100}$/.test(s) ? s : "";
+}
+
+function leerEquipado(texto) {
+  try {
+    const d = JSON.parse(texto || "{}");
+    const r = {};
+    for (const [cat, ids] of Object.entries(CATALOGO)) {
+      const v = d[cat];
+      if (cat === "capa" && v && typeof v === "object" && v.id === "gif" && /^[0-9a-f]{64}$/.test(v.hash || "")) r.capa = { id: "gif", hash: v.hash };
+      else if (typeof v === "string" && ids.includes(v) && v !== "gif") r[cat] = v;
+    }
+    return r;
+  } catch {
+    return {};
+  }
+}
+
+async function etiquetaDe(env, usuario) {
+  if (!usuario) return ETIQUETA_BASE;
+  const fija = ETIQUETAS[usuario.nombre.toLowerCase()];
+  if (fija) return fija;
+  const r = await env.DB.prepare("SELECT etiqueta FROM cos_etiqueta WHERE usuario = ?").bind(usuario.id).first();
+  if (r) {
+    try { return JSON.parse(r.etiqueta); } catch { /* etiqueta dañada: la base */ }
+  }
+  return ETIQUETA_BASE;
+}
+
+/** Cuenta los cuadros de un GIF recorriendo sus bloques; null si no es un GIF válido. */
+function cuadrosGif(b) {
+  const tx = String.fromCharCode(...b.slice(0, 6));
+  if ((tx !== "GIF87a" && tx !== "GIF89a") || b.length < 13) return null;
+  let i = 13;
+  if (b[10] & 0x80) i += 3 * (1 << ((b[10] & 7) + 1));
+  let cuadros = 0;
+  const subbloques = () => { while (i < b.length && b[i] !== 0) i += b[i] + 1; i++; };
+  while (i < b.length) {
+    const t = b[i++];
+    if (t === 0x3b) return cuadros;            // fin
+    if (t === 0x21) { i++; subbloques(); }     // extensión
+    else if (t === 0x2c) {                     // imagen
+      if (i + 9 > b.length) return null;
+      const f = b[i + 8];
+      i += 9;
+      if (f & 0x80) i += 3 * (1 << ((f & 7) + 1));
+      i++;                                     // tamaño mínimo LZW
+      subbloques();
+      cuadros++;
+    } else return cuadros > 0 ? cuadros : null;
+  }
+  return cuadros > 0 ? cuadros : null;
+}
+
+async function cosmeticos(req, env, ruta) {
+  const t = ahora();
+  let m = ruta.match(/^\/cosmeticos\/gif\/([0-9a-f]{64})$/);
+  if (m && req.method === "GET") {
+    const r = await env.DB.prepare("SELECT datos FROM cos_gif WHERE hash = ?").bind(m[1]).first();
+    if (!r) return json({ error: "no existe" }, 404);
+    return new Response(new Uint8Array(r.datos), { headers: { "Content-Type": "image/gif", "Cache-Control": "public, max-age=31536000, immutable" } });
+  }
+  if (ruta === "/cosmeticos/admin/etiqueta" && req.method === "POST") {
+    if (!env.ADMIN_COSMETICOS || !iguales(req.headers.get("X-Admin") || "", env.ADMIN_COSMETICOS)) return json({ error: "no autorizado" }, 401);
+    let b;
+    try { b = await cuerpo(req); } catch { return json({ error: "JSON inválido" }, 400); }
+    const u = await buscar(env, b.cuenta);
+    if (!u) return json({ error: "no existe esa cuenta" }, 404);
+    if (b.etiqueta == null) await env.DB.prepare("DELETE FROM cos_etiqueta WHERE usuario = ?").bind(u.id).run();
+    else await env.DB.prepare("INSERT INTO cos_etiqueta (usuario, etiqueta) VALUES (?, ?) ON CONFLICT(usuario) DO UPDATE SET etiqueta = excluded.etiqueta").bind(u.id, JSON.stringify(b.etiqueta).slice(0, 2000)).run();
+    return json({ ok: true });
+  }
+  if (ruta === "/cosmeticos/lote" && req.method === "POST") {
+    let b;
+    try { b = await cuerpo(req); } catch { return json({ error: "JSON inválido" }, 400); }
+    const srv = servidorNormal(b.servidor);
+    const nombres = [...new Set((Array.isArray(b.nombres) ? b.nombres : []).map(String).filter((n) => NOMBRE.test(n)).map((n) => n.toLowerCase()))].slice(0, 100);
+    const jugadores = {};
+    if (!nombres.length) return json({ jugadores });
+    const marcas = nombres.map(() => "?").join(",");
+    const filas = (await env.DB.prepare(`SELECT p.nombre, p.cuenta, u.nombre AS usuario, e.datos FROM cos_presencia p LEFT JOIN usuarios u ON u.id = p.cuenta LEFT JOIN cos_equipado e ON e.usuario = p.cuenta WHERE p.nombre IN (${marcas}) AND p.servidor = ? AND p.visto > ? ORDER BY p.visto`)
+      .bind(...nombres, srv, t - PRESENCIA_VIVA).all()).results;
+    for (const f of filas) {
+      const usuario = f.cuenta && f.usuario ? { id: f.cuenta, nombre: f.usuario } : null;
+      jugadores[f.nombre.toLowerCase()] = { etiqueta: await etiquetaDe(env, usuario), equipado: usuario ? leerEquipado(f.datos) : {} };
+    }
+    return json({ jugadores });
+  }
+  // Lo que sigue va ligado (o puede ir ligado) a una cuenta de NexLauncher
+  const yo = await quien(req, env);
+  if (ruta === "/cosmeticos/presencia" && req.method === "POST") {
+    let b;
+    try { b = await cuerpo(req); } catch { return json({ error: "JSON inválido" }, 400); }
+    const nombre = String(b.nombre || "");
+    if (!NOMBRE.test(nombre)) return json({ error: "nombre inválido" }, 400);
+    const pasos = [env.DB.prepare("INSERT INTO cos_presencia (nombre, servidor, cuenta, visto) VALUES (?, ?, ?, ?) ON CONFLICT(nombre, servidor) DO UPDATE SET cuenta = excluded.cuenta, visto = excluded.visto")
+      .bind(nombre, servidorNormal(b.servidor), yo ? yo.id : null, t)];
+    if (Math.random() < 0.02) pasos.push(env.DB.prepare("DELETE FROM cos_presencia WHERE visto < ?").bind(t - 3600));
+    await env.DB.batch(pasos);
+    return json({ ok: true, cuenta: yo ? yo.nombre : null });
+  }
+  if (!yo) return json({ error: "Inicia sesión con tu cuenta de NexLauncher para usar cosméticos." }, 401);
+  const actual = async () => leerEquipado((await env.DB.prepare("SELECT datos FROM cos_equipado WHERE usuario = ?").bind(yo.id).first())?.datos);
+  const guardar = (eq) => env.DB.prepare("INSERT INTO cos_equipado (usuario, datos) VALUES (?, ?) ON CONFLICT(usuario) DO UPDATE SET datos = excluded.datos").bind(yo.id, JSON.stringify(eq)).run();
+  if (ruta === "/cosmeticos/yo" && req.method === "GET") {
+    return json({ usuario: yo.nombre, equipado: await actual(), etiqueta: await etiquetaDe(env, yo), catalogo: CATALOGO });
+  }
+  if (ruta === "/cosmeticos/equipar" && req.method === "POST") {
+    let b;
+    try { b = await cuerpo(req); } catch { return json({ error: "JSON inválido" }, 400); }
+    const ids = CATALOGO[b.categoria];
+    if (!ids) return json({ error: "categoría inválida" }, 400);
+    const eq = await actual();
+    if (b.id == null) delete eq[b.categoria];
+    else if (b.categoria === "capa" && b.id === "gif") {
+      const r = await env.DB.prepare("SELECT hash FROM cos_gif WHERE usuario = ? ORDER BY creado DESC LIMIT 1").bind(yo.id).first();
+      if (!r) return json({ error: "Primero sube tu capa GIF." }, 400);
+      eq.capa = { id: "gif", hash: r.hash };
+    } else if (ids.includes(b.id)) eq[b.categoria] = b.id;
+    else return json({ error: "ese cosmético no existe" }, 400);
+    await guardar(eq);
+    return json({ equipado: eq });
+  }
+  if (ruta === "/cosmeticos/capa" && req.method === "POST") {
+    if (Number(req.headers.get("Content-Length") || 0) > MAX_GIF) return json({ error: "El GIF pesa más de 1.5 MB." }, 413);
+    const datos = new Uint8Array(await req.arrayBuffer());
+    if (datos.length > MAX_GIF) return json({ error: "El GIF pesa más de 1.5 MB." }, 413);
+    const n = cuadrosGif(datos);
+    if (!n) return json({ error: "Ese archivo no es un GIF válido." }, 400);
+    if (n > 256) return json({ error: "El GIF tiene demasiados cuadros (máximo 256)." }, 400);
+    const hash = await sha256(datos);
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM cos_gif WHERE usuario = ? AND hash != ?").bind(yo.id, hash),  // una capa GIF por cuenta
+      env.DB.prepare("INSERT OR IGNORE INTO cos_gif (hash, datos, usuario, creado) VALUES (?, ?, ?, ?)").bind(hash, datos, yo.id, t),
+    ]);
+    const eq = await actual();
+    eq.capa = { id: "gif", hash };
+    await guardar(eq);
+    return json({ hash, cuadros: n, equipado: eq });
+  }
+  return json({ error: "no existe" }, 404);
 }
