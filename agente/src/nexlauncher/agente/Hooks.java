@@ -292,14 +292,54 @@ public final class Hooks {
         return null;
     }
 
-    /** {valor, firma} de la propiedad "textures", o null. Pregunta a NexLauncher (que la busca en NexSkins). */
-    static String[] buscar(String nombre) {
+    private static final java.util.concurrent.ExecutorService FONDO = java.util.concurrent.Executors.newFixedThreadPool(2,
+            new java.util.concurrent.ThreadFactory() {
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r, "NexLauncher-skins");
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
+    private static final java.util.Set<String> PENDIENTES = java.util.Collections.newSetFromMap(
+            new ConcurrentHashMap<String, Boolean>());
+
+    /** El hilo que dibuja el juego: ahí nunca se espera a la red (se notaría como tirones). */
+    private static boolean hiloDelJuego() {
+        String n = Thread.currentThread().getName();
+        return "Client thread".equals(n) || "Render thread".equals(n) || "main".equals(n);
+    }
+
+    /**
+     * {valor, firma} de la propiedad "textures", o null. Pregunta a NexLauncher (que la busca en NexSkins o por el
+     * túnel del amigo). Desde el hilo del juego no espera: la pide en segundo plano y la usa la próxima vez.
+     */
+    static String[] buscar(final String nombre) {
         String clave = nombre.toLowerCase();
         long ahora = System.currentTimeMillis();
         Object[] c = CACHE.get(clave);
         if (c != null && (Long) c[0] > ahora) {
             return (String[]) c[1];
         }
+        if (hiloDelJuego()) {
+            if (PENDIENTES.add(clave)) {
+                FONDO.execute(new Runnable() {
+                    public void run() {
+                        try {
+                            pedir(nombre);
+                        } finally {
+                            PENDIENTES.remove(nombre.toLowerCase());
+                        }
+                    }
+                });
+            }
+            return c != null ? (String[]) c[1] : null;
+        }
+        return pedir(nombre);
+    }
+
+    private static String[] pedir(String nombre) {
+        String clave = nombre.toLowerCase();
+        long ahora = System.currentTimeMillis();
         String[] r = null;
         boolean ok = false;
         try {

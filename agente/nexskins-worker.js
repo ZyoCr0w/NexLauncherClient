@@ -65,9 +65,10 @@ export default {
     }
     try {
       if (req.method === "GET" || req.method === "HEAD") {
-        if (ruta === "/" ) return json({ servicio: "NexSkins", formato: "CustomSkinAPI", skins: !!env.SKINS, cuentas: !!env.DB });
+        if (ruta === "/" ) return json({ servicio: "NexSkins", formato: "CustomSkinAPI", skins: !!env.SKINS,
+          skins_es_kv: esKv(env), cuentas: !!env.DB });
         if (ruta === "/indice") {
-          const nombres = (await env.SKINS.get("indice", "json")) || [];
+          const nombres = (await kvJson(env, "indice")) || [];
           return json({ nombres }, 200, { "Cache-Control": "public, max-age=120" });
         }
         let m = ruta.match(/^\/textures\/([0-9a-f]{64})$/);
@@ -94,6 +95,21 @@ export default {
   },
 };
 
+/** ¿SKINS es de verdad un KV namespace? (un R2 o una D1 con ese nombre también existen, pero no sirven) */
+function esKv(env) {
+  return !!env.SKINS && typeof env.SKINS.get === "function" && typeof env.SKINS.getWithMetadata === "function";
+}
+
+/** Lee un JSON del KV; si el valor está dañado devuelve null en vez de romper todo con un error 500. */
+async function kvJson(env, clave) {
+  if (!esKv(env)) {
+    throw new Error("El binding SKINS no es un KV namespace (¿lo enlazaste a un R2 o a una D1?). En Settings → Bindings, SKINS debe ser «KV namespace».");
+  }
+  const texto = await env.SKINS.get(clave, "text");
+  if (texto == null) return null;
+  try { return JSON.parse(texto); } catch { return null; }
+}
+
 function json(obj, estado = 200, extra = {}) {
   return new Response(JSON.stringify(obj), {
     status: estado,
@@ -102,7 +118,7 @@ function json(obj, estado = 200, extra = {}) {
 }
 
 async function perfil(env, nombre) {
-  const d = await env.SKINS.get("u:" + nombre.toLowerCase(), "json");
+  const d = await kvJson(env, "u:" + nombre.toLowerCase());
   if (!d || (!d.skin && !d.capa)) return json({ error: "no existe" }, 404, { "Cache-Control": "public, max-age=60" });
   const r = { username: d.nombre, skins: {} };
   if (d.skin) r.skins[d.slim ? "slim" : "default"] = d.skin;
@@ -163,7 +179,7 @@ async function subir(req, env) {
   if (!NOMBRE.test(nombre)) return json({ error: "nombre inválido" }, 400);
   if (token.length < 32 || token.length > 128) return json({ error: "token inválido" }, 400);
   const clave = "u:" + nombre.toLowerCase();
-  const previo = await env.SKINS.get(clave, "json");
+  const previo = await kvJson(env, clave);
   const th = await sha256("nexskins:" + token);
   if (previo && previo.token !== th) return json({ error: "ese nombre ya es de otra persona" }, 403);
   let skin, capa;
@@ -177,7 +193,7 @@ async function subir(req, env) {
   if (!previo || previo.skin !== skin || previo.capa !== capa || previo.slim !== nuevo.slim || previo.nombre !== nombre) {
     await env.SKINS.put(clave, JSON.stringify(nuevo));
   }
-  const indice = (await env.SKINS.get("indice", "json")) || [];
+  const indice = (await kvJson(env, "indice")) || [];
   const n = nombre.toLowerCase();
   if (!indice.includes(n)) {
     indice.push(n);

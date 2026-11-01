@@ -16,7 +16,7 @@ import java.util.jar.JarFile;
  * texturas (que acepten las de NexLauncher también con cuenta premium). Si algo falla, el juego sigue igual.
  */
 public final class Agente {
-    static final String VERSION = "5";
+    static final String VERSION = "6";
     static final String PAQUETE = "com/mojang/authlib/";
 
     private Agente() {
