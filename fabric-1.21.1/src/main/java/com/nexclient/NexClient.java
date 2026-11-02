@@ -91,6 +91,9 @@ public class NexClient implements ClientModInitializer {
             }
         });
         HudRenderCallback.EVENT.register((g, tiempo) -> Hud.dibujar(g, false));
+        // cada cuadro: botones del ratón puestos en la barra (ver RanuraRaton)
+        net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents.START.register(
+                ctx -> RanuraRaton.sondear(net.minecraft.client.Minecraft.getInstance()));
         // cosméticos 3D de NexLauncher sobre los jugadores
         net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
                 (tipo, renderer, ayuda, ctx) -> {

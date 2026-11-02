@@ -163,21 +163,19 @@ public class Eventos {
         }
     }
 
-    /**
-     * Ranuras de la barra puestas en un botón del ratón (los laterales, por ejemplo): se cambia de objeto en cuanto
-     * llega el clic, también caminando o agachado y aunque otro mod cancele el evento.
-     */
+    /** Ranuras de la barra en botones del ratón: también cuando otro mod cancela el evento (ver RanuraRaton). */
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
     public void ranuraRaton(MouseEvent e) {
-        if (!e.buttonstate || e.button < 0 || mc.currentScreen != null || mc.thePlayer == null || mc.thePlayer.isSpectator()) {
-            return;
+        if (e.buttonstate && e.button >= 0) {
+            RanuraRaton.clic(mc, e.button);
         }
-        KeyBinding[] barra = mc.gameSettings.keyBindsHotbar;
-        for (int i = 0; i < barra.length; i++) {
-            if (barra[i].getKeyCode() == e.button - 100) {
-                mc.thePlayer.inventory.currentItem = i;
-                return;
-            }
+    }
+
+    /** Cada cuadro, antes de dibujar: el estado real de los botones del ratón puestos en la barra. */
+    @SubscribeEvent
+    public void cuadro(TickEvent.RenderTickEvent e) {
+        if (e.phase == TickEvent.Phase.START) {
+            RanuraRaton.sondear(mc);
         }
     }
 
