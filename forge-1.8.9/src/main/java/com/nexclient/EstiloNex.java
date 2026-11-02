@@ -94,9 +94,9 @@ public final class EstiloNex {
     /** Fondo, borde y deslizador del botón. Devuelve el color del texto. */
     public static int fondoBoton(GuiButton b, int x, int y, int w, int h, boolean encima, boolean activo) {
         float k = hover(b, encima && activo);
-        int fondo = activo ? mezclar(Temporada.muertos() ? 0x99180A20 : 0x99101014, Temporada.muertos() ? 0xC0301A3A : 0xC0282830, k) : 0x60101014;
-        boolean dm = Temporada.muertos();
-        int borde = activo ? mezclar(dm ? 0x40FF8F1F : 0x24FFFFFF, dm ? 0xD0FF8F1F : 0x80FFFFFF, k) : 0x14FFFFFF;
+        int fondo = activo ? mezclar(Temporada.activa() ? 0x99000000 | Temporada.tinte() : 0x99101014, Temporada.activa() ? 0xC0000000 | Temporada.tinteClaro() : 0xC0282830, k) : 0x60101014;
+        boolean dm = Temporada.activa();
+        int borde = activo ? mezclar(dm ? 0x40000000 | (Temporada.principal() & 0xFFFFFF) : 0x24FFFFFF, dm ? 0xD0000000 | (Temporada.principal() & 0xFFFFFF) : 0x80FFFFFF, k) : 0x14FFFFFF;
         Gui.drawRect(x, y, x + w, y + h, fondo);
         Gui.drawRect(x, y, x + w, y + 1, borde);
         Gui.drawRect(x, y + h - 1, x + w, y + h, borde);
@@ -104,7 +104,7 @@ public final class EstiloNex {
         Gui.drawRect(x + w - 1, y + 1, x + w, y + h - 1, borde);
         if (k > 0.02f) {  // barrita a la izquierda que crece
             int m = Math.round((h / 2f - 3) * k);
-            Gui.drawRect(x + 1, y + h / 2 - m, x + 3, y + h / 2 + m, (Math.round(255 * k) << 24) | (dm ? 0xFFC21A : 0xFFFFFF));
+            Gui.drawRect(x + 1, y + h / 2 - m, x + 3, y + h / 2 + m, (Math.round(255 * k) << 24) | (dm ? Temporada.secundario() & 0xFFFFFF : 0xFFFFFF));
         }
         return !activo ? 0xFF6E6E78 : mezclar(0xFFD8D8DE, 0xFFFFFFFF, k);
     }
@@ -129,7 +129,7 @@ public final class EstiloNex {
         if (v >= 0) {
             int px = x + 2 + (int) Math.round(v * (w - 8));
             Gui.drawRect(x + 1, y + 1, px, y + h - 1, 0x20FFFFFF);
-            Gui.drawRect(px, y + 2, px + 4, y + h - 2, encima ? (Temporada.muertos() ? 0xFFFFC21A : 0xFFFFFFFF) : (Temporada.muertos() ? 0xFFFF8F1F : 0xFFC8C8D0));
+            Gui.drawRect(px, y + 2, px + 4, y + h - 2, encima ? (Temporada.activa() ? Temporada.secundario() : 0xFFFFFFFF) : (Temporada.activa() ? Temporada.principal() : 0xFFC8C8D0));
         }
         if (b.packedFGColour != 0) {
             color = 0xFF000000 | b.packedFGColour;
@@ -145,7 +145,7 @@ public final class EstiloNex {
 
     /** Fondo de las pantallas sin mundo detrás (en lugar de la tierra). */
     public static void fondo(int w, int h) {
-        dibujarDegradado(0, 0, w, h, Temporada.muertos() ? 0xFF1C0A28 : 0xFF101016, Temporada.muertos() ? 0xFF06030A : 0xFF040406);
+        dibujarDegradado(0, 0, w, h, Temporada.activa() ? Temporada.fondoArriba() : 0xFF101016, Temporada.activa() ? Temporada.fondoAbajo() : 0xFF040406);
     }
 
     /** Las franjas de arriba y abajo de las listas (mundos, servidores, paquetes). */

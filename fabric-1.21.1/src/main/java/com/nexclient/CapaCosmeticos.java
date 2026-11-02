@@ -18,9 +18,9 @@ import org.joml.Matrix4f;
 
 import java.util.List;
 
-/** Cosméticos 3D sobre el jugador (cabeza, espalda, cuerpo y auras), dibujados con cajas de color. */
+/** Cosméticos 3D sobre el jugador (cabeza, espalda, cuerpo, auras, mascotas y mano), dibujados con cajas de color. */
 public class CapaCosmeticos extends RenderLayer<AbstractClientPlayer, PlayerModel<AbstractClientPlayer>> {
-    public static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "capa", "aura"};
+    public static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "capa", "aura", "mascota", "mano"};
     private static final int[][] CARAS = {{0, 2, 6, 4}, {1, 5, 7, 3}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 1, 3, 2}, {4, 6, 7, 5}};
     private static ResourceLocation blanca;
 
@@ -72,6 +72,8 @@ public class CapaCosmeticos extends RenderLayer<AbstractClientPlayer, PlayerMode
                 getParentModel().head.translateAndRotate(pose);
             } else if (hueso.equals("cuerpo")) {
                 getParentModel().body.translateAndRotate(pose);
+            } else if (hueso.equals("mano")) {  // lo que se lleva en la mano izquierda (maracas, bastón…)
+                getParentModel().leftArm.translateAndRotate(pose);
             }
             pose.scale(1 / 16f, 1 / 16f, 1 / 16f);
             dibujar(Cosmeticos3D.cubos(id, e), pose, buffers, luz);

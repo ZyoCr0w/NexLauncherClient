@@ -175,17 +175,18 @@ public final class MenuLateral {
         antes = ahora;
         float t = t();
         float aparecer = suave(t / 0.4f);
-        boolean dm = Temporada.muertos();
+        boolean dm = Temporada.activa();
         if (fondoPropio) {
             fondo(p, w, h, t, dm);
         } else {
-            p.rect(0, 0, w, h, alfa(dm ? 0x8A12051A : 0x8A000000, aparecer));  // el juego se ve detrás, más oscuro
+            p.rect(0, 0, w, h, alfa(dm ? 0x8A000000 | Temporada.tinte() : 0x8A000000, aparecer));  // el juego se ve detrás, más oscuro
         }
         int dx = dx();
         // panel
         if (dm) {
-            p.degradado(dx, 0, ANCHO + dx, h, fondoPropio ? 0xE0180A22 : 0xD0140818, fondoPropio ? 0xEC07030B : 0xE0050208);
-            p.rect(ANCHO + dx, 0, ANCHO + dx + 1, h, alfa(Temporada.CEMPASUCHIL, 0.45f));
+            p.degradado(dx, 0, ANCHO + dx, h, (fondoPropio ? 0xE0000000 : 0xD0000000) | Temporada.tinte(),
+                    (fondoPropio ? 0xEC000000 : 0xE0000000) | (Temporada.fondoAbajo() & 0xFFFFFF));
+            p.rect(ANCHO + dx, 0, ANCHO + dx + 1, h, alfa(Temporada.principal(), 0.45f));
             Temporada.papelPicado(p, dx, ANCHO + dx, 1, t, aparecer);
         } else {
             p.degradado(dx, 0, ANCHO + dx, h, fondoPropio ? 0xD80B0B10 : 0xC8050507, fondoPropio ? 0xE6050507 : 0xD8000000);
@@ -195,9 +196,9 @@ public final class MenuLateral {
         int yc = dm ? 4 : 0;  // con papel picado arriba, la cabecera baja un poco
         p.logo(12 + dx, 16 + yc, 30, aparecer);
         p.texto("§lNexClient", 48 + dx, 19 + yc, alfa(0xFFFFFFFF, aparecer), 1.35f, true);
-        p.texto(dm ? Tr.t("Día de Muertos") : Tr.t(subtitulo), 48 + dx, 35 + yc,
-                alfa(dm ? 0xFFFFB45A : 0xFF8C8C96, aparecer), 0.75f, false);
-        p.rect(12 + dx, 56 + yc, ANCHO - 12 + dx, 57 + yc, alfa(dm ? 0x66FF8F1F : 0x1EFFFFFF, aparecer));
+        p.texto(dm ? Tr.t(Temporada.nombre()) : Tr.t(subtitulo), 48 + dx, 35 + yc,
+                alfa(dm ? Temporada.textoTema() : 0xFF8C8C96, aparecer), 0.75f, false);
+        p.rect(12 + dx, 56 + yc, ANCHO - 12 + dx, 57 + yc, alfa(dm ? 0x66000000 | (Temporada.principal() & 0xFFFFFF) : 0x1EFFFFFF, aparecer));
         // entradas (y submenús abiertos)
         calcular(dt);
         Entrada bajo = en(mx, my);
@@ -206,7 +207,7 @@ public final class MenuLateral {
             Entrada e = f.e;
             int y = f.y;
             if (!f.hijo && e.separador && entradas.indexOf(e) > 0) {
-                p.rect(14 + dx, y - HUECO / 2 - 1, ANCHO - 14 + dx, y - HUECO / 2, dm ? 0x30FF8F1F : 0x14FFFFFF);
+                p.rect(14 + dx, y - HUECO / 2 - 1, ANCHO - 14 + dx, y - HUECO / 2, dm ? 0x30000000 | (Temporada.principal() & 0xFFFFFF) : 0x14FFFFFF);
             }
             float objetivo = e == bajo || e == marcada ? 1 : 0;
             e.hover += (objetivo - e.hover) * Math.min(1, dt * 14);
@@ -258,7 +259,7 @@ public final class MenuLateral {
 
     private void fondo(Pincel p, int w, int h, float t, boolean dm) {
         if (dm) {
-            muertos(p, w, h, t);
+            festivo(p, w, h, t);
             return;
         }
         p.degradado(0, 0, w, h, 0xFF101016, 0xFF040406);
@@ -279,9 +280,12 @@ public final class MenuLateral {
         }
     }
 
-    /** Fondo de Día de Muertos: morado oscuro, papel picado arriba, pétalos cayendo y cempasúchiles abajo. */
-    private void muertos(Pincel p, int w, int h, float t) {
-        p.degradado(0, 0, w, h, 0xFF1C0A28, 0xFF06030A);
+    /**
+     * Fondo de las festividades: papel picado (o luces) arriba, pétalos, confeti o nieve cayendo, y una fila de
+     * adornos abajo (cempasúchiles, banderitas o regalos).
+     */
+    private void festivo(Pincel p, int w, int h, float t) {
+        p.degradado(0, 0, w, h, Temporada.fondoArriba(), Temporada.fondoAbajo());
         float a = suave(t / 1.0f);
         int cx = ANCHO + (w - ANCHO) / 2, cy = h / 2 - 16;
         int r = Math.min(w - ANCHO, h) * 3 / 4;
@@ -290,10 +294,10 @@ public final class MenuLateral {
         Temporada.papelPicado(p, ANCHO + 4, w - 4, 3, t, a);
         Temporada.papelPicado(p, ANCHO + 11, w - 11, 19, t + 1.7f, a * 0.55f);
         // fila de cempasúchiles al pie, como en una ofrenda
-        p.degradado(ANCHO, h - 22, w, h, 0x00000000, alfa(0x55FF8F1F, a));
+        p.degradado(ANCHO, h - 22, w, h, 0x00000000, alfa(0x55000000 | (Temporada.principal() & 0xFFFFFF), a));
         for (int x = ANCHO + 6, k = 0; x < w - 12; x += 17, k++) {
             int sube = Math.round((float) Math.sin(t * 1.2f + k) * 1.0f);
-            Temporada.flor(p, x, h - 13 - (k % 2) * 4 + sube, 2, a);
+            Temporada.adorno(p, x, h - 13 - (k % 2) * 4 + sube, 2, a, k);
         }
     }
 
@@ -310,10 +314,10 @@ public final class MenuLateral {
         float escala = tam >= 70 ? 3 : 2.4f;
         String nombre = "§lNexClient";
         p.texto(nombre, cx - p.ancho(nombre) * escala / 2f, y + tam + 8, alfa(0xFFFFFFFF, a), escala, true);
-        boolean dm = Temporada.muertos();
-        String lema = dm ? Tr.t("Día de Muertos") + " · NexLauncher" : "PvP · NexLauncher";
-        p.texto(lema, cx - p.ancho(lema) / 2f, y + tam + 12 + 9 * escala, alfa(dm ? 0xFFFFB45A : 0xFF8C8C96, a), 1, false);
-        if (dm) {  // calaveritas a los lados del logo, flotando a destiempo
+        boolean dm = Temporada.activa();
+        String lema = dm ? Tr.t(Temporada.nombre()) + " · NexLauncher" : "PvP · NexLauncher";
+        p.texto(lema, cx - p.ancho(lema) / 2f, y + tam + 12 + 9 * escala, alfa(dm ? Temporada.textoTema() : 0xFF8C8C96, a), 1, false);
+        if (dm) {  // la figura de la festividad a los lados del logo, flotando a destiempo
             int celda = tam >= 70 ? 3 : 2, lado = 12 * celda;
             int sep = tam / 2 + 22 + lado;
             for (int k = -1; k <= 1; k += 2) {

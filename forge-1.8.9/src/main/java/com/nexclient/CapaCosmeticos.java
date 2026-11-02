@@ -18,7 +18,7 @@ import java.util.List;
  * escudos: el escudo elegido se ve en el costado del brazo izquierdo (en 1.8.9 no hay escudos), solo como adorno.
  */
 public class CapaCosmeticos implements LayerRenderer<AbstractClientPlayer> {
-    private static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "capa", "aura", "escudo"};
+    private static final String[] CATEGORIAS = {"cabeza", "espalda", "cuerpo", "capa", "aura", "escudo", "mascota", "mano"};
     private static final int[][] CARAS = {{0, 2, 6, 4}, {1, 5, 7, 3}, {0, 4, 5, 1}, {2, 3, 7, 6}, {0, 1, 3, 2}, {4, 6, 7, 5}};
     private final RenderPlayer render;
 
@@ -59,6 +59,8 @@ public class CapaCosmeticos implements LayerRenderer<AbstractClientPlayer> {
                 render.getMainModel().bipedLeftArm.postRender(0.0625F);
             } else if (hueso.equals("cuerpo")) {
                 render.getMainModel().bipedBody.postRender(0.0625F);
+            } else if (hueso.equals("mano")) {  // lo que se lleva en la mano izquierda (maracas, bastón…)
+                render.getMainModel().bipedLeftArm.postRender(0.0625F);
             }
             GlStateManager.scale(0.0625F, 0.0625F, 0.0625F);
             if (hueso.equals("escudo")) {  // en el costado de afuera del brazo izquierdo, a la altura de la mano

@@ -110,6 +110,10 @@ public final class Tr {
             "Autotexto: al terminar una partida manda tu mensaje (por ejemplo gg; con / es un comando).",
             "Auto text: when a game ends it sends your message (e.g. gg; with / it's a command).",
             "Saturación", "Saturation",
+            // NexClient 4.8
+            "Fiestas Patrias", "Mexican Fiestas", "Navidad", "Christmas",
+            "Fiestas Patrias, Día de Muertos y Navidad en los menús y la pantalla de carga.",
+            "Mexican Fiestas, Day of the Dead and Christmas in the menus and the loading screen.",
         };
         for (int i = 0; i + 1 < d.length; i += 2) {
             p(d[i], d[i + 1]);

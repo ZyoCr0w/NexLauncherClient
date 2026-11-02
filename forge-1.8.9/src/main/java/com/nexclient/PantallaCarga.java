@@ -90,9 +90,10 @@ public final class PantallaCarga {
         GlStateManager.disableFog();
         GlStateManager.disableDepth();
         GlStateManager.disableAlpha();
-        boolean dm = Temporada.muertos();
+        boolean dm = Temporada.activa();
         if (dm) {
-            GlStateManager.clearColor(0.09F, 0.035F, 0.13F, 1F);
+            int f = Temporada.fondoCarga();
+            GlStateManager.clearColor(((f >> 16) & 255) / 255F, ((f >> 8) & 255) / 255F, (f & 255) / 255F, 1F);
         } else {
             GlStateManager.clearColor(0.043F, 0.043F, 0.063F, 1F);
         }
@@ -118,10 +119,13 @@ public final class PantallaCarga {
         GlStateManager.disableTexture2D();
         int by = y + ih + 16, bw = iw - 60, bx = (w - bw) / 2;
         rect(wr, te, bx, by, bw, 3, 1F, 1F, 1F, 0.16F);
-        if (dm) {  // barra de cempasúchil y papel picado debajo
-            rect(wr, te, bx, by, Math.round(bw * progreso()), 3, 1F, 0.56F, 0.12F, 1F);
+        if (dm) {  // barra del color de la festividad y una tira de papel picado (o foquitos) debajo
+            int pc = Temporada.principal();
+            rect(wr, te, bx, by, Math.round(bw * progreso()), 3, ((pc >> 16) & 255) / 255F, ((pc >> 8) & 255) / 255F,
+                    (pc & 255) / 255F, 1F);
+            int[] papel = Temporada.papel();
             for (int i = 0, n = Math.max(1, bw / 14); i < n; i++) {
-                int c = Temporada.PAPEL[i % Temporada.PAPEL.length];
+                int c = papel[i % papel.length];
                 rect(wr, te, bx + i * 14 + 2, by + 12, 11, 8, ((c >> 16) & 255) / 255F, ((c >> 8) & 255) / 255F, (c & 255) / 255F, 0.85F);
             }
         } else {

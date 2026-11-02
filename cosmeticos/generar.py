@@ -9,6 +9,7 @@ python3 generar.py  ->  cosmeticos.json
 import json
 import os
 
+import festivos
 import nuevos
 
 
@@ -380,6 +381,8 @@ def catalogo():
     c.update(nuevos.capas_nuevas())
     c.update(nuevos.bandanas_nuevas())
     c.update(nuevos.escudos_nuevos())
+    # NexClient 4.8: de temporada (Día de Muertos, Fiestas Patrias y Navidad), con mascotas y cosas en la mano
+    c.update(festivos.festivos())
     return c
 
 
