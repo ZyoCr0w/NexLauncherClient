@@ -61,20 +61,12 @@ public final class Cosmeticos3D {
     }
 
     /**
-     * Hueso al que va pegado: "cabeza", "cuerpo", "jugador", "mano" (el brazo izquierdo) o "escudo". null si no
-     * existe o si es de una temporada que no toca ahora (Día de Muertos, Fiestas Patrias, Navidad): esos solo se ven
-     * en su festividad.
+     * Hueso al que va pegado: "cabeza", "cuerpo", "jugador", "mano" (el brazo izquierdo) o "escudo" (null si no
+     * existe). Los de temporada se ven todo el año: NexSkins solo deja ponérselos a quien los consiguió en su fiesta.
      */
     public static String hueso(String id) {
         JsonObject d = id == null ? null : obj(defs(), id);
-        if (d == null) {
-            return null;
-        }
-        String temporada = str(d, "temporada", null);
-        if (temporada != null && !Temporada.vigente(temporada)) {
-            return null;
-        }
-        return str(d, "hueso", "cuerpo");
+        return d == null ? null : str(d, "hueso", "cuerpo");
     }
 
     private static final Map<String, Float> ALTOS = new java.util.concurrent.ConcurrentHashMap<String, Float>();

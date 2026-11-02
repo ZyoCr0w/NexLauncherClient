@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.Random;
 
 /**
- * Festividades de NexClient: decoran los menús y la pantalla de carga, y activan sus cosméticos especiales.
+ * Festividades de NexClient: decoran los menús y la pantalla de carga (sus cosméticos los da NexSkins a quien entra en la fiesta).
  * <ul>
  * <li>Fiestas Patrias: del 1 al 16 de septiembre y del 4 al 20 de noviembre (papel picado verde, blanco y rojo,
  * confeti tricolor, banderitas y sombrero de charro).</li>
@@ -12,8 +12,7 @@ import java.util.Random;
  * calaveritas).</li>
  * <li>Navidad: del 1 de diciembre al 6 de enero (series de luces, nieve, regalos y arbolito).</li>
  * </ul>
- * La decoración se apaga en NexClient ▸ Visual ▸ «Temas de temporada»; los cosméticos de temporada dependen solo de
- * la fecha. Todo se dibuja con rectángulos (MenuLateral.Pincel). Este archivo es igual en 1.8.9 y en 1.21.1.
+ * La decoración se apaga en NexClient ▸ Visual ▸ «Temas de temporada». Todo se dibuja con rectángulos (MenuLateral.Pincel). Este archivo es igual en 1.8.9 y en 1.21.1.
  */
 public final class Temporada {
     public static final int NINGUNA = 0, MUERTOS = 1, PATRIAS = 2, NAVIDAD = 3;

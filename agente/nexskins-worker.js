@@ -461,13 +461,15 @@ const CATALOGO = {
   mascota: ["alebrije", "alebrije_noche", "aguila", "rodolfo"],
   mano: ["maracas", "jarrito", "baston_dulce"],
 };
-// De temporada: solo se pueden poner durante su festividad (los juegos tampoco los dibujan fuera de ella)
+// De temporada: quien entra (abre sus cosméticos en NexLauncher o juega con su cuenta) durante la festividad se queda
+// con los de esa festividad para siempre. Fuera de ella no se pueden conseguir. Los creadores tienen todos.
 const TEMPORADA_COS = {
   alebrije: "muertos", alebrije_noche: "muertos", corona_cempasuchil: "muertos",
   aguila: "patrias", sombrero_charro: "patrias", sarape: "patrias", maracas: "patrias", jarrito: "patrias",
   rodolfo: "navidad", gorro_navideno: "navidad", cuernos_reno: "navidad", bufanda_navidena: "navidad",
   baston_dulce: "navidad", nieve: "navidad",
 };
+const CREADORES = ["zyocr0w"];
 
 /** Festividad de una fecha: muertos (25 oct – 3 nov), patrias (1–16 sep y 4–20 nov), navidad (1 dic – 6 ene). */
 function festividad(f) {
@@ -478,12 +480,31 @@ function festividad(f) {
   return null;
 }
 
-/** ¿Es temporada de ese cosmético en algún lugar del mundo ahora? (de UTC−12 a UTC+14, para no cortar a nadie) */
-function deTemporada(id) {
-  const t = TEMPORADA_COS[id];
-  if (!t) return true;
-  const ahoraMs = Date.now();
-  return [-12, -6, 0, 14].some((h) => festividad(new Date(ahoraMs + h * 3600000)) === t);
+/** Festividades que tocan ahora en algún lugar del mundo (de UTC−12 a UTC+14, para no dejar fuera a nadie). */
+function festividadesAhora() {
+  const ms = Date.now();
+  return [...new Set([-12, -6, 0, 14].map((h) => festividad(new Date(ms + h * 3600000))).filter(Boolean))];
+}
+
+const esCreador = (u) => !!u && CREADORES.includes(String(u.nombre).toLowerCase());
+
+/**
+ * Cosméticos de temporada que ya son de esta cuenta. Si ahora es temporada, primero se le dan los de esa fiesta
+ * (se guardan para siempre). Los creadores tienen todos.
+ */
+async function desbloqueados(env, u) {
+  if (esCreador(u)) return Object.keys(TEMPORADA_COS);
+  const fila = await env.DB.prepare("SELECT ids FROM cos_desbloqueado WHERE usuario = ?").bind(u.id).first();
+  let ids = [];
+  try { ids = JSON.parse(fila?.ids || "[]").filter((i) => TEMPORADA_COS[i]); } catch { ids = []; }
+  const fiestas = festividadesAhora();
+  const nuevos = Object.keys(TEMPORADA_COS).filter((i) => fiestas.includes(TEMPORADA_COS[i]) && !ids.includes(i));
+  if (nuevos.length) {
+    ids = ids.concat(nuevos);
+    await env.DB.prepare("INSERT INTO cos_desbloqueado (usuario, ids) VALUES (?, ?) ON CONFLICT(usuario) DO UPDATE SET ids = excluded.ids")
+      .bind(u.id, JSON.stringify(ids)).run();
+  }
+  return ids;
 }
 
 async function esquemaCosmeticos(env) {
@@ -491,6 +512,7 @@ async function esquemaCosmeticos(env) {
   await env.DB.batch([
     env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_presencia (nombre TEXT NOT NULL COLLATE NOCASE, servidor TEXT NOT NULL, cuenta INTEGER, visto INTEGER NOT NULL, PRIMARY KEY (nombre, servidor))"),
     env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_equipado (usuario INTEGER PRIMARY KEY, datos TEXT NOT NULL)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_desbloqueado (usuario INTEGER PRIMARY KEY, ids TEXT NOT NULL)"),
     env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_etiqueta (usuario INTEGER PRIMARY KEY, etiqueta TEXT NOT NULL)"),
     env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_gif (hash TEXT PRIMARY KEY, datos BLOB NOT NULL, usuario INTEGER NOT NULL, creado INTEGER NOT NULL)"),
   ]);
@@ -600,6 +622,7 @@ async function cosmeticos(req, env, ruta) {
       .bind(nombre, servidorNormal(b.servidor), yo ? yo.id : null, t)];
     if (Math.random() < 0.02) pasos.push(env.DB.prepare("DELETE FROM cos_presencia WHERE visto < ?").bind(t - 3600));
     await env.DB.batch(pasos);
+    if (yo && festividadesAhora().length) await desbloqueados(env, yo);  // jugar en temporada también cuenta
     return json({ ok: true, cuenta: yo ? yo.nombre : null });
   }
   if (!yo) return json({ error: "Inicia sesión con tu cuenta de NexLauncher para usar cosméticos." }, 401);
@@ -607,7 +630,8 @@ async function cosmeticos(req, env, ruta) {
   const guardar = (eq) => env.DB.prepare("INSERT INTO cos_equipado (usuario, datos) VALUES (?, ?) ON CONFLICT(usuario) DO UPDATE SET datos = excluded.datos").bind(yo.id, JSON.stringify(eq)).run();
   if (ruta === "/cosmeticos/yo" && req.method === "GET") {
     return json({ usuario: yo.nombre, equipado: await actual(), etiqueta: await etiquetaDe(env, yo), catalogo: CATALOGO,
-                  temporada: festividad(new Date(Date.now() - 6 * 3600000)) });
+                  temporada: festividad(new Date(Date.now() - 6 * 3600000)), desbloqueados: await desbloqueados(env, yo),
+                  creador: esCreador(yo) });
   }
   if (ruta === "/cosmeticos/equipar" && req.method === "POST") {
     let b;
@@ -621,7 +645,9 @@ async function cosmeticos(req, env, ruta) {
       if (!r) return json({ error: "Primero sube tu capa GIF." }, 400);
       eq.capa = { id: "gif", hash: r.hash };
     } else if (ids.includes(b.id)) {
-      if (!deTemporada(b.id)) return json({ error: "Ese cosmético es de temporada: solo se puede poner durante su festividad." }, 400);
+      if (TEMPORADA_COS[b.id] && !(await desbloqueados(env, yo)).includes(b.id)) {
+        return json({ error: "Ese cosmético es de temporada: se consigue entrando durante su festividad." }, 403);
+      }
       eq[b.categoria] = b.id;
     } else return json({ error: "ese cosmético no existe" }, 400);
     await guardar(eq);

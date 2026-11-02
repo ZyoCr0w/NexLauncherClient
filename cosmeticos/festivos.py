@@ -1,4 +1,5 @@
-"""Cosméticos de temporada de NexClient 4.8: solo se pueden poner (y solo se ven) durante su festividad.
+"""Cosméticos de temporada de NexClient 4.8: quien entra durante la festividad se los queda para siempre (NexSkins
+guarda cuáles consiguió cada cuenta; los creadores tienen todos).
 
   muertos  (25 oct – 3 nov):            alebrijes de mascota y corona de cempasúchil
   patrias  (1 – 16 sep y 4 – 20 nov):   águila de mascota, sombrero de charro, sarape, maracas y jarrito
