@@ -383,6 +383,7 @@ def catalogo():
     c.update(nuevos.escudos_nuevos())
     # NexClient 4.8: de temporada (Día de Muertos, Fiestas Patrias y Navidad), con mascotas y cosas en la mano
     c.update(festivos.festivos())
+    c.update(festivos.mascotas())
     return c
 
 

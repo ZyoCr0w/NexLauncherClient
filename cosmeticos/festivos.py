@@ -352,6 +352,132 @@ def nieve():
          "colores": ["#B3E5FC", "#FFFFFF"], "brillo": True}]}
 
 
+# ---------------------------------------------------------------- mascotas de todo el año
+def _patas(color, pies, posiciones, alto=2.2, amp=16, frec=0.9):
+    g = []
+    for k, (x, z) in enumerate(posiciones):
+        g.append({"id": "pata%d" % k, "padre": "mascota", "pivote": [x + 0.5, 1.8, z + 0.5],
+                  "anim": {"rx": anim(amp=amp, frec=frec, fase=(0 if k in (0, 3) else math.pi))},
+                  "piezas": [caja(-0.5, 0, -0.5, 1, alto, 1, color), caja(-0.55, alto - 0.4, -0.6, 1.1, 0.5, 1.2, pies)]})
+    return g
+
+
+def gatito():
+    naranja, rayas, blanco, rosa = "#F59E42", "#C46A1C", "#FFF3E0", "#F48FB1"
+    piezas = [caja(-1.8, -1.6, -3.4, 3.6, 3.4, 6.6, naranja), caja(-1.4, 0.6, -2.8, 2.8, 1.2, 5.0, blanco)]
+    for z in (-2.2, -0.4, 1.4):
+        piezas.append(caja(-1.9, -1.7, z, 3.8, 0.6, 0.7, rayas))
+    cabeza = [caja(-2.0, -3.4, -3.0, 4.0, 3.4, 3.2, naranja), caja(-1.0, -1.4, -3.4, 2.0, 1.1, 0.5, blanco),
+              caja(-0.35, -1.6, -3.55, 0.7, 0.45, 0.2, rosa),
+              caja(-1.5, -2.6, -3.15, 0.8, 0.8, 0.2, "#7CB342"), caja(0.7, -2.6, -3.15, 0.8, 0.8, 0.2, "#7CB342"),
+              caja(-1.2, -2.5, -3.2, 0.3, 0.6, 0.15, "#111111"), caja(0.95, -2.5, -3.2, 0.3, 0.6, 0.15, "#111111"),
+              caja(-1.9, -4.6, -1.8, 1.3, 1.3, 1.0, naranja), caja(0.6, -4.6, -1.8, 1.3, 1.3, 1.0, naranja),
+              caja(-1.6, -4.2, -1.85, 0.7, 0.7, 0.2, rosa), caja(0.9, -4.2, -1.85, 0.7, 0.7, 0.2, rosa)]
+    cola = [{"id": "cola1", "padre": "mascota", "pivote": [0, -1.0, 3.0], "rot": [-55, 0, 0],
+             "anim": {"rz": anim(amp=20, frec=0.5)}, "piezas": [caja(-0.5, -0.5, 0, 1, 1, 3, naranja)]},
+            {"id": "cola2", "padre": "cola1", "pivote": [0, 0, 3.0], "rot": [-40, 0, 0],
+             "anim": {"rz": anim(amp=25, frec=0.5, fase=0.6)}, "piezas": [caja(-0.5, -0.5, 0, 1, 1, 2.4, rayas)]}]
+    grupos = [{"id": "mascota", "pivote": MASCOTA, "anim": FLOTAR, "piezas": piezas},
+              {"id": "cabeza", "padre": "mascota", "pivote": [0, -0.8, -3.2],
+               "anim": {"ry": anim(amp=16, frec=0.18), "rz": anim(amp=5, frec=0.27)}, "piezas": cabeza}]
+    return {"hueso": "jugador", "grupos": grupos + cola + _patas(naranja, blanco, ((-1.6, -3.0), (0.6, -3.0), (-1.6, 1.6), (0.6, 1.6)))}
+
+
+def perrito():
+    cafe, crema, oreja, rosa = "#C68B59", "#F5DEB3", "#7B4A2A", "#E57373"
+    piezas = [caja(-1.9, -1.8, -3.6, 3.8, 3.6, 7.0, cafe), caja(-1.5, 0.4, -3.0, 3.0, 1.4, 5.4, crema),
+              caja(-1.95, -1.9, -3.7, 3.9, 1.0, 1.2, "#D32F2F"),                         # collar
+              caja(-0.5, -1.0, -3.95, 1.0, 1.0, 0.4, "#FFD54A", brillo=True)]           # placa
+    cabeza = [caja(-2.0, -3.6, -3.0, 4.0, 3.6, 3.4, cafe), caja(-1.2, -1.6, -4.8, 2.4, 1.8, 2.0, crema),
+              caja(-0.5, -1.9, -5.0, 1.0, 0.7, 0.4, "#222222"),                            # nariz
+              caja(-0.6, -0.1, -4.6, 1.2, 1.0, 0.4, rosa),                                 # lengua
+              caja(-1.3, -2.8, -3.1, 0.7, 0.7, 0.2, "#111111"), caja(0.6, -2.8, -3.1, 0.7, 0.7, 0.2, "#111111")]
+    orejas = []
+    for lado in (1, -1):
+        orejas.append({"id": "oreja" + ("d" if lado > 0 else "i"), "padre": "cabeza", "pivote": [2.0 * lado, -3.4, -1.5],
+                       "rot": [0, 0, 18 * lado], "anim": {"rz": anim(amp=8 * lado, frec=0.9, mov=10 * lado)},
+                       "piezas": [caja(-0.4 if lado > 0 else -0.6, 0, -1.0, 1.0, 3.0, 2.0, oreja)]})
+    cola = {"id": "cola", "padre": "mascota", "pivote": [0, -1.4, 3.3], "rot": [-50, 0, 0],
+            "anim": {"ry": anim(amp=35, frec=2.6)}, "piezas": [caja(-0.45, -0.45, 0, 0.9, 0.9, 3.0, cafe)]}
+    grupos = [{"id": "mascota", "pivote": MASCOTA, "anim": FLOTAR, "piezas": piezas},
+              {"id": "cabeza", "padre": "mascota", "pivote": [0, -1.0, -3.4],
+               "anim": {"ry": anim(amp=14, frec=0.2), "rz": anim(amp=6, frec=0.31)}, "piezas": cabeza}]
+    return {"hueso": "jugador",
+            "grupos": grupos + orejas + [cola] + _patas(cafe, crema, ((-1.7, -3.2), (0.7, -3.2), (-1.7, 1.8), (0.7, 1.8)))}
+
+
+def buho():
+    cafe, cafe2, crema, ojo, pico = "#8D6E63", "#5D4037", "#EFE3C8", "#FFC107", "#F57C00"
+    piezas = [caja(-2.4, -3.2, -2.2, 4.8, 6.0, 4.4, cafe), caja(-1.8, -1.2, -2.35, 3.6, 3.6, 0.3, crema)]
+    for k, (x, y) in enumerate(((-1.2, -0.6), (0.4, -0.6), (-0.4, 0.6), (-1.2, 1.6), (0.4, 1.6))):
+        piezas.append(caja(x, y, -2.45, 0.8, 0.4, 0.15, cafe2))                           # plumitas del pecho
+    piezas += [caja(-2.0, -6.4, -2.0, 4.0, 3.4, 4.0, cafe),                                 # cabeza
+               caja(-1.8, -5.6, -2.15, 1.6, 1.6, 0.2, ojo), caja(0.2, -5.6, -2.15, 1.6, 1.6, 0.2, ojo),
+               caja(-1.3, -5.1, -2.25, 0.7, 0.7, 0.15, "#111111"), caja(0.7, -5.1, -2.25, 0.7, 0.7, 0.15, "#111111"),
+               caja(-0.35, -4.2, -2.6, 0.7, 0.9, 0.6, pico),
+               caja(-2.0, -7.4, -1.0, 1.0, 1.2, 1.0, cafe2), caja(1.0, -7.4, -1.0, 1.0, 1.2, 1.0, cafe2),   # penachos
+               caja(-1.0, 2.8, -1.2, 0.8, 0.6, 1.2, pico), caja(0.2, 2.8, -1.2, 0.8, 0.6, 1.2, pico)]       # patas
+    alas = []
+    for lado in (1, -1):
+        alas.append({"id": "ala" + ("d" if lado > 0 else "i"), "padre": "mascota", "pivote": [2.4 * lado, -2.6, 0],
+                     "anim": {"rz": anim(amp=-35 * lado, frec=1.3)},
+                     "piezas": [caja(0 if lado > 0 else -0.6, 0, -1.8, 0.6, 4.6, 3.6, cafe2)]})
+    return {"hueso": "jugador", "grupos": [{"id": "mascota", "pivote": [MASCOTA[0], MASCOTA[1] + 1, MASCOTA[2]],
+                                            "anim": dict(FLOTAR, rz=anim(amp=4, frec=0.6)), "piezas": piezas}] + alas}
+
+
+def fantasma():
+    blanco = "#F4F6FF"
+    piezas = [caja(-2.6, -4.0, -2.4, 5.2, 6.4, 4.8, blanco, alfa=0.78),
+              caja(-2.2, -4.8, -2.0, 4.4, 0.9, 4.0, blanco, alfa=0.78),
+              caja(-1.6, -2.6, -2.55, 1.0, 1.4, 0.2, "#1A1A2E"), caja(0.6, -2.6, -2.55, 1.0, 1.4, 0.2, "#1A1A2E"),
+              caja(-0.6, -0.4, -2.55, 1.2, 1.0, 0.2, "#1A1A2E"),
+              caja(-2.0, -1.0, -2.5, 0.8, 0.5, 0.1, "#FF9EC7", alfa=0.8), caja(1.2, -1.0, -2.5, 0.8, 0.5, 0.1, "#FF9EC7", alfa=0.8)]
+    flecos = []
+    for k, x in enumerate((-2.6, -0.85, 0.9)):                       # orilla de abajo que ondula
+        flecos.append({"id": "fleco%d" % k, "padre": "mascota", "pivote": [x + 0.85, 2.4, 0],
+                       "anim": {"rx": anim(amp=14, frec=1.1, fase=k * 1.3)},
+                       "piezas": [caja(-0.85, 0, -2.4, 1.7, 1.6 + (k % 2) * 0.6, 4.8, blanco, alfa=0.7)]})
+    return {"hueso": "jugador", "grupos": [{"id": "mascota", "pivote": MASCOTA,
+                                            "anim": {"y": anim(amp=1.8, frec=0.35), "ry": anim(amp=12, frec=0.15)},
+                                            "piezas": piezas}] + flecos}
+
+
+def axolote():
+    rosa, rosa2, branquia, ojo = "#F8A5C2", "#F78FB3", "#E84393", "#2D3436"
+    piezas = [caja(-1.6, -1.4, -3.8, 3.2, 2.6, 7.0, rosa), caja(-1.2, 0.6, -3.2, 2.4, 0.8, 5.6, rosa2)]
+    cabeza = [caja(-2.2, -2.0, -3.4, 4.4, 2.8, 3.4, rosa), caja(-1.8, -1.2, -3.55, 0.6, 0.6, 0.2, ojo),
+              caja(1.2, -1.2, -3.55, 0.6, 0.6, 0.2, ojo), caja(-0.8, 0.2, -3.5, 1.6, 0.3, 0.15, branquia)]
+    branquias = []
+    for lado in (1, -1):
+        for k, y in enumerate((-2.0, -1.1, -0.2)):
+            branquias.append({"id": "br%s%d" % ("d" if lado > 0 else "i", k), "padre": "cabeza",
+                              "pivote": [2.2 * lado, y, -1.4], "rot": [0, 25 * lado, (-30 + k * 30) * lado],
+                              "anim": {"rz": anim(amp=10 * lado, frec=1.2, fase=k * 0.8)},
+                              "piezas": [caja(0 if lado > 0 else -2.2, -0.3, -0.3, 2.2, 0.6, 0.6, branquia)]})
+    cola = {"id": "cola", "padre": "mascota", "pivote": [0, -0.4, 3.2], "anim": {"ry": anim(amp=24, frec=0.9)},
+            "piezas": [caja(-0.3, -1.6, 0, 0.6, 3.0, 4.2, rosa2)]}
+    grupos = [{"id": "mascota", "pivote": MASCOTA, "anim": FLOTAR, "piezas": piezas},
+              {"id": "cabeza", "padre": "mascota", "pivote": [0, 0, -3.8], "anim": {"ry": anim(amp=10, frec=0.25)},
+               "piezas": cabeza}]
+    return {"hueso": "jugador",
+            "grupos": grupos + branquias + [cola] + _patas(rosa, rosa2, ((-1.6, -2.8), (0.6, -2.8), (-1.6, 1.6), (0.6, 1.6)),
+                                                          alto=1.6, amp=24, frec=1.1)}
+
+
+def mascotas():
+    """Mascotas de todo el año."""
+    return {
+        "dragoncito": alebrije("#C62828", ["#FF7043", "#FFB300", "#8E1B1B", "#FF7043"], "#D32F2F", "#FFB300",
+                               "#3E2723", ["#8E1B1B", "#B71C1C", "#FF7043", "#8E1B1B", "#B71C1C"], "#FF6D00"),
+        "gatito": gatito(),
+        "perrito": perrito(),
+        "buho": buho(),
+        "fantasma": fantasma(),
+        "axolote": axolote(),
+    }
+
+
 def festivos():
     c = {
         # Día de Muertos

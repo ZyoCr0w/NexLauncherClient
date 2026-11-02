@@ -458,7 +458,7 @@ const CATALOGO = {
   aura: ["ki_blanco", "ki_dorado", "ki_azul", "ki_rayos", "aura_oscura", "aura_fuego", "aura_arcoiris", "aura_hielo", "nieve"],
   rastro: ["chispas", "corazones", "notas", "pisadas_fuego"],
   escudo: ["escudo_nex", "escudo_noche", "escudo_dragon", "escudo_dorado", "escudo_hielo", "escudo_fuego", "escudo_obsidiana"],
-  mascota: ["alebrije", "alebrije_noche", "aguila", "rodolfo"],
+  mascota: ["dragoncito", "gatito", "perrito", "buho", "fantasma", "axolote", "alebrije", "alebrije_noche", "aguila", "rodolfo"],
   mano: ["maracas", "jarrito", "baston_dulce"],
 };
 // De temporada: quien entra (abre sus cosméticos en NexLauncher o juega con su cuenta) durante la festividad se queda
@@ -516,6 +516,8 @@ async function esquemaCosmeticos(env) {
     env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_etiqueta (usuario INTEGER PRIMARY KEY, etiqueta TEXT NOT NULL)"),
     env.DB.prepare("CREATE TABLE IF NOT EXISTS cos_gif (hash TEXT PRIMARY KEY, datos BLOB NOT NULL, usuario INTEGER NOT NULL, creado INTEGER NOT NULL)"),
   ]);
+  // premium: la cuenta de Minecraft con la que juega (logo verde encima del nombre; offline, gris)
+  try { await env.DB.prepare("ALTER TABLE cos_presencia ADD COLUMN premium INTEGER NOT NULL DEFAULT 0").run(); } catch { /* ya existe */ }
   cosmeticosListos = true;
 }
 
@@ -603,11 +605,13 @@ async function cosmeticos(req, env, ruta) {
     const jugadores = {};
     if (!nombres.length) return json({ jugadores });
     const marcas = nombres.map(() => "?").join(",");
-    const filas = (await env.DB.prepare(`SELECT p.nombre, p.cuenta, u.nombre AS usuario, e.datos FROM cos_presencia p LEFT JOIN usuarios u ON u.id = p.cuenta LEFT JOIN cos_equipado e ON e.usuario = p.cuenta WHERE p.nombre IN (${marcas}) AND p.servidor = ? AND p.visto > ? ORDER BY p.visto`)
+    const filas = (await env.DB.prepare(`SELECT p.nombre, p.cuenta, p.premium, u.nombre AS usuario, e.datos FROM cos_presencia p LEFT JOIN usuarios u ON u.id = p.cuenta LEFT JOIN cos_equipado e ON e.usuario = p.cuenta WHERE p.nombre IN (${marcas}) AND p.servidor = ? AND p.visto > ? ORDER BY p.visto`)
       .bind(...nombres, srv, t - PRESENCIA_VIVA).all()).results;
     for (const f of filas) {
       const usuario = f.cuenta && f.usuario ? { id: f.cuenta, nombre: f.usuario } : null;
-      jugadores[f.nombre.toLowerCase()] = { etiqueta: await etiquetaDe(env, usuario), equipado: usuario ? leerEquipado(f.datos) : {} };
+      // insignia: el logo de NexLauncher encima del nombre (arcoíris el creador, verde premium, gris offline)
+      const insignia = esCreador(usuario) ? "creador" : f.premium ? "premium" : "offline";
+      jugadores[f.nombre.toLowerCase()] = { etiqueta: await etiquetaDe(env, usuario), insignia, equipado: usuario ? leerEquipado(f.datos) : {} };
     }
     return json({ jugadores });
   }
@@ -618,8 +622,8 @@ async function cosmeticos(req, env, ruta) {
     try { b = await cuerpo(req); } catch { return json({ error: "JSON inválido" }, 400); }
     const nombre = String(b.nombre || "");
     if (!NOMBRE.test(nombre)) return json({ error: "nombre inválido" }, 400);
-    const pasos = [env.DB.prepare("INSERT INTO cos_presencia (nombre, servidor, cuenta, visto) VALUES (?, ?, ?, ?) ON CONFLICT(nombre, servidor) DO UPDATE SET cuenta = excluded.cuenta, visto = excluded.visto")
-      .bind(nombre, servidorNormal(b.servidor), yo ? yo.id : null, t)];
+    const pasos = [env.DB.prepare("INSERT INTO cos_presencia (nombre, servidor, cuenta, visto, premium) VALUES (?, ?, ?, ?, ?) ON CONFLICT(nombre, servidor) DO UPDATE SET cuenta = excluded.cuenta, visto = excluded.visto, premium = excluded.premium")
+      .bind(nombre, servidorNormal(b.servidor), yo ? yo.id : null, t, b.premium ? 1 : 0)];
     if (Math.random() < 0.02) pasos.push(env.DB.prepare("DELETE FROM cos_presencia WHERE visto < ?").bind(t - 3600));
     await env.DB.batch(pasos);
     if (yo && festividadesAhora().length) await desbloqueados(env, yo);  // jugar en temporada también cuenta

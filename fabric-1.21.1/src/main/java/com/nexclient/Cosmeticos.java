@@ -31,13 +31,16 @@ public final class Cosmeticos {
         public final String etiqueta;          // JSON de texto de Minecraft, o null
         public final Map<String, String> equipado;  // categoría -> id (la capa GIF: "gif")
         public final String gif;               // hash de su capa GIF, o null
+        /** Logo de NexLauncher encima del nombre: "creador" (arcoíris), "premium" (verde), "offline" (gris) o null. */
+        public final String insignia;
         public final Map<String, Object> cache = new ConcurrentHashMap<String, Object>();
 
-        Jugador(String nombre, String etiqueta, Map<String, String> equipado, String gif) {
+        Jugador(String nombre, String etiqueta, Map<String, String> equipado, String gif, String insignia) {
             this.nombre = nombre;
             this.etiqueta = etiqueta;
             this.equipado = equipado;
             this.gif = gif;
+            this.insignia = insignia;
         }
 
         public String de(String categoria) {
@@ -146,6 +149,7 @@ public final class Cosmeticos {
             }
             JsonObject d = e.getAsJsonObject();
             String etiqueta = d.has("etiqueta") && !d.get("etiqueta").isJsonNull() ? d.get("etiqueta").toString() : null;
+            String insignia = d.has("insignia") && d.get("insignia").isJsonPrimitive() ? d.get("insignia").getAsString() : null;
             Map<String, String> eq = new HashMap<String, String>();
             String gif = null;
             if (d.has("equipado") && d.get("equipado").isJsonObject()) {
@@ -161,10 +165,11 @@ public final class Cosmeticos {
             }
             Jugador antes = DATOS.get(clave);
             if (antes != null && eq.equals(antes.equipado) && (etiqueta == null ? antes.etiqueta == null
-                    : etiqueta.equals(antes.etiqueta)) && (gif == null ? antes.gif == null : gif.equals(antes.gif))) {
+                    : etiqueta.equals(antes.etiqueta)) && (gif == null ? antes.gif == null : gif.equals(antes.gif))
+                    && (insignia == null ? antes.insignia == null : insignia.equals(antes.insignia))) {
                 continue;  // igual que antes: se conserva lo ya convertido (texto, texturas)
             }
-            DATOS.put(clave, new Jugador(nombre, etiqueta, eq, gif));
+            DATOS.put(clave, new Jugador(nombre, etiqueta, eq, gif, insignia));
             System.out.println("[NexClient] Cosméticos de " + nombre + ": etiqueta " + etiqueta + ", " + eq);
         }
     }
