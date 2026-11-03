@@ -281,6 +281,116 @@ public final class Hooks {
         return false;
     }
 
+    // ---- Tu mundo abierto en LAN: quién entra (hasJoinedServer)
+    private static final ThreadLocal<Object> UNIDO = new ThreadLocal<Object>();
+    private static final Pattern ID = Pattern.compile("\"id\"\\s*:\\s*\"([0-9a-fA-F-]{32,36})\"");
+    private static final Pattern NOMBRE_J = Pattern.compile("\"name\"\\s*:\\s*\"(\\w{1,16})\"");
+
+    /**
+     * hasJoinedServer, antes de preguntar a Mojang: NexLauncher responde por tu mundo. Él revisa primero con Mojang
+     * (premium de verdad: su perfil real) y, si en Amigos está «Dejar entrar cuentas no premium», da el perfil
+     * offline. true = hay respuesta (la devuelve unidoResultado); false = sigue el código de authlib.
+     */
+    public static boolean unido(Object servicio, Object usuario, Object serverId) {
+        UNIDO.remove();
+        if (BASE == null || servicio == null || usuario == null || !(serverId instanceof String)) {
+            return false;
+        }
+        try {
+            String nombre = usuario instanceof String ? (String) usuario : (String) llamar(usuario, "getName", "name");
+            if (nombre == null || !NOMBRE.matcher(nombre).matches()) {
+                return false;
+            }
+            URL url = new URL(BASE + "/sessionserver/session/minecraft/hasJoined?username="
+                    + URLEncoder.encode(nombre, "UTF-8") + "&serverId=" + URLEncoder.encode((String) serverId, "UTF-8"));
+            HttpURLConnection con = (HttpURLConnection) url.openConnection(Proxy.NO_PROXY);
+            con.setConnectTimeout(1500);
+            con.setReadTimeout(8000);  // NexLauncher pregunta antes a Mojang
+            if (con.getResponseCode() != 200) {
+                return false;
+            }
+            InputStream in = con.getInputStream();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[4096];
+            int n;
+            while ((n = in.read(buf)) > 0 && out.size() < 65536) {
+                out.write(buf, 0, n);
+            }
+            in.close();
+            String json = out.toString("UTF-8");
+            Matcher mi = ID.matcher(json), mn = NOMBRE_J.matcher(json);
+            if (!mi.find()) {
+                return false;
+            }
+            String hex = mi.group(1).replace("-", "");
+            UUID id = new UUID(Long.parseUnsignedLong(hex.substring(0, 16), 16), Long.parseUnsignedLong(hex.substring(16), 16));
+            String nom = mn.find() ? mn.group(1) : nombre;
+            ClassLoader cl = servicio.getClass().getClassLoader();
+            Class<?> cGp = Class.forName("com.mojang.authlib.GameProfile", false, cl);
+            Object perfil;
+            try {
+                perfil = cGp.getConstructor(UUID.class, String.class).newInstance(id, nom);
+            } catch (NoSuchMethodException e) {  // authlib 7: record (UUID, String, PropertyMap)
+                Class<?> multimap = Class.forName("com.google.common.collect.Multimap", false, cl);
+                Class<?> cMapa = Class.forName("com.mojang.authlib.properties.PropertyMap", false, cl);
+                Object vacio = Class.forName("com.google.common.collect.LinkedHashMultimap", false, cl).getMethod("create").invoke(null);
+                perfil = cGp.getConstructor(UUID.class, String.class, cMapa)
+                        .newInstance(id, nom, cMapa.getConstructor(multimap).newInstance(vacio));
+            }
+            Matcher v = VALOR.matcher(json), f = FIRMA.matcher(json);
+            if (v.find() && json.contains("\"textures\"")) {
+                perfil = conTexturas(perfil, cl, v.group(1), f.find() ? f.group(1) : null);
+            }
+            Object r = perfil;
+            Class<?> tipo = null;
+            for (Method m : servicio.getClass().getMethods()) {
+                if ("hasJoinedServer".equals(m.getName())) {
+                    tipo = m.getReturnType();
+                    break;
+                }
+            }
+            if (tipo != null && !tipo.isInstance(perfil)) {  // authlib 4+: ProfileResult(GameProfile[, Set])
+                try {
+                    r = tipo.getConstructor(cGp).newInstance(perfil);
+                } catch (NoSuchMethodException e) {
+                    r = tipo.getConstructor(cGp, java.util.Set.class).newInstance(perfil, java.util.Collections.emptySet());
+                }
+            }
+            if (AVISADOS.add("lan:" + nom.toLowerCase())) {
+                System.out.println("[NexLauncher] Mundo LAN: entra " + nom + " (" + id + ") con el visto bueno de NexLauncher.");
+            }
+            UNIDO.set(r);
+            return true;
+        } catch (Throwable e) {
+            return false;  // que decida authlib (Mojang)
+        }
+    }
+
+    public static Object unidoResultado() {
+        Object r = UNIDO.get();
+        UNIDO.remove();
+        return r;
+    }
+
+    private static Object conTexturas(Object perfil, ClassLoader cl, String valor, String firma) throws Exception {
+        Class<?> multimap = Class.forName("com.google.common.collect.Multimap", false, cl);
+        Object props = llamar(perfil, "getProperties", "properties");
+        Object prop = Class.forName("com.mojang.authlib.properties.Property", false, cl)
+                .getConstructor(String.class, String.class, String.class).newInstance("textures", valor, firma);
+        Method put = multimap.getMethod("put", Object.class, Object.class);
+        try {
+            put.invoke(props, "textures", prop);
+            return perfil;
+        } catch (InvocationTargetException inmutable) {
+            // authlib 7: perfil inmutable, se arma uno nuevo con sus propiedades
+        }
+        Object mapa = Class.forName("com.google.common.collect.LinkedHashMultimap", false, cl).getMethod("create").invoke(null);
+        put.invoke(mapa, "textures", prop);
+        Object nuevas = props.getClass().getConstructor(multimap).newInstance(mapa);
+        return perfil.getClass().getConstructor(UUID.class, String.class, props.getClass())
+                .newInstance(llamar(perfil, "getId", "id"), llamar(perfil, "getName", "name"), nuevas);
+    }
+
     private static Object llamar(Object o, String... nombres) throws Exception {
         for (String n : nombres) {
             try {

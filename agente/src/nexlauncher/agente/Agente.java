@@ -13,10 +13,12 @@ import java.util.jar.JarFile;
  *
  * Toca pocos métodos de authlib: getTextures/getPackedTextures (perfil con la skin de NexLauncher si el servidor
  * no mandó ninguna o la mandó apuntando al launcher de otra PC) y las revisiones de firma y dominio de las
- * texturas (que acepten las de NexLauncher también con cuenta premium). Si algo falla, el juego sigue igual.
+ * texturas (que acepten las de NexLauncher también con cuenta premium). También hasJoinedServer: tu mundo abierto
+ * en LAN le pregunta a NexLauncher quién entra, así con «dejar entrar no premium» entran amigos no premium aunque
+ * tu cuenta sea premium y la versión no tenga NexClient (Forge, NeoForge, Quilt…). Si algo falla, el juego sigue igual.
  */
 public final class Agente {
-    static final String VERSION = "6";
+    static final String VERSION = "7";
     static final String PAQUETE = "com/mojang/authlib/";
 
     private Agente() {
@@ -47,7 +49,7 @@ public final class Agente {
                 // Barato: solo clases de authlib que mencionen los métodos de texturas, firmas o dominios
                 if (nombre == null || !nombre.startsWith(PAQUETE) || !(contiene(bytes, "Textures")
                         || contiene(bytes, "validateProperty") || contiene(bytes, "isSignatureValid")
-                        || contiene(bytes, "Domain"))) {
+                        || contiene(bytes, "Domain") || contiene(bytes, "hasJoinedServer"))) {
                     return null;
                 }
                 try {

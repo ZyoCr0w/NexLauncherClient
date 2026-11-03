@@ -12,6 +12,11 @@ import java.nio.ByteBuffer;
  *  - aceptar (firma de la skin y dominio de la textura: que valgan las de NexLauncher aunque juegues premium):
  *      nop nop nop; aload_s; invokestatic Hooks.firma|dominio; ifeq +5; iconst_1; ireturn          (12 bytes)
  *    con un marco nuevo (same_frame) en el 12, donde sigue el código original.
+ *  - unido (hasJoinedServer: tu mundo LAN pregunta si quien entra es de verdad esa cuenta):
+ *      aload_0 aload_1 aload_2; invokestatic Hooks.unido; ifeq +10; invokestatic Hooks.unidoResultado;
+ *      checkcast GameProfile|ProfileResult; areturn                                                  (16 bytes)
+ *    con same_frame en el 16. NexLauncher responde por el anfitrión (cuenta premium real, o con «dejar entrar
+ *    no premium» el perfil offline); si no responde, sigue el código original (Mojang).
  * Los dos miden un múltiplo de 4 (los tableswitch quedan alineados); se corren los offsets que dependen del código.
  */
 final class Parche {
@@ -21,7 +26,7 @@ final class Parche {
             // authlib 5+ (Minecraft 1.20.2 en adelante)
             {"getPackedTextures", "(Lcom/mojang/authlib/GameProfile;)Lcom/mojang/authlib/properties/Property;"},
     };
-    private static final int N_PERFIL = 8, N_ACEPTAR = 12;
+    private static final int N_PERFIL = 8, N_ACEPTAR = 12, N_UNIDO = 16;
     /** Solo para pruebas: elegir otros métodos (el checkcast usa el tipo del primer parámetro). */
     static java.util.function.BiPredicate<String, String> prueba;
     static String tipoPrueba;
@@ -70,6 +75,8 @@ final class Parche {
         int uHooks = k++, cHooks = k++, uNom = k++, uDesc = k++, nt = k++, mref = k++, uGp = k++, cGp = k++;
         int uDescZ = k++, uFirma = k++, ntFirma = k++, mFirma = k++, uDescS = k++, uDominio = k++, ntDominio = k++,
                 mDominio = k++, uSmt = k++, uProp = k++, cProp = k++, uPropNom = k++, ntProp = k++, mProp = k++;
+        int uUnido = k++, uDescU = k++, ntUnido = k++, mUnido = k++, uRes = k++, uDescR = k++, ntRes = k++, mRes = k++,
+                uPr = k++, cPr = k++, uGp2 = k++, cGp2 = k++;
         ByteArrayOutputStream extra = new ByteArrayOutputStream();
         DataOutputStream e = new DataOutputStream(extra);
         e.writeByte(1); e.writeUTF("nexlauncher/agente/Hooks");
@@ -94,6 +101,18 @@ final class Parche {
         e.writeByte(1); e.writeUTF("propiedad");
         e.writeByte(12); e.writeShort(uPropNom); e.writeShort(uDesc);
         e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntProp);
+        e.writeByte(1); e.writeUTF("unido");
+        e.writeByte(1); e.writeUTF("(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Z");
+        e.writeByte(12); e.writeShort(uUnido); e.writeShort(uDescU);
+        e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntUnido);
+        e.writeByte(1); e.writeUTF("unidoResultado");
+        e.writeByte(1); e.writeUTF("()Ljava/lang/Object;");
+        e.writeByte(12); e.writeShort(uRes); e.writeShort(uDescR);
+        e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntRes);
+        e.writeByte(1); e.writeUTF("com/mojang/authlib/yggdrasil/ProfileResult");
+        e.writeByte(7); e.writeShort(uPr);
+        e.writeByte(1); e.writeUTF("com/mojang/authlib/GameProfile");  // cGp puede ser el tipo de prueba
+        e.writeByte(7); e.writeShort(uGp2);
         if (k > 0xffff) {
             throw new IOException("pool lleno");
         }
@@ -133,6 +152,8 @@ final class Parche {
                     : elegido(utf[nom], utf[desc]));
             // aceptar: 0 = no; si no, el método del Hook y en qué variable viene lo que se revisa
             int aceptar = elegido ? 0 : aceptar(utf[nom], utf[desc], estatico, mFirma, mDominio);
+            // unido: 0 = no; si no, la clase del checkcast (lo que devuelve hasJoinedServer en esa authlib)
+            int unido = elegido || aceptar != 0 || estatico ? 0 : unido(utf[nom], utf[desc], cGp2, cPr);
             int slot = estatico ? 0 : 1;
             if ("isSignatureValid".equals(utf[nom])) {
                 slot = 0;  // Property.isSignatureValid(PublicKey): la propiedad es «this»
@@ -149,13 +170,20 @@ final class Parche {
                 b.get(dato);
                 if (elegido && "Code".equals(utf[an])) {
                     boolean prop = prueba == null && utf[desc].startsWith("(Lcom/mojang/authlib/properties/Property;");
-                    dato = codigo(dato, utf, prop ? insercionProp : insercion, N_PERFIL, -1);
+                    dato = codigo(dato, utf, prop ? insercionProp : insercion, N_PERFIL, -1, 1);
                     cambiados++;
                     CAMBIADOS.add(utf[nom]);
                 } else if (aceptar != 0 && "Code".equals(utf[an])) {
                     byte[] ins = {0, 0, 0, (byte) (slot == 0 ? 0x2a : 0x2b), (byte) 0xb8, (byte) (aceptar >> 8),
                             (byte) aceptar, (byte) 0x99, 0, 5, 0x04, (byte) 0xac};
-                    dato = codigo(dato, utf, ins, N_ACEPTAR, version >= 50 ? uSmt : -1);
+                    dato = codigo(dato, utf, ins, N_ACEPTAR, version >= 50 ? uSmt : -1, 1);
+                    cambiados++;
+                    CAMBIADOS.add(utf[nom]);
+                } else if (unido != 0 && "Code".equals(utf[an])) {
+                    byte[] ins = {0x2a, 0x2b, 0x2c, (byte) 0xb8, (byte) (mUnido >> 8), (byte) mUnido,
+                            (byte) 0x99, 0, 10, (byte) 0xb8, (byte) (mRes >> 8), (byte) mRes,
+                            (byte) 0xc0, (byte) (unido >> 8), (byte) unido, (byte) 0xb0};
+                    dato = codigo(dato, utf, ins, N_UNIDO, version >= 50 ? uSmt : -1, 3);
                     cambiados++;
                     CAMBIADOS.add(utf[nom]);
                 }
@@ -204,6 +232,27 @@ final class Parche {
         return 0;
     }
 
+    /** pruebas: aplicar «unido» a otro método con la misma forma */
+    static java.util.function.BiPredicate<String, String> pruebaUnido;
+
+    /**
+     * hasJoinedServer de YggdrasilMinecraftSessionService (y la de 26.3+): authlib 1.x (GameProfile, String),
+     * 2.x–3.x (GameProfile, String, InetAddress) -> GameProfile; 4+ (String, String, InetAddress) -> ProfileResult.
+     */
+    private static int unido(String nombre, String desc, int cGp, int cPr) {
+        if (pruebaUnido != null ? !pruebaUnido.test(nombre, desc) : !"hasJoinedServer".equals(nombre)) {
+            return 0;
+        }
+        String args = desc.substring(1, desc.indexOf(')'));
+        if (!args.matches("(Lcom/mojang/authlib/GameProfile;|Ljava/lang/String;)Ljava/lang/String;(Ljava/net/InetAddress;)?")) {
+            return 0;  // forma desconocida: no se toca
+        }
+        if (desc.endsWith(")Lcom/mojang/authlib/GameProfile;")) {
+            return cGp;
+        }
+        return desc.endsWith(")Lcom/mojang/authlib/yggdrasil/ProfileResult;") ? cPr : 0;
+    }
+
     private static void saltarAtributos(ByteBuffer b) {
         int n = b.getShort() & 0xffff;
         for (int i = 0; i < n; i++) {
@@ -214,7 +263,7 @@ final class Parche {
     }
 
     /** uSmt >= 0: el código insertado salta al original (offset n), que necesita su propio marco. */
-    private static byte[] codigo(byte[] d, String[] utf, byte[] ins, int nIns, int uSmt) throws IOException {
+    private static byte[] codigo(byte[] d, String[] utf, byte[] ins, int nIns, int uSmt, int pila) throws IOException {
         int N = nIns;
         ByteBuffer b = ByteBuffer.wrap(d);
         int maxStack = b.getShort() & 0xffff;
@@ -224,7 +273,7 @@ final class Parche {
         b.get(code);
         ByteArrayOutputStream out = new ByteArrayOutputStream(d.length + 32);
         DataOutputStream o = new DataOutputStream(out);
-        o.writeShort(Math.max(maxStack, 1));
+        o.writeShort(Math.max(maxStack, pila));
         o.writeShort(Math.max(maxLocals, uSmt >= 0 ? 1 : 2));
         o.writeInt(largo + N);
         o.write(ins);
