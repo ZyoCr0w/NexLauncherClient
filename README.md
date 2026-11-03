@@ -1,30 +1,33 @@
-# NexClient
+# Agente de skins de NexLauncher
 
-Mod PvP de [NexLauncher](https://github.com/ZyoCr0w/NexLauncherUpdates) para **Forge 1.8.9** y **Fabric 1.21.1**.
+Java agent (`-javaagent`) que NexLauncher agrega al abrir el juego, con cuenta no premium (junto a
+authlib-injector) y premium (solo). Cuando un servidor manda a un jugador sin skin, o con una skin que apunta
+al launcher de otra PC (`http://127.0.0.1:otro-puerto`), authlib le pregunta a NexLauncher
+(`-Dnexlauncher.skins`), que la busca en NexSkins (y si no, la de la cuenta premium con ese nombre).
+Además hace que authlib acepte las skins firmadas con la clave común de NexLauncher y los dominios de
+`-Dnexlauncher.dominios`, así un jugador premium también ve las skins de sus amigos no premium.
+Funciona en cualquier versión de Minecraft (también 26.3+, con `com.mojang.authlib.services`), también Vanilla.
 
-| Función | 1.8.9 | 1.21.1 |
-|---|---|---|
-| Teclas en pantalla (WASD, LMB/RMB con CPS, espacio) | ✓ | ✓ |
-| Contador de CPS y de FPS | ✓ | ✓ |
-| Editor para mover el HUD | ✓ | ✓ |
-| Blockhit visual (pose de bloqueo de espada) | nativo | ✓ |
-| Animación de blockhit estilo 1.7 | ✓ | ✓ |
-| Sonido de blockhit (6 sonidos, volumen y tono) | ✓ | ✓ |
-| Multiplicador de partículas (x1–x10, siempre crítico / filo) | ✓ | ✓ |
+- `Agente` + `Parche`: editor mínimo de `.class` sin dependencias. Al principio de
+  `YggdrasilMinecraftSessionService.getTextures` (authlib 1–3) y `getPackedTextures` (authlib 5+) agrega
+  `aload_1; invokestatic Hooks.preparar; checkcast GameProfile; astore_1` y corre offsets, excepciones,
+  tablas de líneas/variables y StackMapTable (incluidos los `Uninitialized`).
+- Al principio de `Property.isSignatureValid`, `*.validateProperty(Property)` e
+  `isWhitelistedDomain`/`isAllowedTextureDomain(String)` agrega
+  `nop×3; aload_s; invokestatic Hooks.firma|dominio; ifeq +5; iconst_1; ireturn` con un marco nuevo
+  (`same_frame`) donde sigue el código original; si el método no tenía StackMapTable, la crea.
+- Al principio de `hasJoinedServer` (authlib 1.x: `(GameProfile, String)`; 2–3: `+InetAddress` → `GameProfile`;
+  4+: `(String, String, InetAddress)` → `ProfileResult`) agrega
+  `aload_0 aload_1 aload_2; invokestatic Hooks.unido; ifeq +10; invokestatic Hooks.unidoResultado; checkcast; areturn`
+  (16 bytes, `same_frame` en el 16): tu mundo LAN le pregunta a NexLauncher quién entra (Mojang primero; con
+  «Dejar entrar no premium», el perfil offline). Así un anfitrión premium deja entrar amigos no premium en
+  cualquier versión, también sin NexClient (Forge/NeoForge). Si NexLauncher no responde, sigue authlib.
+- `Hooks` (jar aparte, va al cargador de arranque): devuelve el perfil con la skin de NexLauncher si el
+  servidor no mandó ninguna. Solo usa clases de Java y reflexión; cualquier error deja el perfil igual.
+- `prueba/Masiva2.java`: lo mismo con el cambio «aceptar» (métodos `(Objeto)Z`).
+- `prueba/v3`: authlib de prueba con la forma de Minecraft 26.3 (`MinecraftServicesKeyInfo`, etc.).
+- `prueba/Masiva.java`: aplica el parche a miles de clases reales (guava, commons-lang, groovy, kotlin) y
+  las verifica con `-Xverify:all`.
+- `nexskins-worker.js`: el servidor NexSkins (Cloudflare Workers + KV).
 
-**Menú:** Shift derecho dentro del juego. Los ajustes se guardan en `.minecraft/config/nexclient.json`
-(el mismo archivo para las dos versiones; NexLauncher también lo edita desde Ajustes → PvP).
-
-La versión 1.21.1 necesita **Fabric API**.
-
-## Compilar
-
-GitHub Actions compila las dos versiones en cada push. Para publicar un release:
-
-```
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-En tu PC: `cd forge-1.8.9 && gradlew build` (Java 17) o `cd fabric-1.21.1 && gradlew build` (Java 25 para compilar; el mod funciona con Java 21).
-El `.jar` queda en `build/libs/`.
+Compilar: `sh build.sh` (deja `build/nexskins-agente.jar` y `build/nexskins-hooks.jar`).

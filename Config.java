@@ -1,0 +1,455 @@
+package com.nexclient;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Ajustes de NexClient. El mismo archivo (.minecraft/config/nexclient.json) lo usan la versión 1.8.9,
+ * la 1.21.1 y NexLauncher, así que se configura una sola vez.
+ */
+public class Config {
+    // ---- HUD: teclas
+    public boolean teclas = true;
+    public int teclasX = 6, teclasY = 6;
+    public float teclasEscala = 1.0f;
+    public boolean teclasCps = true;
+    public boolean teclasRaton = true;
+    public boolean teclasEspacio = true;
+    public boolean cps = false;
+    public int cpsX = 6, cpsY = 100;
+    public boolean fps = false;
+    /** Versión anterior: FPS, CPS y ping sin texto (ahora cada uno tiene el suyo; se usa solo para migrar). */
+    public boolean soloNumeros = false;
+    /** La palabra de cada contador: «FPS», «CPS» y «ms». null = todavía no se eligió (sale de soloNumeros). */
+    public Boolean textoFps, textoCps, textoPing;
+    public int fpsX = 6, fpsY = 114;
+
+    // ---- HUD: información
+    public boolean coords = false;
+    public boolean coordsDireccion = true;
+    public boolean ping = false;
+    public boolean reloj = false;
+    public boolean reloj24 = true;
+    public boolean velocidad = false;
+    public boolean combo = false;
+    public boolean alcance = false;
+    public boolean estado = false;
+    public boolean pociones = false;
+    public boolean armadura = false;
+    /** Posición de cada elemento nuevo: id -> {x, y}. Una x enorme lo pega al borde derecho. */
+    public Map<String, int[]> pos = new HashMap<String, int[]>();
+    /** Ancla de cada elemento movido en el editor: {izq/centro/der, arriba/medio/abajo, distancia x, distancia y}. */
+    public Map<String, int[]> anclas = new HashMap<String, int[]>();
+    /** Cuadrícula del editor del HUD: 0 sin cuadrícula, o su tamaño en píxeles. */
+    public int rejilla = 0;
+    public boolean hudFondo = true;
+    public boolean hudSombra = true;
+    public int hudColor = 0;
+    /** Estilo propio de cada elemento del HUD (se crea con los valores generales de arriba). */
+    public Map<String, Estilo> estilos = new HashMap<String, Estilo>();
+    /** Mods extra elegidos en el juego, por versión ("1.8.9", "1.21.1"); NexLauncher los instala al jugar. */
+    public Map<String, List<String>> extras = new HashMap<String, List<String>>();
+
+    public static class Estilo {
+        public float escala = 1.0f;
+        /** Opacidad del fondo, 0–100 %. */
+        public int fondo = 40;
+        public boolean sombra = true;
+        public int colorTexto = 0;
+        public boolean borde = false;
+        public int colorBorde = 0;
+        /** Texto arcoíris (chroma): cada letra cambia de color con el tiempo. */
+        public boolean arcoiris = false;
+    }
+
+    // ---- Blockhit
+    public boolean blockhit = true;
+    /** true: la espada se sigue moviendo al golpear mientras bloqueas (como en 1.7). */
+    public boolean estilo17 = true;
+    /** Animación de 1.7 también al comer o beber: el brazo sigue golpeando (sin sonido de blockhit). */
+    public boolean blockhitComida = true;
+    /** Al mantener el clic izquierdo mientras bloqueas o comes, el brazo repite el golpe (como spam de clics). */
+    public boolean blockhitMantener = true;
+    /** 1.21: al bloquear con espada no se dibuja el escudo de la otra mano. */
+    public boolean ocultarEscudo = true;
+    public boolean sonido = true;
+    public String sonidoId = "metal";
+    public float volumen = 1.0f;
+    public float tono = 1.0f;
+    /** Versión anterior: true = sonaba en cada golpe (se usa solo para migrar a sonidoCuando). */
+    public boolean sonidoCadaGolpe = false;
+    /** Cuándo suena: 0 al recibir daño mientras bloqueas con la espada, 1 al golpear bloqueando, 2 en cada golpe. */
+    public Integer sonidoCuando;
+
+    // ---- Partículas
+    public boolean particulas = true;
+    public int multiplicador = 2;
+    public boolean siempreCritico = false;
+    public boolean siempreFilo = false;
+
+    // ---- Juego
+    public boolean toggleSprint = false;
+    public boolean toggleSneak = false;
+    public boolean zoom = true;
+    public float zoomFactor = 4.0f;
+    public boolean zoomSuave = true;
+    public boolean fullbright = false;
+    public boolean ocultarFuego = false;
+    public boolean tiempoFijo = false;
+    public int hora = 6000;
+    public boolean despejado = false;
+    /** Vista libre (tecla R): 0 apagada, 1 mientras mantienes la tecla, 2 la tecla la prende y apaga. */
+    public int vistaLibre = 1;
+    /** Ping de cada jugador en números en la lista del Tab. */
+    public boolean pingTab = true;
+    /** Al abrir el mundo en LAN (Jugar con amigos de NexLauncher), dejar entrar cuentas no premium. */
+    public boolean lanSinPremium = true;
+    /** Autotexto: al terminar una partida se manda este mensaje solo (o un comando si empieza con /). */
+    public boolean autoTexto = false;
+    public String autoTextoMensaje = "gg";
+    /** Frases del chat que anuncian el final de una partida (se pueden editar en nexclient.json). */
+    public List<String> autoTextoFrases;
+
+    // ---- Mira y color de golpe
+    public boolean mira = false;
+    public int miraEstilo = 1;
+    public int miraTamano = 5;
+    public int miraGrosor = 1;
+    public int miraHueco = 2;
+    public int miraColor = 0;
+    public boolean miraBorde = true;
+    /** Color de la mira (RGB). -1 = todavía no se eligió: se toma el de la lista de colores de antes. */
+    public int miraRGB = -1;
+    public int miraOpacidad = 100;
+    public int miraBordeRGB = 0x000000;
+    public int miraBordeGrosor = 1;
+    public boolean miraArcoiris = false;
+    /** Se abre al moverte rápido o saltar. */
+    public boolean miraDinamica = false;
+    /** Cambia de color al apuntar a un jugador. */
+    public boolean miraObjetivo = false;
+    public int miraObjetivoRGB = 0xFF5555;
+    /** Destello blanco al golpear. */
+    public boolean miraDestello = false;
+    /** También en tercera persona. */
+    public boolean miraTercera = false;
+    /** Se oculta mientras tensas el arco. */
+    public boolean miraOcultarArco = false;
+    /** Mira propia: 15 × 15 píxeles, '1' = pintado. */
+    public String miraPixeles = "";
+    /** Miras guardadas (códigos NXM1:…), hasta 5. */
+    public List<String> miraRanuras = new ArrayList<String>();
+    public boolean colorGolpe = false;
+    public int colorGolpeIdx = 1;
+
+    // ---- Cosméticos y etiquetas de NexLauncher (perfiles PvP)
+    /** Línea encima del nombre de los jugadores de NexLauncher (NEXLAUNCHER, o la de su rango). */
+    public boolean etiquetas = true;
+    /** Tu propio nombre (y tu etiqueta) encima de tu cabeza en tercera persona (F5). */
+    public boolean nombrePropio = true;
+    /** Temas de temporada en los menús (Halloween, Día de Muertos, Fiestas Patrias y Navidad). */
+    public boolean temaTemporada = true;
+    /** Cosméticos que se ven: 0 los de todos, 1 solo los míos, 2 ninguno. */
+    public int cosmeticosVer = 0;
+
+    // ---- Visual
+    /** Menú principal y de pausa propios de NexClient (si no, los de Minecraft o del paquete de texturas). */
+    public boolean menuNex = true;
+    /** Saturación del color del juego en %: 100 normal, 0 blanco y negro, 200 colores muy vivos. */
+    public int saturacion = 100;
+    public boolean contorno = false;
+    public int contornoColor = 0;
+    public float contornoGrosor = 2.0f;
+
+    public static final String[] SONIDOS = {"metal", "escudo", "golpe", "orbe", "pling", "click"};
+    public static final String[] NOMBRES = {"Metal", "Escudo", "Golpe", "Experiencia", "Pling", "Click"};
+    public static final String[] MODOS_VISTA = {"Apagada", "Mantener R", "Alternar R"};
+    public static final String[] MODOS_SONIDO = {"Al recibir daño", "Al golpear", "En cada golpe"};
+    /** Finales de partida de los servidores PvP más comunes (Hypixel, minijuegos en español…). */
+    public static final String[] FRASES_FIN = {"1st Killer -", "1st Place -", "Winner:", "Winners:", "Winning Team -",
+            "Winning Team:", "Winners -", " won the game!", "Top Survivors", "Your Overall Winstreak:", "Victory!",
+            "VICTORY!", "You won", "Ganador:", "Ganadores:", "Ganador -", "¡Victoria!", "ha ganado la partida",
+            "han ganado la partida", "Ganaste la partida", "¡Has ganado!"};
+    public static final String[] ESTILOS_MIRA = Miras.ESTILOS;
+    public static final int[] COLORES = {0xFFFFFFFF, 0xFF55FFFF, 0xFF55FF55, 0xFFFFFF55, 0xFFFF5555, 0xFFFF55FF,
+            0xFFFFAA00, 0xFF5555FF, 0xFF000000};
+    public static final String[] NOMBRES_COLOR = {"Blanco", "Aqua", "Verde", "Amarillo", "Rojo", "Rosa", "Naranja",
+            "Azul", "Negro"};
+
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static Config actual = new Config();
+    private static File archivo;
+    private static long modificado;
+
+    public static Config get() {
+        return actual;
+    }
+
+    public static void cargar(File f) {
+        archivo = f;
+        Config c = null;
+        if (f.isFile()) {
+            try (Reader r = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)) {
+                c = GSON.fromJson(r, Config.class);
+            } catch (Exception e) {
+                System.err.println("[NexClient] nexclient.json ilegible, se usan los valores por defecto: " + e);
+            }
+            modificado = f.lastModified();
+        }
+        actual = c != null ? c : new Config();
+        actual.limitar();
+    }
+
+    /** Si NexLauncher cambió el archivo con el juego abierto, se vuelve a leer. */
+    public static void recargarSiCambio() {
+        if (archivo != null && archivo.isFile() && archivo.lastModified() != modificado) {
+            cargar(archivo);
+        }
+    }
+
+    public void guardar() {
+        if (archivo == null) {
+            return;
+        }
+        limitar();
+        try {
+            File carpeta = archivo.getParentFile();
+            if (carpeta != null) {
+                carpeta.mkdirs();
+            }
+            File tmp = new File(archivo.getPath() + ".tmp");
+            try (Writer w = new OutputStreamWriter(new FileOutputStream(tmp), StandardCharsets.UTF_8)) {
+                GSON.toJson(this, w);
+            }
+            if (!tmp.renameTo(archivo)) {
+                archivo.delete();
+                tmp.renameTo(archivo);
+            }
+            modificado = archivo.lastModified();
+        } catch (Exception e) {
+            System.err.println("[NexClient] No se pudo guardar nexclient.json: " + e);
+        }
+    }
+
+    private void limitar() {
+        teclasEscala = Math.max(0.5f, Math.min(2.5f, teclasEscala));
+        multiplicador = Math.max(1, Math.min(10, multiplicador));
+        volumen = Math.max(0f, Math.min(2f, volumen));
+        tono = Math.max(0.5f, Math.min(2f, tono));
+        zoomFactor = Math.max(1.5f, Math.min(15f, zoomFactor));
+        hora = Math.max(0, Math.min(23999, hora));
+        vistaLibre = Math.max(0, Math.min(2, vistaLibre));
+        contornoGrosor = Math.max(1f, Math.min(8f, contornoGrosor));
+        cosmeticosVer = Math.max(0, Math.min(2, cosmeticosVer));
+        miraColor = Math.max(0, Math.min(COLORES.length - 1, miraColor));
+        limitarMira();
+        colorGolpeIdx = Math.max(0, Math.min(COLORES.length - 1, colorGolpeIdx));
+        hudColor = Math.max(0, Math.min(COLORES.length - 1, hudColor));
+        contornoColor = Math.max(0, Math.min(COLORES.length - 1, contornoColor));
+        if (pos == null) {
+            pos = new HashMap<String, int[]>();
+        }
+        if (anclas == null) {
+            anclas = new HashMap<String, int[]>();
+        }
+        rejilla = Math.max(0, Math.min(40, rejilla));
+        if (estilos == null) {
+            estilos = new HashMap<String, Estilo>();
+        }
+        if (extras == null) {
+            extras = new HashMap<String, List<String>>();
+        }
+        for (Estilo e : estilos.values()) {
+            if (e != null) {
+                e.escala = Math.max(0.5f, Math.min(3f, e.escala));
+                e.fondo = Math.max(0, Math.min(100, e.fondo));
+                e.colorTexto = Math.max(0, Math.min(COLORES.length - 1, e.colorTexto));
+                e.colorBorde = Math.max(0, Math.min(COLORES.length - 1, e.colorBorde));
+            }
+        }
+        if (indiceSonido(sonidoId) < 0) {
+            sonidoId = "metal";
+        }
+        if (textoFps == null) {
+            textoFps = !soloNumeros;
+        }
+        if (textoCps == null) {
+            textoCps = !soloNumeros;
+        }
+        if (textoPing == null) {
+            textoPing = !soloNumeros;
+        }
+        if (sonidoCuando == null) {
+            sonidoCuando = sonidoCadaGolpe ? 2 : 0;
+        }
+        sonidoCuando = Math.max(0, Math.min(MODOS_SONIDO.length - 1, sonidoCuando));
+        saturacion = Math.max(0, Math.min(200, saturacion));
+        if (autoTextoMensaje == null) {
+            autoTextoMensaje = "gg";
+        }
+        if (autoTextoMensaje.length() > 100) {
+            autoTextoMensaje = autoTextoMensaje.substring(0, 100);
+        }
+        if (autoTextoFrases == null || autoTextoFrases.isEmpty()) {
+            autoTextoFrases = new ArrayList<String>(java.util.Arrays.asList(FRASES_FIN));
+        }
+    }
+
+    /** ¿Se escribe la palabra después del número? (FPS, CPS, ms) */
+    public boolean conTextoFps() {
+        return textoFps == null || textoFps;
+    }
+
+    public boolean conTextoCps() {
+        return textoCps == null || textoCps;
+    }
+
+    public boolean conTextoPing() {
+        return textoPing == null || textoPing;
+    }
+
+    public int cuandoSuena() {
+        return sonidoCuando == null ? 0 : sonidoCuando;
+    }
+
+    public void limitarMira() {
+        miraEstilo = Math.max(0, Math.min(ESTILOS_MIRA.length - 1, miraEstilo));
+        miraTamano = Math.max(1, Math.min(20, miraTamano));
+        miraGrosor = Math.max(1, Math.min(6, miraGrosor));
+        miraHueco = Math.max(0, Math.min(12, miraHueco));
+        if (miraRGB < 0) {
+            miraRGB = COLORES[Math.max(0, Math.min(COLORES.length - 1, miraColor))] & 0xFFFFFF;
+        }
+        miraRGB &= 0xFFFFFF;
+        miraBordeRGB &= 0xFFFFFF;
+        miraObjetivoRGB &= 0xFFFFFF;
+        miraOpacidad = Math.max(10, Math.min(100, miraOpacidad));
+        miraBordeGrosor = Math.max(1, Math.min(3, miraBordeGrosor));
+        if (miraPixeles == null || miraPixeles.length() != Miras.LADO * Miras.LADO) {
+            StringBuilder b = new StringBuilder();
+            for (int i = 0; i < Miras.LADO * Miras.LADO; i++) {
+                int x = i % Miras.LADO - 7, y = i / Miras.LADO - 7;
+                // de inicio, una cruz pequeña con hueco (para que no empiece en blanco)
+                b.append((x == 0 && Math.abs(y) >= 2 && Math.abs(y) <= 5) || (y == 0 && Math.abs(x) >= 2 && Math.abs(x) <= 5) ? '1' : '0');
+            }
+            miraPixeles = b.toString();
+        }
+        if (miraRanuras == null) {
+            miraRanuras = new ArrayList<String>();
+        }
+        while (miraRanuras.size() > 5) {
+            miraRanuras.remove(miraRanuras.size() - 1);
+        }
+    }
+
+    public static int indiceSonido(String id) {
+        for (int i = 0; i < SONIDOS.length; i++) {
+            if (SONIDOS[i].equals(id)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public static String nombreSonido(String id) {
+        int i = indiceSonido(id);
+        return i < 0 ? id : NOMBRES[i];
+    }
+
+    // ---- deshacer / rehacer en el editor del HUD: se guarda solo lo que el editor cambia
+    private static final class HudGuardado {
+        Map<String, int[]> pos, anclas;
+        Map<String, Estilo> estilos;
+        int teclasX, teclasY, cpsX, cpsY, fpsX, fpsY;
+        float teclasEscala;
+        boolean[] activos;
+    }
+
+    public String instantaneaHud(boolean[] activos) {
+        HudGuardado h = new HudGuardado();
+        h.pos = pos;
+        h.anclas = anclas;
+        h.estilos = estilos;
+        h.teclasX = teclasX;
+        h.teclasY = teclasY;
+        h.cpsX = cpsX;
+        h.cpsY = cpsY;
+        h.fpsX = fpsX;
+        h.fpsY = fpsY;
+        h.teclasEscala = teclasEscala;
+        h.activos = activos;
+        return GSON.toJson(h);
+    }
+
+    /** Vuelve a una instantánea; devuelve qué elementos estaban visibles (o null). */
+    public boolean[] restaurarHud(String texto) {
+        HudGuardado h = GSON.fromJson(texto, HudGuardado.class);
+        pos = h.pos;
+        anclas = h.anclas;
+        estilos = h.estilos;
+        teclasX = h.teclasX;
+        teclasY = h.teclasY;
+        cpsX = h.cpsX;
+        cpsY = h.cpsY;
+        fpsX = h.fpsX;
+        fpsY = h.fpsY;
+        teclasEscala = h.teclasEscala;
+        limitar();
+        return h.activos;
+    }
+
+    public int colorTexto() {
+        return COLORES[hudColor];
+    }
+
+    public Estilo estilo(String id) {
+        Estilo e = estilos.get(id);
+        if (e == null) {
+            e = new Estilo();
+            e.fondo = hudFondo ? 40 : 0;
+            e.sombra = hudSombra;
+            e.colorTexto = hudColor;
+            if (id.equals("teclas")) {
+                e.escala = teclasEscala;
+            }
+            estilos.put(id, e);
+        }
+        return e;
+    }
+
+    /** Lista de mods extra de esa versión (null = todavía no se eligió: NexLauncher usa los recomendados). */
+    public List<String> extrasDe(String version) {
+        return extras.get(version);
+    }
+
+    public void ponerExtra(String version, String id, boolean activo, List<String> porDefecto) {
+        List<String> l = extras.get(version);
+        if (l == null) {
+            l = new ArrayList<String>(porDefecto);
+            extras.put(version, l);
+        }
+        l.remove(id);
+        if (activo) {
+            l.add(id);
+        }
+    }
+
+    /** Hora del juego (0–23999) como texto: 6000 -> 12:00. */
+    public static String textoHora(int ticks) {
+        int minutos = ((ticks + 6000) % 24000) * 60 / 1000;
+        return String.format("%02d:%02d", minutos / 60, minutos % 60);
+    }
+}
