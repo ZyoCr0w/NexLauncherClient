@@ -4,6 +4,8 @@ guarda cuáles consiguió cada cuenta; los creadores tienen todos).
   muertos  (25 oct – 3 nov):            alebrijes de mascota y corona de cempasúchil
   patrias  (1 – 16 sep y 4 – 20 nov):   águila de mascota, sombrero de charro, sarape, maracas y jarrito
   navidad  (1 dic – 6 ene):             Rodolfo el reno, gorro navideño, cuernos de reno, bufanda, bastón de dulce y nieve
+  halloween (1 – 24 oct; NexClient 4.10): calabaza en la cabeza, sombrero de bruja, capa de vampiro, murciélago de
+                                         mascota, calabacita en la mano y aura de murciélagos
 
 Categorías nuevas:
   mascota: hueso «jugador» (no gira con el cuerpo): flota junto al hombro izquierdo.
@@ -11,6 +13,8 @@ Categorías nuevas:
            x de -1 a 3, z de -2 a 2; el puño está en (1, 10, 0) y lo que se agarra apunta al frente (-Z).
 """
 import math
+
+from nuevos import capa_modelo
 
 
 def anim(**k):
@@ -478,6 +482,112 @@ def mascotas():
     }
 
 
+
+# ---------------------------------------------------------------- Halloween (1 – 24 oct)
+def calabaza():
+    """Calabaza tallada que cubre la cabeza (como la de Minecraft), con cara que brilla y tallo que se mece."""
+    nar, nar2, nar3, luz, tallo = "#FF7518", "#E8650F", "#C9530A", "#FFD54A", "#3E7D2C"
+    piezas = [caja(-5.0, -9.6, -5.0, 10.0, 10.0, 10.0, nar)]
+    for x in (-3.6, -0.6, 2.4):  # gajos: franjas un poco más oscuras en las 4 caras
+        piezas += [caja(x, -9.7, -5.1, 1.2, 10.2, 0.2, nar2), caja(x, -9.7, 4.9, 1.2, 10.2, 0.2, nar2),
+                   caja(-5.1, -9.7, x, 0.2, 10.2, 1.2, nar2), caja(4.9, -9.7, x, 0.2, 10.2, 1.2, nar2)]
+    piezas.append(caja(-5.05, -9.65, -5.05, 10.1, 0.4, 10.1, nar3))   # tapa
+    cara = []
+    for x in (-3.6, 1.0):                                              # ojos triangulares
+        cara += [caja(x, -6.6, -5.25, 2.6, 0.9, 0.3, luz), caja(x + 0.5, -7.4, -5.25, 1.6, 0.8, 0.3, luz),
+                 caja(x + 0.9, -8.0, -5.25, 0.8, 0.6, 0.3, luz)]
+    cara += [caja(-0.6, -5.4, -5.25, 1.2, 1.0, 0.3, luz)]               # nariz
+    for k, x in enumerate((-3.8, -2.0, -0.4, 1.2, 2.8)):               # boca con dientes
+        cara.append(caja(x, -3.4 + (0.6 if k % 2 else 0), -5.25, 1.6, 1.4 - (0.6 if k % 2 else 0), 0.3, luz))
+    cara.append(caja(-3.8, -2.4, -5.25, 7.6, 0.6, 0.3, luz))
+    return {"hueso": "cabeza", "grupos": [
+        {"id": "calabaza", "piezas": piezas},
+        {"id": "cara", "piezas": [dict(p, brillo=True, parpadeo={"frec": 1.7, "min": 0.55}) for p in cara]},
+        {"id": "tallo", "pivote": [0, -9.6, 0], "rot": [0, 0, 8], "anim": {"rz": anim(amp=6, frec=0.7, mov=-5)},
+         "piezas": [caja(-0.7, -2.2, -0.7, 1.4, 2.4, 1.4, tallo), caja(-0.5, -2.6, -0.5, 2.2, 0.6, 1.0, tallo)]}]}
+
+
+def sombrero_bruja():
+    negro, negro2, morado, hebilla = "#17121F", "#231A30", "#7B2FBE", "#FFC21A"
+    grupos = [{"id": "ala", "piezas": [caja(-7.5, -8.8, -7.5, 15.0, 0.6, 15.0, negro),
+                                       caja(-5.0, -9.6, -5.0, 10.0, 1.0, 10.0, morado),          # cinta
+                                       caja(-1.2, -9.7, -5.15, 2.4, 1.2, 0.3, hebilla, brillo=True)]},
+              {"id": "c1", "pivote": [0, -9.4, 0], "piezas": [caja(-4.6, -3.0, -4.6, 9.2, 3.2, 9.2, negro2)]}]
+    padre = "c1"
+    for k, (t, rx) in enumerate([(7.0, -10), (5.2, -16), (3.4, -22), (1.8, -28)]):   # punta que se dobla hacia atrás
+        gid = "c%d" % (k + 2)
+        grupos.append({"id": gid, "padre": padre, "pivote": [0, -2.8, 0], "rot": [rx, 0, 4],
+                       "anim": {"rx": anim(amp=3 + k, frec=0.45, fase=k * 0.5, mov=6 + k * 2, aire=-5)},
+                       "piezas": [caja(-t / 2, -3.0, -t / 2, t, 3.2, t, negro if k % 2 else negro2)]})
+        padre = gid
+    return {"hueso": "cabeza", "grupos": grupos}
+
+
+def capa_vampiro():
+    """Capa larga negra por fuera, roja por dentro, con cuello alto: la tela ondea como las capas 3D."""
+    dibujo = []
+    for j in range(16):
+        f = ""
+        for i in range(10):
+            borde = i in (0, 9) or j == 15
+            f += "r" if borde else ("n" if (i + j) % 7 else "m")
+        dibujo.append(f)
+    c = capa_modelo(dibujo, {"n": "#0D0B10", "m": "#1A1420", "r": "#8B0000"}, brillan=(), cuello="#B00020")
+    c["grupos"][0]["piezas"] += [caja(-5.4, -3.2, -0.2, 0.8, 3.0, 1.2, "#B00020"),      # cuello alto (picos)
+                                 caja(4.6, -3.2, -0.2, 0.8, 3.0, 1.2, "#B00020"),
+                                 caja(-5.4, -3.6, 0.6, 10.8, 3.4, 0.4, "#2A0008")]
+    return c
+
+
+def murcielago():
+    cuerpo, ala, ala2, ojo, colmillo = "#2B2233", "#3A2E45", "#4B3B5C", "#FF3B30", "#FFFFFF"
+    piezas = [caja(-1.4, -1.6, -1.4, 2.8, 3.2, 2.8, cuerpo),
+              caja(-1.6, -3.8, -1.6, 3.2, 2.4, 3.0, cuerpo),                          # cabeza
+              caja(-1.4, -5.0, -0.6, 0.9, 1.4, 0.8, cuerpo), caja(0.5, -5.0, -0.6, 0.9, 1.4, 0.8, cuerpo),  # orejas
+              caja(-1.1, -3.2, -1.75, 0.7, 0.6, 0.2, ojo, brillo=True), caja(0.4, -3.2, -1.75, 0.7, 0.6, 0.2, ojo, brillo=True),
+              caja(-0.6, -1.8, -1.7, 0.3, 0.5, 0.2, colmillo), caja(0.3, -1.8, -1.7, 0.3, 0.5, 0.2, colmillo),
+              caja(-0.9, 1.6, -0.4, 0.6, 0.8, 0.6, cuerpo), caja(0.3, 1.6, -0.4, 0.6, 0.8, 0.6, cuerpo)]   # patitas
+    grupos = [{"id": "mascota", "pivote": MASCOTA,
+               "anim": {"y": anim(amp=2.0, frec=0.6), "ry": anim(amp=14, frec=0.2), "rx": anim(mov=-8, aire=-6)},
+               "piezas": piezas}]
+    for lado in (1, -1):                                   # alas de membrana que aletean rápido
+        filas = ["aaaaab", "aaaab.", "aab...", "ab...."]
+        filas = filas if lado > 0 else [f[::-1] for f in filas]
+        grupos.append({"id": "ala" + ("i" if lado > 0 else "d"), "padre": "mascota", "pivote": [1.4 * lado, -1.2, 0],
+                       "rot": [0, 0, -10 * lado], "anim": {"rz": anim(amp=42 * lado, frec=3.2)},
+                       "piezas": [{"pixeles": {"origen": [0 if lado > 0 else -6.0, 0, -2.0], "plano": "xz",
+                                               "filas": filas, "paleta": {"a": ala, "b": ala2}, "tam": 1.0,
+                                               "prof": 0.3}}]})
+    return {"hueso": "jugador", "grupos": grupos}
+
+
+def calabacita():
+    """Cubeta de calabaza para los dulces, en la mano."""
+    nar, luz, asa = "#FF7518", "#FFD54A", "#1C1C1C"
+    piezas = [caja(-1.4, 10.4, -3.4, 4.8, 4.0, 4.8, nar),
+              caja(-0.8, 11.2, -3.55, 1.0, 0.8, 0.2, luz, brillo=True), caja(1.8, 11.2, -3.55, 1.0, 0.8, 0.2, luz, brillo=True),
+              caja(-0.4, 12.8, -3.55, 2.8, 0.6, 0.2, luz, brillo=True),
+              caja(-1.0, 7.4, -1.2, 0.4, 3.2, 0.4, asa), caja(2.6, 7.4, -1.2, 0.4, 3.2, 0.4, asa),
+              caja(-1.0, 7.2, -1.2, 4.0, 0.4, 0.4, asa)]
+    # como las maracas: las piezas van relativas al pivote (el puño)
+    return {"hueso": "mano", "grupos": [{"id": "cubeta", "pivote": [1, 10, 0],
+                                         "anim": {"rx": anim(amp=6, frec=0.9, mov=10)},
+                                         "piezas": [dict(p, caja=[p["caja"][0] - 1, p["caja"][1] - 10] + p["caja"][2:])
+                                                    for p in piezas]}]}
+
+
+def aura_murcielagos():
+    """Murcielaguitos que dan vueltas alrededor del jugador."""
+    grupos = []
+    for k in range(5):
+        grupos.append({"id": "orbita%d" % k, "pivote": [0, -14 + k * 2.4, 0], "rot": [0, k * 72, 0],
+                       "anim": {"ry": anim(vel=55 + k * 9), "y": anim(amp=1.2, frec=0.5, fase=k)},
+                       "piezas": [caja(9.0, -0.5, -0.5, 1.0, 1.0, 1.0, "#2B2233"),
+                                  caja(7.6, -0.2, -0.3, 1.4, 0.3, 0.6, "#3A2E45"),
+                                  caja(10.0, -0.2, -0.3, 1.4, 0.3, 0.6, "#3A2E45"),
+                                  caja(9.2, -0.3, -0.6, 0.6, 0.25, 0.1, "#FF3B30", brillo=True)]})
+    return {"hueso": "jugador", "grupos": grupos}
+
 def festivos():
     c = {
         # Día de Muertos
@@ -499,9 +609,18 @@ def festivos():
         "bufanda_navidena": bufanda_navidena(),
         "baston_dulce": baston_dulce(),
         "nieve": nieve(),
+        # Halloween
+        "calabaza": calabaza(),
+        "sombrero_bruja": sombrero_bruja(),
+        "capa_vampiro": capa_vampiro(),
+        "murcielago": murcielago(),
+        "calabacita": calabacita(),
+        "aura_murcielagos": aura_murcielagos(),
     }
     temporadas = {"alebrije": "muertos", "alebrije_noche": "muertos", "corona_cempasuchil": "muertos",
                   "aguila": "patrias", "sombrero_charro": "patrias", "sarape": "patrias", "maracas": "patrias",
                   "jarrito": "patrias", "rodolfo": "navidad", "gorro_navideno": "navidad", "cuernos_reno": "navidad",
-                  "bufanda_navidena": "navidad", "baston_dulce": "navidad", "nieve": "navidad"}
+                  "bufanda_navidena": "navidad", "baston_dulce": "navidad", "nieve": "navidad",
+                  "calabaza": "halloween", "sombrero_bruja": "halloween", "capa_vampiro": "halloween",
+                  "murcielago": "halloween", "calabacita": "halloween", "aura_murcielagos": "halloween"}
     return {k: _temporada(v, temporadas[k]) for k, v in c.items()}
