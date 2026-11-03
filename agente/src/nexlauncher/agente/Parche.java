@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
  *    con un marco nuevo (same_frame) en el 12, donde sigue el código original.
  *  - unido (hasJoinedServer: tu mundo LAN pregunta si quien entra es de verdad esa cuenta):
  *      aload_0 aload_1 aload_2; invokestatic Hooks.unido; ifeq +10; invokestatic Hooks.unidoResultado;
- *      checkcast GameProfile|ProfileResult; areturn                                                  (16 bytes)
+ *      checkcast GameProfile|<lo que devuelva>; areturn                                              (16 bytes)
  *    con same_frame en el 16. NexLauncher responde por el anfitrión (cuenta premium real, o con «dejar entrar
  *    no premium» el perfil offline); si no responde, sigue el código original (Mojang).
  * Los dos miden un múltiplo de 4 (los tableswitch quedan alineados); se corren los offsets que dependen del código.
@@ -70,6 +70,13 @@ final class Parche {
             }
         }
         int finCp = b.position();
+        // hasJoinedServer puede devolver otro tipo en authlib nuevas (26.x+): se toma el de su descriptor
+        String resultado = "com/mojang/authlib/yggdrasil/ProfileResult";
+        for (String u : utf) {
+            if (u != null && u.matches(UNIDO_ARGS + "L[\\w/$]+;") && !u.endsWith(")Lcom/mojang/authlib/GameProfile;")) {
+                resultado = u.substring(u.indexOf(')') + 2, u.length() - 1);
+            }
+        }
         // Constantes nuevas al final del pool
         int k = nCp;
         int uHooks = k++, cHooks = k++, uNom = k++, uDesc = k++, nt = k++, mref = k++, uGp = k++, cGp = k++;
@@ -109,7 +116,7 @@ final class Parche {
         e.writeByte(1); e.writeUTF("()Ljava/lang/Object;");
         e.writeByte(12); e.writeShort(uRes); e.writeShort(uDescR);
         e.writeByte(10); e.writeShort(cHooks); e.writeShort(ntRes);
-        e.writeByte(1); e.writeUTF("com/mojang/authlib/yggdrasil/ProfileResult");
+        e.writeByte(1); e.writeUTF(resultado);
         e.writeByte(7); e.writeShort(uPr);
         e.writeByte(1); e.writeUTF("com/mojang/authlib/GameProfile");  // cGp puede ser el tipo de prueba
         e.writeByte(7); e.writeShort(uGp2);
@@ -153,7 +160,7 @@ final class Parche {
             // aceptar: 0 = no; si no, el método del Hook y en qué variable viene lo que se revisa
             int aceptar = elegido ? 0 : aceptar(utf[nom], utf[desc], estatico, mFirma, mDominio);
             // unido: 0 = no; si no, la clase del checkcast (lo que devuelve hasJoinedServer en esa authlib)
-            int unido = elegido || aceptar != 0 || estatico ? 0 : unido(utf[nom], utf[desc], cGp2, cPr);
+            int unido = elegido || aceptar != 0 || estatico ? 0 : unido(utf[nom], utf[desc], cGp2, cPr, resultado);
             int slot = estatico ? 0 : 1;
             if ("isSignatureValid".equals(utf[nom])) {
                 slot = 0;  // Property.isSignatureValid(PublicKey): la propiedad es «this»
@@ -239,18 +246,20 @@ final class Parche {
      * hasJoinedServer de YggdrasilMinecraftSessionService (y la de 26.3+): authlib 1.x (GameProfile, String),
      * 2.x–3.x (GameProfile, String, InetAddress) -> GameProfile; 4+ (String, String, InetAddress) -> ProfileResult.
      */
-    private static int unido(String nombre, String desc, int cGp, int cPr) {
+    /** (GameProfile|String, String[, InetAddress]) */
+    private static final String UNIDO_ARGS = "\\((Lcom/mojang/authlib/GameProfile;|Ljava/lang/String;)Ljava/lang/String;(Ljava/net/InetAddress;)?\\)";
+
+    private static int unido(String nombre, String desc, int cGp, int cPr, String resultado) {
         if (pruebaUnido != null ? !pruebaUnido.test(nombre, desc) : !"hasJoinedServer".equals(nombre)) {
             return 0;
         }
-        String args = desc.substring(1, desc.indexOf(')'));
-        if (!args.matches("(Lcom/mojang/authlib/GameProfile;|Ljava/lang/String;)Ljava/lang/String;(Ljava/net/InetAddress;)?")) {
+        if (!desc.matches(UNIDO_ARGS + "L[\\w/$]+;")) {
             return 0;  // forma desconocida: no se toca
         }
         if (desc.endsWith(")Lcom/mojang/authlib/GameProfile;")) {
             return cGp;
         }
-        return desc.endsWith(")Lcom/mojang/authlib/yggdrasil/ProfileResult;") ? cPr : 0;
+        return desc.endsWith(")L" + resultado + ";") ? cPr : 0;
     }
 
     private static void saltarAtributos(ByteBuffer b) {
