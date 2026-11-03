@@ -114,6 +114,11 @@ public final class Tr {
             "Fiestas Patrias", "Mexican Fiestas", "Navidad", "Christmas",
             "Fiestas Patrias, Día de Muertos y Navidad en los menús y la pantalla de carga.",
             "Mexican Fiestas, Day of the Dead and Christmas in the menus and the loading screen.",
+            // NexClient 4.10
+            "Halloween", "Halloween",
+            "Halloween, Fiestas Patrias, Día de Muertos y Navidad en los menús y la pantalla de carga.",
+            "Halloween, Mexican Fiestas, Day of the Dead and Christmas in the menus and the loading screen.",
+            "Tu mundo LAN acepta cuentas no premium.", "Your LAN world accepts non-premium accounts.",
         };
         for (int i = 0; i + 1 < d.length; i += 2) {
             p(d[i], d[i + 1]);

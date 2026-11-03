@@ -160,7 +160,7 @@ public class Config {
     public boolean etiquetas = true;
     /** Tu propio nombre (y tu etiqueta) encima de tu cabeza en tercera persona (F5). */
     public boolean nombrePropio = true;
-    /** Temas de temporada en los menús (Día de Muertos del 25 de octubre al 3 de noviembre). */
+    /** Temas de temporada en los menús (Halloween, Día de Muertos, Fiestas Patrias y Navidad). */
     public boolean temaTemporada = true;
     /** Cosméticos que se ven: 0 los de todos, 1 solo los míos, 2 ninguno. */
     public int cosmeticosVer = 0;
