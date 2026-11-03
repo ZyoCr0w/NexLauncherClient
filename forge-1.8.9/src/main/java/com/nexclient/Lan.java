@@ -25,7 +25,7 @@ public final class Lan {
             if (!avisado && mc.thePlayer != null) {
                 avisado = true;
                 mc.thePlayer.addChatMessage(new ChatComponentText(
-                        "\u00a77[NexClient] Tu mundo LAN acepta cuentas no premium."));
+                        "\u00a77[NexClient] " + Tr.t("Tu mundo LAN acepta cuentas no premium.")));
             }
         }
     }

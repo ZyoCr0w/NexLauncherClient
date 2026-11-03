@@ -25,7 +25,7 @@ public final class Lan {
             if (!avisado && mc.player != null) {
                 avisado = true;
                 mc.player.displayClientMessage(
-                        Component.literal("\u00a77[NexClient] Tu mundo LAN acepta cuentas no premium."), false);
+                        Component.literal("\u00a77[NexClient] " + Tr.t("Tu mundo LAN acepta cuentas no premium.")), false);
             }
         }
     }

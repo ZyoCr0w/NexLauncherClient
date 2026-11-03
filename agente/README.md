@@ -16,6 +16,12 @@ Funciona en cualquier versión de Minecraft (también 26.3+, con `com.mojang.aut
   `isWhitelistedDomain`/`isAllowedTextureDomain(String)` agrega
   `nop×3; aload_s; invokestatic Hooks.firma|dominio; ifeq +5; iconst_1; ireturn` con un marco nuevo
   (`same_frame`) donde sigue el código original; si el método no tenía StackMapTable, la crea.
+- Al principio de `hasJoinedServer` (authlib 1.x: `(GameProfile, String)`; 2–3: `+InetAddress` → `GameProfile`;
+  4+: `(String, String, InetAddress)` → `ProfileResult`) agrega
+  `aload_0 aload_1 aload_2; invokestatic Hooks.unido; ifeq +10; invokestatic Hooks.unidoResultado; checkcast; areturn`
+  (16 bytes, `same_frame` en el 16): tu mundo LAN le pregunta a NexLauncher quién entra (Mojang primero; con
+  «Dejar entrar no premium», el perfil offline). Así un anfitrión premium deja entrar amigos no premium en
+  cualquier versión, también sin NexClient (Forge/NeoForge). Si NexLauncher no responde, sigue authlib.
 - `Hooks` (jar aparte, va al cargador de arranque): devuelve el perfil con la skin de NexLauncher si el
   servidor no mandó ninguna. Solo usa clases de Java y reflexión; cualquier error deja el perfil igual.
 - `prueba/Masiva2.java`: lo mismo con el cambio «aceptar» (métodos `(Objeto)Z`).

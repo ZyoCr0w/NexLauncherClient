@@ -11,15 +11,19 @@ import java.util.Random;
  * <li>Día de Muertos: del 25 de octubre al 3 de noviembre (papel picado de colores, pétalos de cempasúchil y
  * calaveritas).</li>
  * <li>Navidad: del 1 de diciembre al 6 de enero (series de luces, nieve, regalos y arbolito).</li>
+ * <li>Halloween: del 1 al 24 de octubre (banderitas naranja y morado, murciélagos, hojas secas, calabazas). Del 25 en
+ * adelante manda Día de Muertos.</li>
  * </ul>
  * La decoración se apaga en NexClient ▸ Visual ▸ «Temas de temporada». Todo se dibuja con rectángulos (MenuLateral.Pincel). Este archivo es igual en 1.8.9 y en 1.21.1.
  */
 public final class Temporada {
-    public static final int NINGUNA = 0, MUERTOS = 1, PATRIAS = 2, NAVIDAD = 3;
+    public static final int NINGUNA = 0, MUERTOS = 1, PATRIAS = 2, NAVIDAD = 3, HALLOWEEN = 4;
     public static final int CEMPASUCHIL = 0xFFFF8F1F, AMARILLO = 0xFFFFC21A, ROSA = 0xFFE4007C, MORADO = 0xFF8E3CCB,
             TURQUESA = 0xFF19B5C8, VERDE = 0xFF2FB36B;
     public static final int VERDE_MX = 0xFF1E9E4A, BLANCO_MX = 0xFFF4F4F0, ROJO_MX = 0xFFD62828;
     public static final int ROJO_NAV = 0xFFD7263D, VERDE_NAV = 0xFF1E7B3C, ORO = 0xFFFFD54A;
+    public static final int CALABAZA = 0xFFFF7518, MORADO_HW = 0xFF7B2FBE, NEGRO_HW = 0xFF17121F, VERDE_HW = 0xFF6BCB3A;
+    private static final int[] PAPEL_HALLOWEEN = {CALABAZA, MORADO_HW, 0xFF2B2233, VERDE_HW};
     /** Los colores del papel picado de Día de Muertos, en orden. */
     public static final int[] PAPEL = {ROSA, CEMPASUCHIL, MORADO, TURQUESA, AMARILLO, VERDE};
     private static final int[] PAPEL_PATRIAS = {VERDE_MX, BLANCO_MX, ROJO_MX};
@@ -31,9 +35,12 @@ public final class Temporada {
     private Temporada() {
     }
 
-    /** Festividad según la fecha (sin importar el ajuste de decoración). -Dnexclient.tema=muertos|patrias|navidad|normal. */
+    /** Festividad según la fecha (sin importar el ajuste). -Dnexclient.tema=halloween|muertos|patrias|navidad|normal. */
     public static int porFecha() {
         String forzado = System.getProperty("nexclient.tema", "");
+        if (forzado.equals("halloween")) {
+            return HALLOWEEN;
+        }
         if (forzado.equals("muertos")) {
             return MUERTOS;
         }
@@ -57,6 +64,9 @@ public final class Temporada {
 
     /** Mes 1–12 y día → festividad. */
     public static int deFecha(int mes, int dia) {
+        if (mes == 10 && dia <= 24) {
+            return HALLOWEEN;
+        }
         if ((mes == 10 && dia >= 25) || (mes == 11 && dia <= 3)) {
             return MUERTOS;
         }
@@ -87,21 +97,22 @@ public final class Temporada {
         return actual() == MUERTOS;
     }
 
-    /** ¿Se ven los cosméticos de esa temporada («muertos», «patrias», «navidad»)? Solo depende de la fecha. */
+    /** ¿Se ven los cosméticos de esa temporada («halloween», «muertos», «patrias», «navidad»)? Solo depende de la fecha. */
     public static boolean vigente(String temporada) {
         int f = porFecha();
         return ("muertos".equals(temporada) && f == MUERTOS) || ("patrias".equals(temporada) && f == PATRIAS)
-                || ("navidad".equals(temporada) && f == NAVIDAD);
+                || ("navidad".equals(temporada) && f == NAVIDAD) || ("halloween".equals(temporada) && f == HALLOWEEN);
     }
 
     public static String nombre() {
         int f = actual();
-        return f == MUERTOS ? "Día de Muertos" : f == PATRIAS ? "Fiestas Patrias" : f == NAVIDAD ? "Navidad" : "";
+        return f == MUERTOS ? "Día de Muertos" : f == PATRIAS ? "Fiestas Patrias" : f == NAVIDAD ? "Navidad" : f == HALLOWEEN ? "Halloween" : "";
     }
 
     // ---------------------------------------------------------------- colores de cada festividad
     public static int[] papel() {
-        return actual() == PATRIAS ? PAPEL_PATRIAS : actual() == NAVIDAD ? LUCES : PAPEL;
+        int f = actual();
+        return f == PATRIAS ? PAPEL_PATRIAS : f == NAVIDAD ? LUCES : f == HALLOWEEN ? PAPEL_HALLOWEEN : PAPEL;
     }
 
     /** Color de acento de la entrada i del menú (va cambiando entre los de la festividad). */
@@ -113,47 +124,47 @@ public final class Temporada {
     /** Acento principal (líneas, barras): cempasúchil, verde o rojo navideño. */
     public static int principal() {
         int f = actual();
-        return f == PATRIAS ? VERDE_MX : f == NAVIDAD ? ROJO_NAV : CEMPASUCHIL;
+        return f == PATRIAS ? VERDE_MX : f == NAVIDAD ? ROJO_NAV : f == HALLOWEEN ? CALABAZA : CEMPASUCHIL;
     }
 
     /** Acento claro (perillas al pasar el ratón). */
     public static int secundario() {
         int f = actual();
-        return f == PATRIAS ? BLANCO_MX : f == NAVIDAD ? ORO : AMARILLO;
+        return f == PATRIAS ? BLANCO_MX : f == NAVIDAD ? ORO : f == HALLOWEEN ? 0xFFB57BFF : AMARILLO;
     }
 
     /** Color de los textos de la festividad (el nombre bajo el logo). */
     public static int textoTema() {
         int f = actual();
-        return f == PATRIAS ? 0xFF8FE3AA : f == NAVIDAD ? 0xFFFF9C9C : 0xFFFFB45A;
+        return f == PATRIAS ? 0xFF8FE3AA : f == NAVIDAD ? 0xFFFF9C9C : f == HALLOWEEN ? 0xFFFF9A4D : 0xFFFFB45A;
     }
 
     /** Degradado de fondo de las pantallas sin mundo (arriba y abajo). */
     public static int fondoArriba() {
         int f = actual();
-        return f == PATRIAS ? 0xFF0C1E14 : f == NAVIDAD ? 0xFF0C1830 : 0xFF1C0A28;
+        return f == PATRIAS ? 0xFF0C1E14 : f == NAVIDAD ? 0xFF0C1830 : f == HALLOWEEN ? 0xFF1A0E06 : 0xFF1C0A28;
     }
 
     public static int fondoAbajo() {
         int f = actual();
-        return f == PATRIAS ? 0xFF040906 : f == NAVIDAD ? 0xFF03060E : 0xFF06030A;
+        return f == PATRIAS ? 0xFF040906 : f == NAVIDAD ? 0xFF03060E : f == HALLOWEEN ? 0xFF050305 : 0xFF06030A;
     }
 
     /** Tinte (RGB) de paneles y botones. */
     public static int tinte() {
         int f = actual();
-        return f == PATRIAS ? 0x0C1C12 : f == NAVIDAD ? 0x0A1426 : 0x180A22;
+        return f == PATRIAS ? 0x0C1C12 : f == NAVIDAD ? 0x0A1426 : f == HALLOWEEN ? 0x1C0E06 : 0x180A22;
     }
 
     public static int tinteClaro() {
         int f = actual();
-        return f == PATRIAS ? 0x1C3C28 : f == NAVIDAD ? 0x1C2C4C : 0x301A3A;
+        return f == PATRIAS ? 0x1C3C28 : f == NAVIDAD ? 0x1C2C4C : f == HALLOWEEN ? 0x3A1E0C : 0x301A3A;
     }
 
     /** Fondo de la pantalla de carga (RGB). */
     public static int fondoCarga() {
         int f = actual();
-        return f == PATRIAS ? 0x0A1A10 : f == NAVIDAD ? 0x0A1222 : 0x170921;
+        return f == PATRIAS ? 0x0A1A10 : f == NAVIDAD ? 0x0A1222 : f == HALLOWEEN ? 0x140A04 : 0x170921;
     }
 
     public static int alfa(int argb, float a) {
@@ -209,6 +220,12 @@ public final class Temporada {
             return;
         }
         int[] colores = papel();
+        if (actual() == HALLOWEEN) {  // telaraña de hilo y murciélagos que cuelgan entre las banderitas
+            for (int x = x1 + 21; x < x2 - 6; x += 42) {
+                int by = y + 13 + Math.round((float) Math.sin(t * 1.4f + x) * 1.5f);
+                figura(p, MURCIELAGO, x - 5, by, 1, a, new int[]{0xFF2B2233, 0xFFFF3B30}, "NR");
+            }
+        }
         p.rect(x1, y, x2, y + 1, alfa(0xFFC9B79C, a * 0.8f));
         int paso = 14;
         int n = Math.max(1, (x2 - x1 - 3) / paso);
@@ -256,6 +273,30 @@ public final class Temporada {
     }
 
     // ---------------------------------------------------------------- figura junto al logo
+    private static final String[] MURCIELAGO = {
+            "N....N....N",
+            "NN..NNN..NN",
+            "NNNNNRNRNNN",
+            ".NNNNNNNNN.",
+            "..N.NNN.N..",
+            "......N....",
+    };
+    private static final String[] CALABAZA_F = {
+            ".....GG.....",
+            "......G.....",
+            "..OOOOOOOO..",
+            ".OOoOOOOoOO.",
+            "OOYYOOOOYYOO",
+            "OYYYYOOYYYYO",
+            "OOOOOYYOOOOO",
+            "OoOOOOOOOOoO",
+            "OYOYYYYYYOYO",
+            "OOYYOYYOYYOO",
+            ".OOOOOOOOOO.",
+            "..OOOOOOOO..",
+    };
+    private static final String[] CALABACITA = {"..G..", ".OOO.", "OYOYO", "OOOOO", ".OOO."};
+
     private static final String[] CALAVERA = {
             "...WWWWWW...",
             ".WWWWPPWWWW.",
@@ -299,7 +340,7 @@ public final class Temporada {
             ".....CC.....",
     };
 
-    /** Figura de la festividad (12×12 celdas): calaverita, sombrero de charro o arbolito de Navidad. */
+    /** Figura de la festividad (12×12 celdas): calaverita, sombrero de charro, arbolito de Navidad o calabaza. */
     public static void calavera(MenuLateral.Pincel p, int x, int y, int celda, float a) {
         if (a <= 0.02f) {
             return;
@@ -308,6 +349,9 @@ public final class Temporada {
         if (f == PATRIAS) {
             figura(p, SOMBRERO, x, y, celda, a, new int[]{0xFF231A16, VERDE_MX, BLANCO_MX, ROJO_MX, 0xFFFFD54A, 0xFFE0B23A},
                     "NVBROG");
+        } else if (f == HALLOWEEN) {
+            float luz = 0.65f + 0.35f * (float) Math.sin(System.nanoTime() / 1.8e8);
+            figura(p, CALABAZA_F, x, y, celda, a, new int[]{CALABAZA, 0xFFE8650F, alfa(ORO, luz), 0xFF3E7D2C}, "OoYG");
         } else if (f == NAVIDAD) {
             float luz = 0.6f + 0.4f * (float) Math.sin(System.nanoTime() / 2.5e8);
             figura(p, ARBOL, x, y, celda, a, new int[]{0xFF2E8B3E, alfa(ORO, luz), 0xFFE53935, 0xFF4FA3FF, 0xFF6D4C2F},
@@ -326,10 +370,16 @@ public final class Temporada {
         adorno(p, x, y, celda, a, 0);
     }
 
-    /** Adorno de la fila de abajo (k = su posición): cempasúchil, banderita de México, o regalo y arbolito. */
+    /** Adorno de la fila de abajo (k = su posición): cempasúchil, banderita de México, regalo, o calabaza y murciélago. */
     public static void adorno(MenuLateral.Pincel p, int x, int y, int celda, float a, int k) {
         int f = actual();
-        if (f == PATRIAS) {
+        if (f == HALLOWEEN) {
+            if (k % 2 == 0) {
+                figura(p, CALABACITA, x, y, celda, a, new int[]{CALABAZA, ORO, 0xFF3E7D2C}, "OYG");
+            } else {
+                figura(p, MURCIELAGO, x - celda, y, Math.max(1, celda / 2 + 1), a, new int[]{0xFF2B2233, 0xFFFF3B30}, "NR");
+            }
+        } else if (f == PATRIAS) {
             figura(p, BANDERITA, x, y - celda, celda, a, new int[]{0xFF8A7560, VERDE_MX, BLANCO_MX, ROJO_MX}, "PVBR");
         } else if (f == NAVIDAD) {
             int[] cajas = {ROJO_NAV, 0xFF2E7DD7, VERDE_NAV, 0xFF8E3CCB};
@@ -351,7 +401,7 @@ public final class Temporada {
         }
     }
 
-    /** Pétalos de cempasúchil, confeti verde-blanco-rojo o copos de nieve, cayendo y meciéndose en el rectángulo. */
+    /** Pétalos de cempasúchil, confeti verde-blanco-rojo, copos de nieve u hojas secas de otoño, cayendo y meciéndose en el rectángulo. */
     public static void petalos(MenuLateral.Pincel p, int x1, int y1, int w, int h, float t, float a) {
         int f = actual();
         for (float[] q : PETALOS) {
@@ -368,7 +418,9 @@ public final class Temporada {
                 p.rect(px, py, px + s, py + s, alfa(c, a * 0.8f * borde));
                 continue;
             }
-            if (f == PATRIAS) {
+            if (f == HALLOWEEN) {  // hojas secas
+                c = q[6] < 5 ? 0xFFD9661A : q[6] < 8 ? 0xFF8C4A1C : MORADO_HW;
+            } else if (f == PATRIAS) {
                 c = q[6] < 4 ? VERDE_MX : q[6] < 7 ? BLANCO_MX : ROJO_MX;
             } else {
                 c = q[6] < 6 ? CEMPASUCHIL : q[6] < 9 ? AMARILLO : ROSA;

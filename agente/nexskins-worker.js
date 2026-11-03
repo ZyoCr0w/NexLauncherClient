@@ -450,16 +450,19 @@ const ETIQUETAS = {
 const CATALOGO = {
   cabeza: ["aureola_dorada", "aureola_arcoiris", "aureola_oscura", "corona", "cuernos", "orejas_gato", "orejas_zorro", "nube",
            "bandana_fuego", "bandana_fuego_azul", "bandana_ninja", "bandana_arcoiris", "bandana_nex", "bandana_pirata",
-           "corona_cempasuchil", "sombrero_charro", "gorro_navideno", "cuernos_reno"],
+           "corona_cempasuchil", "sombrero_charro", "gorro_navideno", "cuernos_reno", "calabaza", "sombrero_bruja"],
   espalda: ["alas_angel", "alas_angel_oscuro", "alas_angel_arcoiris", "alas_dragon", "alas_dragon_negro", "alas_dragon_hielo",
             "alas_dragon_ender", "alas_mariposa", "alas_fuego", "jetpack"],
   cuerpo: ["cola_zorro", "cola_gato", "cola_dragon", "bufanda", "orbitas", "sarape", "bufanda_navidena"],
-  capa: ["gif", "capa_brillo", "capa_color", "capa_real", "capa_estelar", "capa_nex", "capa_llamas", "capa_arcoiris"],
-  aura: ["ki_blanco", "ki_dorado", "ki_azul", "ki_rayos", "aura_oscura", "aura_fuego", "aura_arcoiris", "aura_hielo", "nieve"],
+  capa: ["gif", "capa_brillo", "capa_color", "capa_real", "capa_estelar", "capa_nex", "capa_llamas", "capa_arcoiris",
+         "capa_vampiro"],
+  aura: ["ki_blanco", "ki_dorado", "ki_azul", "ki_rayos", "aura_oscura", "aura_fuego", "aura_arcoiris", "aura_hielo", "nieve",
+         "aura_murcielagos"],
   rastro: ["chispas", "corazones", "notas", "pisadas_fuego"],
   escudo: ["escudo_nex", "escudo_noche", "escudo_dragon", "escudo_dorado", "escudo_hielo", "escudo_fuego", "escudo_obsidiana"],
-  mascota: ["dragoncito", "gatito", "perrito", "buho", "fantasma", "axolote", "alebrije", "alebrije_noche", "aguila", "rodolfo"],
-  mano: ["maracas", "jarrito", "baston_dulce"],
+  mascota: ["dragoncito", "gatito", "perrito", "buho", "fantasma", "axolote", "alebrije", "alebrije_noche", "aguila", "rodolfo",
+            "murcielago"],
+  mano: ["maracas", "jarrito", "baston_dulce", "calabacita"],
 };
 // De temporada: quien entra (abre sus cosméticos en NexLauncher o juega con su cuenta) durante la festividad se queda
 // con los de esa festividad para siempre. Fuera de ella no se pueden conseguir. Los creadores tienen todos.
@@ -468,12 +471,16 @@ const TEMPORADA_COS = {
   aguila: "patrias", sombrero_charro: "patrias", sarape: "patrias", maracas: "patrias", jarrito: "patrias",
   rodolfo: "navidad", gorro_navideno: "navidad", cuernos_reno: "navidad", bufanda_navidena: "navidad",
   baston_dulce: "navidad", nieve: "navidad",
+  calabaza: "halloween", sombrero_bruja: "halloween", capa_vampiro: "halloween", murcielago: "halloween",
+  calabacita: "halloween", aura_murcielagos: "halloween",
 };
 const CREADORES = ["zyocr0w"];
 
-/** Festividad de una fecha: muertos (25 oct – 3 nov), patrias (1–16 sep y 4–20 nov), navidad (1 dic – 6 ene). */
+/** Festividad de una fecha: halloween (1–24 oct), muertos (25 oct – 3 nov), patrias (1–16 sep y 4–20 nov),
+ *  navidad (1 dic – 6 ene). */
 function festividad(f) {
   const m = f.getUTCMonth() + 1, d = f.getUTCDate();
+  if (m === 10 && d <= 24) return "halloween";
   if ((m === 10 && d >= 25) || (m === 11 && d <= 3)) return "muertos";
   if ((m === 9 && d <= 16) || (m === 11 && d >= 4 && d <= 20)) return "patrias";
   if (m === 12 || (m === 1 && d <= 6)) return "navidad";
